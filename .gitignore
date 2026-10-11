@@ -1,0 +1,7 @@
+# Secrets
+.env
+
+# Private notes, scratch and logs
+.local/
+tmp/
+*.log

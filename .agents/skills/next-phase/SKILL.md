@@ -1,0 +1,113 @@
+---
+name: next-phase
+description: Start or resume a bounded Compute Cost & Risk Monitor OpenSpec phase, selecting relevant build and domain skills, implementing authorized tasks, verifying evidence, and closing only complete changes.
+---
+
+# Compute Cost & Risk Monitor next phase
+
+Read [PROJECT.md](../../../PROJECT.md), [WORKFLOW.md](../../../WORKFLOW.md), and
+[HANDOFF.md](../../../HANDOFF.md). Current user instructions govern the checkpoint.
+Installing or reviewing skills does not itself implement the application.
+
+## 1. Recover the actual checkpoint
+
+Inspect working tree, branch and recent commits before changing Git state. Preserve staged,
+unstaged and untracked work; resume a relevant branch without automatic stash/reset.
+Use `openspec list --json`, then `openspec status --change NAME --json`. Read returned
+artifact paths and active tasks. Planning artifacts marked done do not mean code exists.
+
+Choose review/setup, authorized implementation, new phase, or verified closure:
+- A review-only or skills-adoption request stays at that boundary until completed.
+- An existing authorized phase resumes its current task IDs after reconciling stale facts.
+- A new capability needs a scoped proposal and feasibility investigation where needed.
+- A completed slice inside an unfinished phase stays a slice; leave later tasks open.
+
+State the selected change, branch, mode and next tasks briefly. Ask only when different
+plausible scopes would materially change the work.
+
+## 2. Apply relevant skills and prerequisites
+
+Use [compute-cost-risk-monitor-build-safety](../compute-cost-risk-monitor-build-safety/SKILL.md) for architecture/dependencies,
+tool or adapter contracts, external calls, data handling, prompts/model behavior, run recording,
+cost or phase readiness. It routes to the full 17-workflow collection. Load only workflows
+needed for the slice.
+Use [compute-cost-risk-monitor-market-review](../compute-cost-risk-monitor-market-review/SKILL.md)
+for offer data, comparable pricing, workload costs, budget exposure and the market brief.
+Use available UI/design skills when a user-facing interface is actually in scope; inspect
+project design context first. Architecture diagrams live in a Figma draft on the owner's
+Pro seat, drawn to standard conventions: create them in Phase 1 and update them when a phase
+changes components, data flow or schema. Load the Figma skills before any Figma tool. Framework/API work uses current official docs or installed
+source. A skill recommendation does not justify adding its framework to the application.
+
+Distinguish technical checks, product decisions, and action authorization. Technical passes
+can be established from evidence; missing evidence stays missing. Reuse accepted decisions
+and existing implementation authorization. All PROJECT.md `⛔` gates remain operator-resolved:
+surface the relevant gate and stop its dependent action; never satisfy or waive it. Unresolved
+external access or budget gates do not block local development.
+Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
+branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR
+merges only after its review and the user's go-ahead.
+
+Before proposing a new phase or capability, grill the user with [grilling](../grilling/SKILL.md)
+on the phase's design tree: goal and non-goals, acceptance evidence, PROJECT.md `TBD` items it
+depends on, affected `⛔` gates, and open feasibility. Look up facts yourself; put only decisions
+to the user. The proposal starts once the frontier is empty and the user confirms shared
+understanding. Record settled decisions in PROJECT.md and the proposal/design. Resuming an
+authorized phase skips grilling unless a new material decision appears.
+
+Use available OpenSpec propose/update guidance to keep proposal, design, specs and tasks
+coherent. Preserve existing spec-first history. For a new phase create a reviewable spec-only
+`docs:` commit, push the branch and open a draft PR (WORKFLOW.md § Pull requests). Pause where the user requested review or a material decision is unresolved;
+already authorized implementation does not need repeated permission for routine refinements.
+
+## 3. Implement the authorized slice
+
+Use the OpenSpec apply workflow. Select task IDs and completion criteria before changing
+behavior. Keep deterministic domain logic and validation separate from external adapters,
+persistence and presentation. Use synthetic fixtures. Tests need no credentials or network
+unless the task is an authorized live integration whose gate is resolved.
+Only the source adapter (Vast.ai first) touches the network: it saves each original response
+before parsing, and normalization, cost and exposure code read stored observations only.
+Never add a call that rents, creates or changes instances.
+
+Update the phase to In progress with its first implementation commit. Use Conventional
+Commits per task or coherent task group. Mark tasks complete only after their required
+behavior/checks pass. Scope changes and unresolved failures remain visible in tasks/handoff.
+Do not treat the roadmap in PROJECT.md as an instruction to build all later phases now.
+
+## 4. Verify the changed boundary
+
+- Skills/planning: frontmatter, local links, routing consistency, source digests where
+  carried over, strict OpenSpec validation, whitespace and candidate-file inspection.
+  Do not claim runtime verification from these checks.
+- Runtime: run `TBD in Phase 0` once implemented. Before Phase 0 finishes, inspect
+  actual checks rather than assuming this command exists. Run meaningful regression/contract
+  tests for the change.
+- Results and claims: check outputs independently of the code that produced them. No
+  exception does not prove correctness; a timeout or empty result does not prove a negative.
+- Model/agent behavior: evaluate against cases fixed before measuring. An LLM judge cannot
+  establish deterministic correctness.
+- UI: verify changed flows in the actual local interface with synthetic cases.
+- Live adapters: apply unresolved operator gates plus budget, timing, failure and sensitive
+  output checks. Offline mocks establish contracts, not live results.
+- Code review: before a code PR is marked ready, run the review in WORKFLOW.md and resolve
+  its findings. A review complements the gate and tests; it does not replace them.
+
+Record commands, outcomes, revision/environment and material untested cases. Reuse evidence
+when its scope/revision remain valid. Retain failures; don't rerun selectively for a win.
+
+## 5. Close only what is complete
+
+For a full phase, verify all tasks/requirements and required checks. Archive on its branch
+using OpenSpec, synchronize main specs, validate again, and commit archive plus phase Done
+as `chore:`. Push, mark the PR ready, and merge it with a merge commit only after the gate is
+green, the code review is resolved and the user gives the go-ahead. Preserve unfinished
+work and unrelated files. Delete a branch, locally and on GitHub, only after verifying it is merged.
+
+For a partial milestone, record its completion and remaining tasks; do not archive or mark
+the whole phase Done. Local verification is not hosted CI, cloud execution or deployment.
+
+Keep personal schedules and correspondence in ignored `.local/` notes.
+
+Update HANDOFF with current branch/change, selected scope, implemented behavior, checks,
+limitations and the exact next task. Keep the roadmap in PROJECT, task ownership in OpenSpec.
