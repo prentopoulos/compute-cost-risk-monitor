@@ -61,8 +61,13 @@ user before each later phase. Evidence that counts in every phase:
 
 ## 4. Stack and commands
 
-- Python, pandas, DuckDB, Streamlit, pytest (decided). Python version, environment manager,
-  lockfile, lint/format/type tools and hosted CI: TBD in Phase 0. Python 3.10 is installed.
+- Python, pandas, DuckDB, Streamlit, pytest (decided). Phase 0 grilling, 2026-10-11 (all
+  owner calls answered by the owner; settled answers cited in
+  `openspec/changes/phase-0-toolchain/design.md` D1–D23): Python 3.13 managed by uv with a
+  committed `uv.lock`; Ruff for format and lint; mypy strict; pytest with pytest-cov;
+  commitizen for commit messages; OpenSpec CLI 1.6.0 pinned through npm; hosted CI on GitHub
+  Actions (owner). Package `compute_cost_risk_monitor` (owner). Run Python only through uv:
+  bare `python` differs by shell on the owner's PC.
 - Data source: [Vast.ai API](https://vast.ai/developers/api) offer search (by GPU, price,
   location and other specifications). Not used yet; whether it needs an API key is checked in
   Phase 2 under its ⛔ gate.
@@ -129,6 +134,9 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 
 - [ ] Operator approves the service (paid API plan, LLM calls for the brief, hosting) and a
       budget. This project never spends Vast.ai account credit.
+- Decision, 2026-10-11 (owner, Phase 0 grilling): GitHub Actions CI may use the account's free
+  included minutes; the owner confirmed overage cannot bill. Scope: the Phase 0 CI workflow
+  and its later updates. It approves no paid service.
 
 ### ⛔ Before publishing
 
