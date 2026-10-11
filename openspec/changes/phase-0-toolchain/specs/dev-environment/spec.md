@@ -25,11 +25,12 @@ pandas-stubs and commitizen.
 
 ### Requirement: Locked OpenSpec CLI
 The project SHALL pin the OpenSpec CLI (`@fission-ai/openspec`) at exactly 1.6.0 in
-`package.json`, with a committed `package-lock.json`. The gate SHALL run the repo-local CLI,
-not a global install.
+`package.json`, with a committed `package-lock.json`. The gate SHALL run the repo-local CLI
+through `node` and the package's own entry point, not a global install or an npm shell shim.
+npm's Windows `.cmd` shims break on the `&` in this repo's folder name.
 
 #### Scenario: Repo-local CLI after bootstrap
-- **WHEN** a developer runs `npm ci` and then `npx --no-install openspec --version`
+- **WHEN** a developer runs `npm ci` and then `node node_modules/@fission-ai/openspec/bin/openspec.js --version`
 - **THEN** it prints `1.6.0`
 
 ### Requirement: Package layout
