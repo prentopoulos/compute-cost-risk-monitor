@@ -12,9 +12,9 @@
 
 ## 3. Smoke tests
 
-- [ ] 3.1 Add import smoke tests for pandas, DuckDB, Streamlit and `compute_cost_risk_monitor`
-- [ ] 3.2 Add the pandas → in-memory DuckDB → pandas round trip, asserting values and dtypes for integer, float, string and UTC timestamp columns
-- [ ] 3.3 Add the headless Streamlit `AppTest.from_function` smoke test
+- [x] 3.1 Add import smoke tests for pandas, DuckDB, Streamlit and `compute_cost_risk_monitor`
+- [x] 3.2 Add the pandas → in-memory DuckDB → pandas round trip, asserting values and dtypes for integer, float, string and UTC timestamp columns
+- [x] 3.3 Add the headless Streamlit `AppTest.from_function` smoke test
 
 ## 4. Gate
 
