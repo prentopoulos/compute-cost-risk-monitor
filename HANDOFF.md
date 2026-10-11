@@ -10,6 +10,10 @@ pytest), the seven-phase plan and the ⛔ gates. Branch `main` holds the single 
 the private GitHub repo prentopoulos/compute-cost-risk-monitor is `origin`. No phase has
 started, no application code exists, and no Vast.ai data has been fetched.
 No Figma diagram file exists yet; Phase 1 creates it.
+On 2026-10-11 the setup was compared with the updated kit (new_project_agent_setup_updated).
+Its verbatim Agent Builder and grilling files are unchanged. Adopted: the runtime-secret wording,
+recording operator gate decisions with scope and date, and `.env.*` ignore rules. AI-ops is
+deferred: PROJECT.md §2 says to install it before the optional brief drafter is proposed.
 
 ## Implemented behavior
 

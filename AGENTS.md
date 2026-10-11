@@ -23,7 +23,8 @@ pricing, workload costs, budget exposure and the market brief.
 
 ## Non-negotiables
 
-- Secrets only in gitignored .env; never print, commit or put them in outputs.
+- Secrets use the runtime secret mechanism (gitignored .env for local development); never
+  print, commit or put them in outputs.
 - ⛔ gates in PROJECT.md are operator-resolved. Surface and stop at the relevant gate; never
   satisfy or waive one. Local work can proceed before deferred gates.
 - Never fabricate results or external-service output. Label mocked, local and live results

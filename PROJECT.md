@@ -38,6 +38,7 @@ Deferred or out of scope:
 - A second source, added only after its access and comparable fields are verified (⛔ below).
 - Trend claims, made only after several weeks of collection.
 - The optional AI agent, which may only draft the market brief from validated numbers (⛔ spend).
+  Before proposing it, install the setup kit's AI-ops skill and AI_OPS.md (deferred 2026-10-11).
 - Renting, creating or modifying instances, or any account action beyond reading offers.
 - Accounts, logins or multiple users. Hosting before Phase 7 (⛔ publishing).
 
@@ -81,7 +82,8 @@ merges only after its review and the user's go-ahead. Follow WORKFLOW.md for pha
 
 ## 5. Non-negotiables
 
-- Secrets live only in gitignored .env; never print, commit or include them in reports.
+- Secrets use the runtime secret mechanism (gitignored .env for local development); never
+  print, commit or include them in reports.
 - Label mocked, local and live results accurately. Preserve failed runs.
 - Operator resolves all ⛔ gates. The agent never satisfies or waives one itself.
 - Call the data observed marketplace asking prices, never executed trades or a market-wide
@@ -133,4 +135,5 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 - [ ] Operator approves making the GitHub repo public, deploying the demo, and sharing the
       walkthrough or brief, including the data and caveats they show.
 
-All gates are unresolved until the operator checks them. Local work proceeds independently.
+Record explicit operator decisions already given, with scope and date; do not request them
+again. Gates without such a decision remain unresolved. Local work proceeds independently.
