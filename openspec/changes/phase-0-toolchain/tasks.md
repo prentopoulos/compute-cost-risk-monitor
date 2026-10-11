@@ -20,11 +20,11 @@
 
 - [x] 4.1 Add `scripts/gate.py`: runs lock check, format check, lint, strict mypy, pytest with branch coverage, OpenSpec strict validation and the commit check; runs every step, prints a summary, and exits non-zero on any failure; skips the commit check with a notice on an empty range
 - [x] 4.2 Run the gate green in Git Bash and in PowerShell, and record the output
-- [ ] 4.3 Show the gate failing on a deliberate defect (a misformatted file, a type error and a non-conventional commit message, each reverted) and record the output
+- [x] 4.3 Show the gate failing on a deliberate defect (a misformatted file, a type error and a non-conventional commit message, each reverted) and record the output
 
 ## 5. Hosted CI and repository settings
 
-- [ ] 5.1 Add `.github/workflows/ci.yml` per D16 (ubuntu-latest, `contents: read`, 10-minute timeout, cancel-in-progress, SHA-pinned actions, `fetch-depth: 0`, `uv sync --locked`, `npm ci`, gate, `uv audit --locked`)
+- [x] 5.1 Add `.github/workflows/ci.yml` per D16 (ubuntu-latest, `contents: read`, 10-minute timeout, cancel-in-progress, SHA-pinned actions, `fetch-depth: 0`, `uv sync --locked`, `npm ci`, gate, `uv audit --locked`)
 - [ ] 5.2 Push and confirm the CI run on the Phase 0 PR is green; record the run URL and duration
 - [ ] 5.3 Turn on Dependabot alerts and security updates (D6) and record which manifests GitHub's dependency graph detects
 

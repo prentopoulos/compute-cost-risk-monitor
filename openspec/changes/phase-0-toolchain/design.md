@@ -46,7 +46,7 @@ their basis.
 | D14 | Gate: `uv run --locked python scripts/gate.py`. It runs every step, prints a summary and exits non-zero on any failure. Tools are never called by bare name | default. Make and just are absent, and conda tools shadow PATH in Git Bash |
 | D15 | Commit check: `cz check --rev-range origin/main..HEAD` (commitizen), skipped with a notice on an empty range | default. Source: commitizen source (default `allowed_prefixes` include Merge/Revert; `NoCommitsFoundError` on an empty range) |
 | D16 | CI: one `ubuntu-latest` job, `contents: read`, 10-minute timeout, per-ref cancel-in-progress, SHA-pinned actions, gate then `uv audit --locked` | default. Source: build-safety `orchestrate_ci_cd.md` step 1 |
-| D17 | `uv audit --locked` runs in CI and before marking a PR ready, not in the offline local gate | default. Source: uv CLI reference (`uv audit`, needs network) |
+| D17 | `uv audit --locked` runs in CI and before marking a PR ready, not in the offline local gate. It is experimental in uv 0.13, so CI pins uv 0.13.0 and passes `--preview-features audit-command` (found in implementation) | default. Source: uv CLI reference (`uv audit`, needs network); local run warning |
 | D18 | No secret scanner in Phase 0. Add one in Phase 2 (first credential) and recheck before going public | recorded. Source: SECURITY_BASELINE B01 and its absence rule |
 | D19 | No branch protection or required checks | recorded. Source: WORKFLOW.md (review and owner go-ahead before every merge) |
 | D20 | src layout; `tests/smoke` now, `tests/unit` and `tests/fixtures` later; `.gitattributes` forces LF for code and config only; `.editorconfig`; no `.env.example` until Phase 2 | default |
@@ -79,6 +79,8 @@ their basis.
   free quota under D4; public repos (Phase 7) run free.
 - [Dependabot cannot read `uv.lock`] → the audit in CI covers Python advisories; this is
   checked during implementation and recorded.
+- [`uv audit` is experimental and may change] → CI pins the uv version; a behaviour change
+  shows up as a failed audit step, never as a silent pass.
 - [AppTest on Windows] → it runs in-process. If it fails on Windows, the failure is recorded,
   not hidden.
 
