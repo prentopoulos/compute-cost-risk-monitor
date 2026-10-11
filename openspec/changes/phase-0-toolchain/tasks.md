@@ -1,14 +1,14 @@
 ## 1. Machine prerequisites (owner-approved, D3)
 
-- [ ] 1.1 Install uv with `winget install --id=astral-sh.uv -e` and confirm `uv --version` in Git Bash and PowerShell
-- [ ] 1.2 Run `uv python install 3.13` and confirm uv resolves 3.13.16
+- [x] 1.1 Install uv with `winget install --id=astral-sh.uv -e` and confirm `uv --version` in Git Bash and PowerShell
+- [x] 1.2 Run `uv python install 3.13` and confirm uv resolves 3.13.16
 
 ## 2. Environment and layout
 
-- [ ] 2.1 Add `.python-version` (3.13), `pyproject.toml` (name, `requires-python`, runtime and dev dependencies, hatchling build backend, Ruff, mypy and pytest config) and the `src/compute_cost_risk_monitor` package with `__init__.py` and `py.typed`
-- [ ] 2.2 Generate and commit `uv.lock`; confirm `uv sync --locked` and `uv lock --check` exit 0
-- [ ] 2.3 Add `package.json` (private, exact `@fission-ai/openspec` 1.6.0) and `package-lock.json`; confirm `npm ci` and `npx --no-install openspec --version` print 1.6.0
-- [ ] 2.4 Add `.gitattributes` (LF for code, config and lockfiles only), `.editorconfig`, and the `.gitignore` entries for venv, caches, coverage and `node_modules/`; confirm `git ls-files --eol` and a clean `git status` after the gate
+- [x] 2.1 Add `.python-version` (3.13), `pyproject.toml` (name, `requires-python`, runtime and dev dependencies, uv_build build backend, Ruff, mypy and pytest config) and the `src/compute_cost_risk_monitor` package with `__init__.py` and `py.typed`
+- [x] 2.2 Generate and commit `uv.lock`; confirm `uv sync --locked` and `uv lock --check` exit 0
+- [x] 2.3 Add `package.json` (private, exact `@fission-ai/openspec` 1.6.0) and `package-lock.json`; confirm `npm ci` and `node node_modules/@fission-ai/openspec/bin/openspec.js --version` print 1.6.0 (npx shims fail on the `&` in the folder name)
+- [x] 2.4 Add `.gitattributes` (LF for code, config and lockfiles only), `.editorconfig`, and the `.gitignore` entries for venv, caches, coverage and `node_modules/`; confirm `git ls-files --eol` and a clean `git status` after the gate
 
 ## 3. Smoke tests
 
