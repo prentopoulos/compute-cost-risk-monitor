@@ -18,8 +18,8 @@
 
 ## 4. Gate
 
-- [ ] 4.1 Add `scripts/gate.py`: runs lock check, format check, lint, strict mypy, pytest with branch coverage, OpenSpec strict validation and the commit check; runs every step, prints a summary, and exits non-zero on any failure; skips the commit check with a notice on an empty range
-- [ ] 4.2 Run the gate green in Git Bash and in PowerShell, and record the output
+- [x] 4.1 Add `scripts/gate.py`: runs lock check, format check, lint, strict mypy, pytest with branch coverage, OpenSpec strict validation and the commit check; runs every step, prints a summary, and exits non-zero on any failure; skips the commit check with a notice on an empty range
+- [x] 4.2 Run the gate green in Git Bash and in PowerShell, and record the output
 - [ ] 4.3 Show the gate failing on a deliberate defect (a misformatted file, a type error and a non-conventional commit message, each reverted) and record the output
 
 ## 5. Hosted CI and repository settings
