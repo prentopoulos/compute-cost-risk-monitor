@@ -12,10 +12,16 @@ Use Conventional Commits: docs for planning, feat/fix/refactor for implementatio
 setup/archive. Preserve spec-first history, task commits and archive-before-merge with a
 merge commit (GitHub "Create a merge commit", the equivalent of `git merge --no-ff`; never
 squash or rebase-merge). Preserve unrelated work; do not reset or stash it automatically.
+Commits and PR bodies carry no Claude session links; `.claude/settings.json` turns them off.
 
 ## Pull requests and code review
 
 One phase is one branch and one PR into main. Main took one direct commit, the setup.
+
+Every PR body opens with a **TL;DR**: two to four plain sentences a non-engineer can follow,
+naming things by what they do. It says what changed, why, and what the owner needs to do (often
+nothing, or approve the merge); if the PR changes what the app shows, it says how. Keep it
+current as the PR changes, with the technical detail below it.
 
 1. Spec ready: after the spec-only `docs:` commit, push the branch and open a **draft** PR
    titled `Phase N: <deliverable>`. The body links the OpenSpec change, lists the ⛔ gates the
