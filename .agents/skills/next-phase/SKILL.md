@@ -48,12 +48,31 @@ Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Pus
 branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR
 merges only after its review and the user's go-ahead.
 
-Before proposing a new phase or capability, grill the user with [grilling](../grilling/SKILL.md)
-on the phase's design tree: goal and non-goals, acceptance evidence, PROJECT.md `TBD` items it
-depends on, affected `⛔` gates, and open feasibility. Look up facts yourself; put only decisions
-to the user. The proposal starts once the frontier is empty and the user confirms shared
-understanding. Record settled decisions in PROJECT.md and the proposal/design. Resuming an
-authorized phase skips grilling unless a new material decision appears.
+Before proposing a new phase or capability, grill on the phase's design tree with
+[grilling](../grilling/SKILL.md): goal and non-goals, acceptance evidence, PROJECT.md `TBD` items
+it depends on, affected `⛔` gates, and open feasibility. Resuming an authorized phase skips
+grilling unless a new material decision appears. Each round:
+
+1. Map the tree from the project documents and checkpoint, and fix the round's frontier
+   questions with their options.
+2. Hand the frontier to the **informed answerer**, a subagent briefed by
+   [informed-answerer.md](informed-answerer.md). It researches and answers every question and
+   marks each an **owner call** or **settled**. Spawn it once per grilling (Claude Code: Agent,
+   `general-purpose`) and continue that same agent each round. In a harness without subagents,
+   run its pass as a separate step and tell the user.
+3. Review its report: reopen the source behind each settled answer yourself, and re-apply the
+   owner-call test from that file. Any answer may become an owner call; an owner call becomes
+   settled only when you show its triggers do not hold and name its basis.
+4. Present the owner calls in grilling's format, each with a `Why you:` line naming its
+   triggers in plain words, then the settled answers as one numbered list (answer, basis,
+   source) the user can reopen by number. A round with no owner calls flows straight on to the
+   next frontier.
+
+Grilling is done when the frontier is empty, every question is owner-answered or settled with a
+cited basis, and the user confirms the full decision list. Record each decision in PROJECT.md
+and the proposal/design with who made it: the owner, or the settled basis and source. When the
+user reopens a settled answer or says an owner call did not need them, add a line to the
+calibration examples in informed-answerer.md in the phase's spec commit.
 
 Use available OpenSpec propose/update guidance to keep proposal, design, specs and tasks
 coherent. Preserve existing spec-first history. For a new phase create a reviewable spec-only

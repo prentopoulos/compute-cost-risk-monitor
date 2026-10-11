@@ -19,7 +19,9 @@ None yet.
 
 Setup verification: see the setup commit or report. No runtime checks exist yet.
 
-Next: run the next-phase skill for Phase 0 (toolchain, lockfile, quality gate). It grills
-the user on the PROJECT.md `TBD` decisions Phase 0 depends on (Python version, environment
-manager, lint/format/type tools, gate command, hosted CI) before proposing. Phase 0 is the
-first branch and draft PR under WORKFLOW.md § Pull requests and code review.
+Next: run the next-phase skill for Phase 0 (toolchain, lockfile, quality gate). Its grilling
+covers the PROJECT.md `TBD` decisions Phase 0 depends on (Python version, environment manager,
+lint/format/type tools, gate command, hosted CI): the informed answerer settles what evidence
+decides, and the owner answers the owner calls. A first Phase 0 round was drafted before that
+flow existed and was not answered; start grilling fresh. Phase 0 is the first branch and draft
+PR under WORKFLOW.md § Pull requests and code review.
