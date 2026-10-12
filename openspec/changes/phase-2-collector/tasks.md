@@ -55,7 +55,7 @@
 
 ## 7. Diagrams, review and documents
 
-- [ ] 7.1 Update the FigJam container view and ERD, and re-export the SVGs to `docs/architecture/`
+- [x] 7.1 Update the FigJam container view and ERD, and re-export the SVGs to `docs/architecture/`
 - [ ] 7.2 Run the market-review read-through of stored rows (units, labels, missing values, reservations, repeats) and the build-safety check of the adapter, and record both in the PR
 - [ ] 7.3 Run the gate green in Git Bash and PowerShell and `uv audit`, and record the output
 - [ ] 7.4 Update HANDOFF.md with the checkpoint, evidence, limitations and the next task
