@@ -16,3 +16,8 @@ uv.lock text eol=lf
 
 # Verbatim skill copies keep their current line endings (their manifest digests depend on it).
 .agents/** !eol
+
+# Verbatim copies (Agent Builder and grilling) are stored byte-for-byte, so every checkout
+# matches the SHA-256 digests in the build-safety source manifest.
+.agents/skills/compute-cost-risk-monitor-build-safety/agent-builder/** -text
+.agents/skills/grilling/** -text
