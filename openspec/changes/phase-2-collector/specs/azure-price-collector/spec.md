@@ -9,7 +9,8 @@ The first request SHALL carry exactly these parameters:
 - `$filter=serviceName eq 'Virtual Machines' and contains(armSkuName, 'Standard_N')`
 
 Later pages SHALL be fetched from each response's `NextPageLink`, exactly as given, only when the
-link uses scheme `https`, host `prices.azure.com`, port 443 or none, and path `/api/retail/prices`.
+link holds only printable ASCII without spaces and uses scheme `https`, host `prices.azure.com`,
+port 443 or none, and path `/api/retail/prices`.
 Redirects SHALL NOT be followed. The collector SHALL send no credentials, cookies or
 `Accept-Encoding` other than `identity`.
 
@@ -18,7 +19,7 @@ Redirects SHALL NOT be followed. The collector SHALL send no credentials, cookie
 - **THEN** its first request is a GET to the endpoint with exactly the four parameters above, and a User-Agent naming the project and its version
 
 #### Scenario: Next page link on another host refused
-- **WHEN** a page's `NextPageLink` points at a host other than `prices.azure.com`, at another path, or uses `http`
+- **WHEN** a page's `NextPageLink` points at a host other than `prices.azure.com`, at another path, uses `http`, or contains a space, control character or non-ASCII character
 - **THEN** no request is sent to it and the run stops with status `partial` and stop reason `invalid_next_link`
 
 #### Scenario: Repeated next page link stops the run
@@ -42,8 +43,9 @@ retry SHALL be:
 - otherwise 2, 4, 8 and 16 seconds for the four retries.
 
 Any other status SHALL stop the run without a retry. A run SHALL stop after 200 pages or 30 minutes.
-An empty final page right after a full page of 1,000 items SHALL be fetched once more, after 60
-seconds, before it is accepted.
+An empty final page right after a full page of 1,000 items, or an empty first page, SHALL be
+fetched once more, after 60 seconds, before it is accepted. A first page that is empty again SHALL
+stop the run with stop reason `empty_first_page`: an empty result is not a snapshot.
 
 #### Scenario: Requests are paced
 - **WHEN** a run fetches three pages with no errors
@@ -69,6 +71,10 @@ seconds, before it is accepted.
 - **WHEN** the API keeps returning a next page after 200 pages
 - **THEN** no 201st page is requested and the run stops with status `partial` and stop reason `page_cap`
 
+#### Scenario: Empty first page is not a snapshot
+- **WHEN** the first page has no items and no next link, twice
+- **THEN** the run stops with stop reason `empty_first_page` and is not stored as `succeeded`
+
 #### Scenario: Suspicious empty page fetched again
 - **WHEN** a page with 1,000 items is followed by a page with no items and no next link
 - **THEN** that page is requested once more after 60 seconds before the run completes
@@ -78,7 +84,8 @@ Every request attempt SHALL be kept on disk before its body is parsed. The body 
 `data/raw/azure-retail/YYYY/MM/DD/<run_id>-<seq>.json.gz`, using the run's UTC start date. It SHALL
 hold the exact response bytes, gzip-compressed at level 9 with modification time 0. A sidecar
 `<run_id>-<seq>.meta.json` SHALL be written after the body file. Each file SHALL be written once
-(temporary file, then rename) and never overwritten. The sidecar SHALL record:
+and never overwritten: whole into a temporary file, then hard-linked into place, which fails if
+the target exists on Windows and POSIX alike (a rename would overwrite silently on POSIX). The sidecar SHALL record:
 - sidecar version, source, run ID, sequence, page number, attempt number, data label and code
   version;
 - method, request URL as sent, and User-Agent;
@@ -92,7 +99,8 @@ hold the exact response bytes, gzip-compressed at level 9 with modification time
 The sidecar SHALL NOT contain cookies, absolute paths, the host name or IP address, or environment
 variables. A request that failed without a body SHALL be kept as an empty body. Each run SHALL also
 keep a start manifest `<run_id>.run.json` and, when the run ends, an end manifest
-`<run_id>.end.json`.
+`<run_id>.end.json` with the finish time, stop reason and number of requests sent. The finish time
+SHALL be the start time plus the elapsed monotonic time, so it never precedes the start.
 
 #### Scenario: Body kept byte for byte
 - **WHEN** a page's bytes are kept and read back
@@ -121,9 +129,9 @@ Each item SHALL be classified in this order, and counted in exactly one of:
   `Standard_NV`;
 - **rejected**: a required field is missing or of the wrong type (`meterId`, `skuId`,
   `armRegionName`, `type`, `retailPrice`, `unitOfMeasure`, `currencyCode`, `isPrimaryMeterRegion`,
-  `tierMinimumUnits`, `meterName`, `skuName`), the currency is not USD, the meter is not primary,
-  `retailPrice` is not finite or not greater than zero, an optional field has the wrong type, or a
-  reservation has no term;
+  `tierMinimumUnits`, `meterName`, `skuName`), a number does not fit a float, the currency is not
+  USD, the meter is not primary, `retailPrice` is not finite or not greater than zero, an optional
+  field has the wrong type, a reservation has no term, or a key field contains `|`;
 - **repeat**: an earlier item in the run has the same item key;
 - **stored**: otherwise.
 
@@ -181,7 +189,7 @@ observations.
 A stored item's key SHALL join, with `|`:
 - `meterId`, `skuId`, `armRegionName` and `type`;
 - `reservationTerm` (empty when absent);
-- `tierMinimumUnits` as a decimal;
+- `tierMinimumUnits` as Python's shortest float text (for example `0.0`);
 - `currencyCode` and `armSkuName`.
 
 An item whose key was already stored in the run SHALL NOT be stored again. It SHALL be recorded as
@@ -207,7 +215,9 @@ their price unit. A non-reservation unit other than `1 Hour` SHALL be counted un
 - **THEN** both are stored and the run's `shared_meter_key` flag count is 1
 
 ### Requirement: Run status and write-once run records
-A run's status SHALL be:
+An unexpected error during the requests (for example a full disk) SHALL end the run with stop
+reason `error` and its message, and the end manifest SHALL still be written. A run's status SHALL
+be:
 - `succeeded` when paging ended on a parsed page with no next link;
 - `partial` when it stopped earlier after parsing at least one page;
 - `failed` when no page was parsed.
@@ -246,8 +256,9 @@ nothing of the run SHALL be written, and its files SHALL stay on disk.
 
 ### Requirement: Ingest from retained files
 The ingest step SHALL build a run's records only from that run's retained files, not from memory or
-the network. It SHALL check each body against its sidecar's SHA-256 and length before parsing, and
-SHALL write nothing if any check fails. It SHALL take the run's data label from the start manifest.
+the network. Each sidecar SHALL name its own run's body file for its sequence number. Ingest SHALL
+check each body against its sidecar's SHA-256 and length before parsing, SHALL refuse an unreadable
+or damaged file by name, and SHALL write nothing if any check fails. It SHALL take the run's data label from the start manifest.
 A run with no end manifest SHALL be stored with stop reason `no_end_manifest`. Ingesting a run that
 the database already holds SHALL be refused.
 
@@ -265,14 +276,21 @@ the database already holds SHALL be refused.
 
 ### Requirement: Collect command
 `uv run python -m compute_cost_risk_monitor.collect` SHALL fetch one live run, labelled `live`, and
-then ingest it. There SHALL be no option to set the data label. `--ingest-run <run_id>` SHALL
-ingest a retained run without network access. The command SHALL refuse a live fetch when another
-live run started less than 24 hours earlier. It SHALL print the run ID, status, stop reason and
+then ingest it. Its default database and raw folder SHALL be under the repository's `data/`
+folder, whatever the working directory. There SHALL be no option to set the data label.
+`--ingest-run <run_id>` SHALL ingest a retained run without network access. It SHALL refuse a run
+without an end manifest until its time cap plus five minutes has passed, since it may still be
+fetching. The command SHALL refuse a live fetch when another live run started less than 24 hours
+earlier, unless that run ended without sending any request. It SHALL print the run ID, status, stop reason and
 counts, never prices. It SHALL exit 0 for a succeeded run and non-zero otherwise.
 
 #### Scenario: Second live run within a day refused
 - **WHEN** the command is run less than 24 hours after a live run started
 - **THEN** no request is sent, and the command names the earlier run and exits non-zero
+
+#### Scenario: Run that may still be fetching not ingested
+- **WHEN** `--ingest-run` names a run started ten minutes earlier that has no end manifest
+- **THEN** it is refused with the time after which it may be ingested
 
 #### Scenario: Ingest without network
 - **WHEN** `--ingest-run` names a retained run

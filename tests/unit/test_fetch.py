@@ -6,7 +6,7 @@ import io
 import json
 import urllib.error
 import urllib.request
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,7 @@ from compute_cost_risk_monitor import fetch, raw_store
 from support import (
     START,
     FakeClock,
+    ScriptedFetcher,
     collect,
     item,
     next_link,
@@ -372,3 +373,91 @@ def test_every_request_targets_the_api(tmp_path: Path) -> None:
 
 def test_fake_clock_starts_at_the_fixture_time() -> None:
     assert FakeClock().now() == START
+
+
+# --- code review fixes (PR #7) ---
+
+
+class SlowBody(io.BytesIO):
+    def read(self, size: int | None = -1) -> bytes:
+        raise TimeoutError("timed out reading the error body")
+
+
+def test_failure_while_reading_an_error_body_is_retryable() -> None:
+    error = urllib.error.HTTPError(
+        "https://prices.azure.com/",
+        503,
+        "Service Unavailable",
+        email.message.Message(),
+        SlowBody(),
+    )
+    response = fetch.UrllibFetcher("ua/1", FakeOpener(error))("https://x.test/", 1.0)
+    assert (response.status, response.body) == (None, b"")
+    assert response.error is not None and response.error.startswith("HTTP 503, then")
+    assert fetch.judge(response) == ("retry", None)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ValueError("bad"),
+        http.client.InvalidURL("bad"),
+        UnicodeEncodeError("ascii", "é", 0, 1, "x"),
+    ],
+)
+def test_fetcher_turns_request_errors_into_responses(error: BaseException) -> None:
+    response = fetch.UrllibFetcher("ua/1", FakeOpener(error))("https://x.test/", 1.0)
+    assert response.status is None and response.error is not None
+
+
+def test_non_ascii_retry_after_digits_are_ignored() -> None:
+    assert fetch.retry_after("²", START) is None
+
+
+def test_unexpected_error_still_closes_the_run(tmp_path: Path) -> None:
+    responses: list[fetch.Response | BaseException] = [
+        ok(page_bytes([item()], next_link(1000))),
+        RuntimeError("disk full (simulated)"),
+    ]
+    result, _, _ = collect(tmp_path, responses)
+    assert (result.stop_reason, result.detail) == (
+        "error",
+        "RuntimeError: disk full (simulated)",
+    )
+    files = raw_store.read_run(tmp_path, az.SOURCE, result.run_id)
+    assert files.end is not None and files.end["requests"] == 1
+
+
+def test_empty_first_page_is_fetched_again_then_refused(tmp_path: Path) -> None:
+    result, fetcher, clock = collect(tmp_path, [ok(page_bytes([])), ok(page_bytes([]))])
+    assert result.stop_reason == "empty_first_page"
+    assert len(fetcher.calls) == 2
+    assert 60.0 in clock.sleeps
+
+
+def test_empty_first_page_that_fills_on_retry_completes(tmp_path: Path) -> None:
+    result, _, _ = collect(tmp_path, [ok(page_bytes([])), ok(page_bytes([item()]))])
+    assert (result.stop_reason, result.pages_parsed) == ("completed", 2)
+
+
+def test_finish_time_never_precedes_the_start(tmp_path: Path) -> None:
+    clock = FakeClock()
+    calls = {"n": 0}
+
+    def stepping_back() -> datetime:
+        calls["n"] += 1
+        # Wall clock jumps an hour back after the start was read.
+        return START if calls["n"] == 1 else START - timedelta(hours=1)
+
+    fetcher = ScriptedFetcher(clock, [status(400)])
+    result = fetch.fetch_run(
+        tmp_path,
+        fetcher,
+        fetch.Clock(stepping_back, clock.monotonic, clock.sleep),
+        data_label="synthetic",
+        code_version=None,
+        dependency_versions={},
+        user_agent="ua/1",
+    )
+    end = json.loads((result.folder / f"{result.run_id}.end.json").read_text("ascii"))
+    assert datetime.fromisoformat(end["finished_at"]) >= START

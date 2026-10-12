@@ -164,3 +164,61 @@ def test_manifest_label_is_read_from_disk(tmp_path: Path) -> None:
 
 def test_system_clock_is_utc() -> None:
     assert command.system_clock().now().utcoffset() == timedelta(0)
+
+
+# --- code review fixes (PR #7) ---
+
+
+def test_default_paths_do_not_depend_on_the_working_directory() -> None:
+    assert command.DEFAULT_RAW.is_absolute() and command.DEFAULT_DB.is_absolute()
+    assert command.DEFAULT_RAW == command.REPO / "data" / "raw"
+
+
+def test_run_that_sent_no_request_does_not_count(tmp_path: Path) -> None:
+    run_id = write_live_manifest(tmp_path / "raw", hours_ago=1)
+    folder = next((tmp_path / "raw").rglob(f"{run_id}.run.json")).parent
+    info = raw_store.RunInfo("azure-retail", run_id, "live", START, None, folder)
+    raw_store.write_end_manifest(info, START, "error", "OSError: disk full", requests=0)
+    assert command.recent_live_run(tmp_path / "raw", START) is None
+
+
+def test_run_that_may_still_be_fetching_is_not_ingested(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run_id = write_live_manifest(tmp_path / "raw", hours_ago=0.1)
+    code, _ = run_command(tmp_path, [], "--ingest-run", run_id)
+    assert code == 2
+    assert "may still be fetching" in capsys.readouterr().err
+
+
+def test_crashed_run_can_be_ingested_once_its_time_cap_has_passed(
+    tmp_path: Path,
+) -> None:
+    result, _, _ = collect(tmp_path / "raw", [ok(page_bytes([item()]))])
+    (result.folder / f"{result.run_id}.end.json").unlink()
+    clock = FakeClock()
+    clock.elapsed = 3600.0  # an hour after the run started
+    code = command.main(
+        [
+            "--db",
+            str(tmp_path / "m.duckdb"),
+            "--raw-dir",
+            str(tmp_path / "raw"),
+            "--ingest-run",
+            result.run_id,
+        ],
+        clock=clock.clock(),
+    )
+    assert code == 1  # stored as partial (no end manifest), not refused
+
+
+def test_manifest_write_failure_is_reported(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def full_disk(*args: object, **kwargs: object) -> None:
+        raise OSError("disk full (simulated)")
+
+    monkeypatch.setattr(raw_store, "write_run_manifest", full_disk)
+    code, fetcher = run_command(tmp_path, [ok(page_bytes([item()]))])
+    assert (code, fetcher.calls) == (1, [])
+    assert "could not be recorded" in capsys.readouterr().err

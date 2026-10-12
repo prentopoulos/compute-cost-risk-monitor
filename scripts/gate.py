@@ -21,6 +21,7 @@ OPENSPEC_CLI = (
 )
 COMMIT_RANGE = "origin/main..HEAD"
 SECRETS_BASELINE = ".secrets.baseline"
+SECRETS_BATCH = 100
 
 
 @dataclass
@@ -126,19 +127,27 @@ def secrets_check() -> Result:
     paths = {path for path in listed.stdout.decode("utf-8").split("\0") if path}
     files = sorted(path for path in paths if (ROOT / path).is_file())
     # The baseline carries the file exclusions; --no-verify keeps the scan offline.
-    return execute(
-        name,
-        [
-            sys.executable,
-            "-m",
-            "detect_secrets.pre_commit_hook",
-            "--baseline",
-            SECRETS_BASELINE,
-            "--no-verify",
-            *files,
-        ],
-        files=len(files),
-    )
+    # Files go in batches so the command line stays under Windows' length limit. The
+    # hook rewrites the baseline (and fails) only when it has entries whose lines moved
+    # or after a detect-secrets upgrade; this baseline has no entries.
+    hook = [
+        sys.executable,
+        "-m",
+        "detect_secrets.pre_commit_hook",
+        "--baseline",
+        SECRETS_BASELINE,
+        "--no-verify",
+    ]
+    start = time.monotonic()
+    codes = [
+        run([*hook, *batch], files=len(batch))
+        for batch in (
+            files[i : i + SECRETS_BATCH] for i in range(0, len(files), SECRETS_BATCH)
+        )
+    ]
+    failed = [code for code in codes if code != 0]
+    note = f"exit {failed[0]}" if failed else ""
+    return Result(name, "fail" if failed else "pass", time.monotonic() - start, note)
 
 
 def main() -> int:

@@ -207,3 +207,60 @@ def test_manifest_that_is_not_an_object_refused(tmp_path: Path) -> None:
     raw_store.write_once(run.folder / f"{run.run_id}.run.json", b"[1, 2]\n")
     with pytest.raises(raw_store.IntegrityError, match="not a JSON object"):
         raw_store.read_run(tmp_path, "azure-retail", run.run_id)
+
+
+# --- code review fixes (PR #7) ---
+
+
+@pytest.mark.parametrize(
+    "damage",
+    [b"\x1f\x8b\x08\x00truncated", b"not gzip at all", None],
+    ids=["cut-short gzip", "garbage", "deleted"],
+)
+def test_unreadable_body_is_an_integrity_error(
+    tmp_path: Path, damage: bytes | None
+) -> None:
+    _, sidecar = keep(tmp_path)
+    path = tmp_path / str(sidecar["file"])
+    path.unlink()
+    if damage is not None:
+        path.write_bytes(damage)
+    with pytest.raises(raw_store.IntegrityError, match="cannot be read"):
+        raw_store.read_body(tmp_path, sidecar)
+
+
+def test_sidecar_missing_a_field_is_an_integrity_error(tmp_path: Path) -> None:
+    _, sidecar = keep(tmp_path)
+    del sidecar["sha256"]
+    with pytest.raises(raw_store.IntegrityError, match="cannot be read"):
+        raw_store.read_body(tmp_path, sidecar)
+
+
+def test_sidecar_pointing_at_another_file_refused(tmp_path: Path) -> None:
+    run = info(tmp_path)
+    raw_store.write_run_manifest(run, {}, {})
+    raw_store.keep_exchange(tmp_path, run, 0, 0, 1, exchange(), "ua/1")
+    path = run.folder / f"{run.run_id}-0000.meta.json"
+    sidecar = json.loads(path.read_text(encoding="ascii"))
+    sidecar["file"] = "azure-retail/2026/10/12/elsewhere.json.gz"
+    path.unlink()
+    path.write_text(json.dumps(sidecar), encoding="ascii")
+    with pytest.raises(raw_store.IntegrityError, match="missing or misnamed"):
+        raw_store.read_run(tmp_path, "azure-retail", run.run_id)
+
+
+def test_unreadable_manifest_is_an_integrity_error(tmp_path: Path) -> None:
+    run = info(tmp_path)
+    raw_store.write_once(run.folder / f"{run.run_id}.run.json", b"{not json")
+    with pytest.raises(raw_store.IntegrityError, match="cannot be read"):
+        raw_store.read_run(tmp_path, "azure-retail", run.run_id)
+
+
+def test_run_manifests_can_be_limited_to_days(tmp_path: Path) -> None:
+    run = info(tmp_path)
+    raw_store.write_run_manifest(run, {}, {})
+    assert [
+        m["run_id"] for _, m in raw_store.run_manifests(tmp_path, "azure-retail")
+    ] == [run.run_id]
+    other_day = [datetime(2026, 10, 10, tzinfo=UTC).date()]
+    assert list(raw_store.run_manifests(tmp_path, "azure-retail", other_day)) == []

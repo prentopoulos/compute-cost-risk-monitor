@@ -25,11 +25,16 @@ from pathlib import Path
 from compute_cost_risk_monitor import azure_retail as az
 from compute_cost_risk_monitor import db, fetch, ingest, raw_store
 
-DEFAULT_DB = Path("data/monitor.duckdb")
-DEFAULT_RAW = Path("data/raw")
+_CHECKOUT = Path(__file__).resolve().parents[2]
+# The repo root when run from a checkout (uv run), so the data folder and the 24-hour
+# guard do not depend on the working directory; otherwise the working directory.
+REPO = _CHECKOUT if (_CHECKOUT / "pyproject.toml").is_file() else Path.cwd()
+DEFAULT_DB = REPO / "data" / "monitor.duckdb"
+DEFAULT_RAW = REPO / "data" / "raw"
 LIVE = "live"
 GUARD = timedelta(hours=24)
-REPO = Path(__file__).resolve().parents[2]
+# A run without an end manifest may still be fetching until its time cap has passed.
+SETTLE = timedelta(seconds=fetch.Limits().max_seconds) + timedelta(minutes=5)
 
 
 def package_version() -> str:
@@ -72,17 +77,39 @@ def code_version(repo: Path = REPO) -> str | None:
     return head.stdout.strip() + dirty
 
 
+def _sent_no_request(folder: Path, run_id: str) -> bool:
+    end = folder / f"{run_id}.end.json"
+    if not end.exists():
+        return False  # still running or killed: count it
+    return bool(json.loads(end.read_text(encoding="ascii")).get("requests") == 0)
+
+
 def recent_live_run(raw_root: Path, now: datetime) -> tuple[str, datetime] | None:
-    """The latest live run started less than 24 hours before `now`, read from disk."""
+    """The latest live run started less than 24 hours before `now`, read from disk.
+
+    Runs are filed by UTC start date, so only today's and yesterday's folders can hold
+    one. A run that ended before sending any request read nothing and is not counted.
+    """
     latest: tuple[str, datetime] | None = None
-    for path in (raw_root / az.SOURCE).glob("*/*/*/*.run.json"):
-        manifest = json.loads(path.read_text(encoding="ascii"))
+    days = {now.date(), (now - GUARD).date()}
+    for path, manifest in raw_store.run_manifests(raw_root, az.SOURCE, days):
         if manifest.get("data_label") != LIVE:
             continue
         started = datetime.fromisoformat(manifest["started_at"])
-        if now - started < GUARD and (latest is None or started > latest[1]):
+        if not now - started < GUARD or (latest is not None and started <= latest[1]):
+            continue
+        if not _sent_no_request(path.parent, str(manifest["run_id"])):
             latest = (str(manifest["run_id"]), started)
     return latest
+
+
+def still_fetching(raw_root: Path, run_id: str, now: datetime) -> datetime | None:
+    """When a run without an end manifest may be ingested, if that is still ahead."""
+    files = raw_store.read_run(raw_root, az.SOURCE, run_id)
+    if files.end is not None:
+        return None
+    settled = datetime.fromisoformat(files.manifest["started_at"]) + SETTLE
+    return settled if now < settled else None
 
 
 def report(result: ingest.IngestResult, db_path: Path) -> None:
@@ -134,18 +161,25 @@ def main(
     )
     args = parser.parse_args(argv)
 
+    clock = clock or system_clock()
     if args.ingest_run:
         try:
-            result = _ingest(
-                args.db, args.raw_dir, raw_store.check_run_id(args.ingest_run)
-            )
+            run_id = raw_store.check_run_id(args.ingest_run)
+            settled = still_fetching(args.raw_dir, run_id, clock.now())
+            if settled is not None:
+                print(
+                    f"refused: run {run_id} has no end manifest and may still be"
+                    f" fetching; retry after {settled.isoformat()}",
+                    file=sys.stderr,
+                )
+                return 2
+            result = _ingest(args.db, args.raw_dir, run_id)
         except (ValueError, raw_store.IntegrityError, ingest.AlreadyIngested) as error:
             print(f"refused: {error}", file=sys.stderr)
             return 2
         report(result, args.db)
         return 0 if result.status == "succeeded" else 1
 
-    clock = clock or system_clock()
     recent = recent_live_run(args.raw_dir, clock.now())
     if recent is not None:
         run_id, started = recent
@@ -156,15 +190,20 @@ def main(
         )
         return 2
 
-    run = fetch.fetch_run(
-        args.raw_dir,
-        fetcher or fetch.UrllibFetcher(user_agent()),
-        clock,
-        data_label=data_label,
-        code_version=code_version(),
-        dependency_versions=dependency_versions(),
-        user_agent=user_agent(),
-    )
+    agent = user_agent()
+    try:
+        run = fetch.fetch_run(
+            args.raw_dir,
+            fetcher or fetch.UrllibFetcher(agent),
+            clock,
+            data_label=data_label,
+            code_version=code_version(),
+            dependency_versions=dependency_versions(),
+            user_agent=agent,
+        )
+    except OSError as error:  # the start or end manifest could not be written
+        print(f"run could not be recorded: {error}", file=sys.stderr)
+        return 1
     try:
         result = _ingest(args.db, args.raw_dir, run.run_id)
     except Exception as error:

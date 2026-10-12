@@ -12,7 +12,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -71,10 +71,19 @@ class UrllibFetcher:
                 status, reason = reply.status, reply.reason
                 headers = list(reply.headers.items())
         except urllib.error.HTTPError as error:
-            body = error.read(MAX_BODY + 1) if error.fp is not None else b""
             status, reason = error.code, str(error.reason)
             headers = list(error.headers.items()) if error.headers else []
-        except (OSError, http.client.HTTPException) as error:
+            try:
+                body = error.read(MAX_BODY + 1) if error.fp is not None else b""
+            except (OSError, http.client.HTTPException) as failure:
+                # The status arrived but its body did not: no exact bytes to keep, so
+                # it is a transport failure, retried like any other.
+                note = f"HTTP {status}, then {type(failure).__name__}: {failure}"
+                return Response(None, "", headers, b"", note)
+            finally:
+                error.close()
+        except (OSError, http.client.HTTPException, ValueError) as error:
+            # ValueError covers http.client.InvalidURL and non-ASCII request lines.
             return Response(None, "", [], b"", f"{type(error).__name__}: {error}")
         if len(body) > MAX_BODY:
             return Response(status, reason, headers, body[:MAX_BODY], "body_too_large")
@@ -126,7 +135,8 @@ def retry_after(value: str | None, now: datetime) -> float | None:
     if value is None:
         return None
     text = value.strip()
-    if text.isdigit():
+    # str.isdigit() also accepts digits such as "²" that float() rejects.
+    if text.isascii() and text.isdigit():
         return float(text)
     try:
         moment = parsedate_to_datetime(text)
@@ -258,11 +268,14 @@ class _Loop:
             result = self.fetch_page(url, page)
             link = result.next_link
             empty_end = not result.items and not link
-            if empty_end and previous_count == az.PAGE_SIZE:
+            if empty_end and previous_count in (None, az.PAGE_SIZE):
                 # Throttling once looked like an empty last page; ask once more.
                 self._wait(self.limits.empty_page_wait)
                 result = self.fetch_page(url, page)
                 link = result.next_link
+                if page == 0 and not result.items:
+                    # An empty result is not a snapshot of nothing listed (design D7).
+                    raise _Stop("empty_first_page", "page 0 was empty twice")
             previous_count = len(result.items)
             if link is None or link == "":
                 return "completed", f"{page + 1} pages"
@@ -290,9 +303,13 @@ def fetch_run(
     limits: Limits | None = None,
     run_id: str | None = None,
 ) -> RunResult:
-    """Fetch one run into raw files. Always ends with an end manifest unless killed."""
+    """Fetch one run into raw files. Always ends with an end manifest unless killed.
+
+    Unexpected errors end the run with stop reason `error`; they are not raised.
+    """
     limits = limits or Limits()
     started_at = clock.now()
+    started_mono = clock.monotonic()
     run_id = raw_store.check_run_id(run_id or raw_store.new_run_id(started_at))
     info = raw_store.RunInfo(
         source=az.SOURCE,
@@ -316,5 +333,10 @@ def fetch_run(
         reason, detail = stop.reason, stop.detail
     except KeyboardInterrupt:
         reason, detail = "interrupted", "Ctrl-C"
-    raw_store.write_end_manifest(info, clock.now(), reason, detail)
+    except Exception as error:  # e.g. a full disk: still close the run honestly
+        reason, detail = "error", f"{type(error).__name__}: {error}"
+    # Measured on the monotonic clock, so a wall-clock step back cannot put the finish
+    # before the start (collection_run requires finished_at >= started_at).
+    finished_at = started_at + timedelta(seconds=clock.monotonic() - started_mono)
+    raw_store.write_end_manifest(info, finished_at, reason, detail, loop.seq)
     return RunResult(run_id, info.folder, reason, detail, loop.seq, loop.pages_parsed)

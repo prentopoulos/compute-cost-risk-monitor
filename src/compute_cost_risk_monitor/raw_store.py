@@ -19,8 +19,10 @@ import json
 import os
 import re
 import secrets
+import zlib
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -127,7 +129,11 @@ def write_run_manifest(
 
 
 def write_end_manifest(
-    info: RunInfo, finished_at: datetime, stop_reason: str, detail: str
+    info: RunInfo,
+    finished_at: datetime,
+    stop_reason: str,
+    detail: str,
+    requests: int | None = None,
 ) -> Path:
     path = info.folder / f"{info.run_id}.end.json"
     document = {
@@ -136,6 +142,7 @@ def write_end_manifest(
         "finished_at": _iso(finished_at),
         "stop_reason": stop_reason,
         "detail": detail,
+        "requests": requests,
     }
     write_once(path, _json_bytes(document))
     return path
@@ -206,10 +213,39 @@ def find_run(raw_root: Path, source: str, run_id: str) -> Path:
 
 
 def _load(path: Path) -> dict[str, Any]:
-    document = json.loads(path.read_text(encoding="ascii"))
+    try:
+        document = json.loads(path.read_text(encoding="ascii"))
+    except (OSError, ValueError) as error:
+        raise IntegrityError(f"{path.name} cannot be read: {error}") from error
     if not isinstance(document, dict):
         raise IntegrityError(f"{path.name} is not a JSON object")
     return document
+
+
+def run_manifests(
+    raw_root: Path, source: str, days: Iterable[date] | None = None
+) -> Iterator[tuple[Path, dict[str, Any]]]:
+    """Start manifests and their paths, optionally only from the given date folders."""
+    base = raw_root / source
+    if days is None:
+        paths: Iterable[Path] = base.glob("*/*/*/*.run.json")
+    else:
+        paths = (
+            path
+            for day in sorted(set(days))
+            for path in (base / f"{day:%Y}" / f"{day:%m}" / f"{day:%d}").glob(
+                "*.run.json"
+            )
+        )
+    for path in sorted(paths):
+        yield path, _load(path)
+
+
+def _seq(sidecar: dict[str, Any], path: Path) -> int:
+    seq = sidecar.get("seq")
+    if not isinstance(seq, int) or isinstance(seq, bool):
+        raise IntegrityError(f"{path.name} has no sequence number")
+    return seq
 
 
 def read_run(raw_root: Path, source: str, run_id: str) -> RunFiles:
@@ -219,9 +255,19 @@ def read_run(raw_root: Path, source: str, run_id: str) -> RunFiles:
         raise IntegrityError(f"start manifest of {run_id} names another run or source")
     end_path = folder / f"{run_id}.end.json"
     end = _load(end_path) if end_path.exists() else None
-    sidecars = [_load(path) for path in sorted(folder.glob(f"{run_id}-*.meta.json"))]
-    for expected, sidecar in enumerate(sidecars):
-        if sidecar.get("seq") != expected or sidecar.get("run_id") != run_id:
+    loaded = [(path, _load(path)) for path in folder.glob(f"{run_id}-*.meta.json")]
+    # Order by the recorded number, not the file name: past seq 9999 names stop sorting.
+    loaded.sort(key=lambda pair: _seq(pair[1], pair[0]))
+    sidecars = [sidecar for _, sidecar in loaded]
+    for expected, (path, sidecar) in enumerate(loaded):
+        body = folder / f"{run_id}-{expected:04d}.json.gz"
+        if (
+            sidecar["seq"] != expected
+            or sidecar.get("run_id") != run_id
+            or path.name != f"{run_id}-{expected:04d}.meta.json"
+            # A sidecar describes its own run's body, never another file.
+            or sidecar.get("file") != body.relative_to(raw_root).as_posix()
+        ):
             raise IntegrityError(
                 f"sidecar {expected} of {run_id} is missing or misnamed"
             )
@@ -238,14 +284,18 @@ def read_run(raw_root: Path, source: str, run_id: str) -> RunFiles:
 
 def read_body(raw_root: Path, sidecar: dict[str, Any]) -> bytes:
     """A kept body, checked against its sidecar's length and SHA-256."""
-    text = str(sidecar["file"])
+    text = str(sidecar.get("file", ""))
     relative = PurePosixPath(text)
     # Sidecars store POSIX paths under the raw root. On Windows "/x" or "C:x" would
     # escape the root when joined, so refuse anything but plain relative parts.
     if relative.is_absolute() or ".." in relative.parts or "\\" in text or ":" in text:
         raise IntegrityError(f"sidecar points outside the raw root: {text}")
-    body = gzip.decompress(raw_root.joinpath(*relative.parts).read_bytes())
-    digest = hashlib.sha256(body).hexdigest()
-    if len(body) != sidecar["byte_length"] or digest != sidecar["sha256"]:
+    try:
+        body = gzip.decompress(raw_root.joinpath(*relative.parts).read_bytes())
+        expected = (sidecar["byte_length"], sidecar["sha256"])
+    except (OSError, EOFError, zlib.error, KeyError) as error:
+        name = type(error).__name__
+        raise IntegrityError(f"{text} cannot be read ({name})") from error
+    if (len(body), hashlib.sha256(body).hexdigest()) != expected:
         raise IntegrityError(f"{text} does not match its sidecar")
     return body

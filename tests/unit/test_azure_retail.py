@@ -160,3 +160,24 @@ def test_rental_type_rules(
     price_type: str, meter: str, sku: str, expected: tuple[str, str | None]
 ) -> None:
     assert az.rental_type(price_type, meter, sku) == expected
+
+
+@pytest.mark.parametrize("field", ["retailPrice", "tierMinimumUnits", "unitPrice"])
+def test_integers_too_large_for_a_float_are_rejected(field: str) -> None:
+    item = copy.deepcopy(ITEMS["base"])
+    item[field] = 10**400
+    assert az.classify(item) == az.Verdict("rejected", "invalid_value")
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        DOCS_NEXT_LINK + "\n",
+        DOCS_NEXT_LINK.replace("&", "\n&"),
+        DOCS_NEXT_LINK.replace("$skip", " $skip"),
+        DOCS_NEXT_LINK + "\t",
+        DOCS_NEXT_LINK + "é",
+    ],
+)
+def test_next_link_with_stray_characters_is_refused(link: str) -> None:
+    assert az.next_link_problem(link) == "characters"

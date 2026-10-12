@@ -43,6 +43,15 @@ _REQUIRED_TEXT = (
     "meterName",
     "skuName",
 )
+_KEY_TEXT = (
+    "meterId",
+    "skuId",
+    "armRegionName",
+    "type",
+    "reservationTerm",
+    "currencyCode",
+    "armSkuName",
+)
 _OPTIONAL_TEXT = (
     "location",
     "productId",
@@ -61,6 +70,10 @@ def first_page_url() -> str:
 
 def next_link_problem(link: str) -> str | None:
     """Why a NextPageLink must not be followed, or None when it points at the API."""
+    # urlsplit silently drops tabs and newlines, but the request would send them; only
+    # printable ASCII without spaces is a link this collector will request.
+    if not all("!" <= char <= "~" for char in link):
+        return "characters"
     try:
         parts = urlsplit(link)
         port = parts.port
@@ -144,9 +157,15 @@ def _rejected(reason: str) -> Verdict:
     return Verdict("rejected", reason)
 
 
-def _is_number(value: object) -> bool:
+def _number(value: object) -> float | None:
+    """A JSON number as a float, or None when it is not one a float can hold."""
     # bool is an int in Python, but never a price.
-    return isinstance(value, int | float) and not isinstance(value, bool)
+    if not isinstance(value, int | float) or isinstance(value, bool):
+        return None
+    try:
+        return float(value)
+    except OverflowError:  # an integer too large for a float
+        return None
 
 
 def rental_type(
@@ -227,16 +246,19 @@ def classify(item: object) -> Verdict:
     if not sku.startswith(GPU_FAMILIES):
         return Verdict("out_of_scope")
 
-    for field in (*_REQUIRED_TEXT, "retailPrice", "isPrimaryMeterRegion"):
-        if item.get(field) is None:
-            return _rejected("missing_field")
-    if "tierMinimumUnits" not in item or item["tierMinimumUnits"] is None:
+    required = (
+        *_REQUIRED_TEXT,
+        "retailPrice",
+        "isPrimaryMeterRegion",
+        "tierMinimumUnits",
+    )
+    if any(item.get(field) is None for field in required):
         return _rejected("missing_field")
     if any(not isinstance(item[f], str) or not item[f] for f in _REQUIRED_TEXT):
         return _rejected("invalid_value")
-    price, tier = item["retailPrice"], item["tierMinimumUnits"]
+    price, tier = _number(item["retailPrice"]), _number(item["tierMinimumUnits"])
     primary = item["isPrimaryMeterRegion"]
-    if not _is_number(price) or not _is_number(tier) or not isinstance(primary, bool):
+    if price is None or tier is None or not isinstance(primary, bool):
         return _rejected("invalid_value")
 
     if item["currencyCode"] != "USD":
@@ -254,10 +276,9 @@ def classify(item: object) -> Verdict:
         value = item.get(field)
         if value is not None and (not isinstance(value, str) or not value):
             return _rejected("invalid_value")
-    unit = item.get("unitPrice")
-    if unit is not None and (
-        not _is_number(unit) or not math.isfinite(unit) or unit < 0
-    ):
+    raw_unit = item.get("unitPrice")
+    unit = None if raw_unit is None else _number(raw_unit)
+    if raw_unit is not None and (unit is None or not math.isfinite(unit) or unit < 0):
         return _rejected("invalid_value")
     start = _start_date(item.get("effectiveStartDate"))
     if start is False:
@@ -268,6 +289,9 @@ def classify(item: object) -> Verdict:
     term = item.get("reservationTerm")
     if item["type"] == "Reservation" and term is None:
         return _rejected("reservation_without_term")
+    # The key joins these with "|", so one inside a value would make keys ambiguous.
+    if any("|" in str(item.get(field) or "") for field in _KEY_TEXT):
+        return _rejected("invalid_value")
 
     kind, flag = rental_type(item["type"], item["meterName"], item["skuName"])
     flags = [flag] if flag else []
@@ -295,8 +319,8 @@ def classify(item: object) -> Verdict:
         arm_region_name=item["armRegionName"],
         location=item.get("location"),
         price_type=item["type"],
-        retail_price=float(price),
-        unit_price=None if unit is None else float(unit),
+        retail_price=price,
+        unit_price=unit,
         unit_of_measure=item["unitOfMeasure"],
         effective_start_date=start,
         product_id=item.get("productId"),
@@ -307,7 +331,7 @@ def classify(item: object) -> Verdict:
         service_family=item.get("serviceFamily"),
         is_primary_meter_region=primary,
         reservation_term=term,
-        tier_minimum_units=float(tier),
+        tier_minimum_units=tier,
         savings_plan=None if plan is None else json.dumps(plan, separators=(",", ":")),
     )
     return Verdict("stored", row=row)

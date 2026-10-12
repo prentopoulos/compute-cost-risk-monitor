@@ -22,9 +22,7 @@ DRIFT = {"missing_field", "invalid_value", "not_an_object"}
 def kept_first_page() -> tuple[dict[str, Any], bytes] | None:
     if not RAW.is_dir():
         return None
-    manifests = sorted((RAW / az.SOURCE).glob("*/*/*/*.run.json"), reverse=True)
-    for path in manifests:
-        manifest = json.loads(path.read_text(encoding="ascii"))
+    for path, manifest in reversed(list(raw_store.run_manifests(RAW, az.SOURCE))):
         if manifest.get("data_label") != "live":
             continue
         first = path.parent / f"{manifest['run_id']}-0000.meta.json"
