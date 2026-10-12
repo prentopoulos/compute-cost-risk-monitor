@@ -68,7 +68,8 @@ An Azure observation SHALL be excluded with the first matching reason in this or
 - `unit_not_hourly`: price unit other than `1 Hour`;
 - `unmapped_sku`: size not in the map;
 - `fractional_gpu`: mapped GPU count not a whole number;
-- `retired_size`: Learn retirement date on or before the snapshot's UTC start date.
+- `retired_size`: Learn retirement date on or before the snapshot's UTC start date, using a
+  region's own date where Learn extends the retirement for that region.
 
 Otherwise the row SHALL be normalized with USD/GPU-hour = price ÷ mapped GPU count, plus the GPU
 variant label, GPU count and map reference. Every row SHALL carry the rule set's exclusions text.
@@ -102,6 +103,10 @@ the size is mapped. Values SHALL never be filled in to make a row pass.
 #### Scenario: Retired by snapshot date
 - **WHEN** a mapped whole-GPU size retired on 2026-09-30 is observed in snapshots started on 2026-09-29 and 2026-10-12
 - **THEN** the first is normalized and the second is excluded as `retired_size`
+
+#### Scenario: Regional extension
+- **WHEN** a mapped NVv3 size is observed in `uaenorth` and in `westeurope` in a snapshot started on 2026-10-12, with the series retired on 2026-09-30 and UAE North extended to 2027-01-31
+- **THEN** the `uaenorth` row is normalized and the `westeurope` row is excluded as `retired_size`
 
 #### Scenario: Non-primary rows never arrive
 - **WHEN** a page item has `isPrimaryMeterRegion` false
