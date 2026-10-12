@@ -1,0 +1,18 @@
+# Auto-detect text; existing Markdown and .agents/ copies keep their current handling.
+* text=auto
+
+# Code, config and lockfiles are LF everywhere so local and CI checks see the same bytes.
+*.py text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+uv.lock text eol=lf
+.python-version text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Verbatim skill copies keep their current line endings (their manifest digests depend on it).
+.agents/** !eol

@@ -1,0 +1,8 @@
+{
+  "name": "compute-cost-risk-monitor-tooling",
+  "private": true,
+  "description": "Pins the OpenSpec CLI used by the quality gate.",
+  "devDependencies": {
+    "@fission-ai/openspec": "1.6.0"
+  }
+}

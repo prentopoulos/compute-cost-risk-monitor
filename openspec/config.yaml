@@ -3,7 +3,7 @@ schema: spec-driven
 context: |
   Compute Cost & Risk Monitor: answers which comparable GPU rental offers are available, what a workload would cost, and how exposed a compute budget is to changing prices, using observed marketplace asking prices (starting with Vast.ai).
   Read PROJECT.md for current scope and WORKFLOW.md for the phase workflow.
-  Stack: Python, pandas, DuckDB, Streamlit, pytest. Environment manager, lockfile and gate command are TBD in Phase 0.
+  Stack: Python 3.13, pandas, DuckDB, Streamlit, pytest; uv with uv.lock; Ruff, strict mypy. Gate: uv run --frozen python scripts/gate.py.
   Phases 1-7 follow PROJECT.md section 6: schema and acceptance, Vast.ai collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, public demo.
   Data is observed marketplace asking prices, never executed trades or a market-wide benchmark. Exposure figures are labelled scenario calculations, not forecasts.
   Compare offers only within a comparable group (GPU variant, GPU count, region, rental type); normalize to USD/GPU-hour and state cost exclusions.
