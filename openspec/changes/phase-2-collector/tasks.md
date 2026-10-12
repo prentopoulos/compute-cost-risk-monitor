@@ -32,17 +32,17 @@
 
 ## 5. Ingest and command
 
-- [ ] 5.1 Write `ingest.py`:
+- [x] 5.1 Write `ingest.py`:
   - read a run's files, verify them and parse;
   - classify the rows, keep first copies, record repeats and flags, and work out status and counts;
   - write everything in one transaction;
   - refuse a run already ingested, and write nothing on an integrity failure
-- [ ] 5.2 Write `collect.py`:
+- [x] 5.2 Write `collect.py`:
   - live fetch then ingest, labelled `live`;
   - `--ingest-run`;
   - the 24-hour guard;
   - exit codes, and a summary printed without prices
-- [ ] 5.3 Add an end-to-end contract test on a synthetic three-page run, and check it independently:
+- [x] 5.3 Add an end-to-end contract test on a synthetic three-page run, and check it independently:
   - known counts, rental types, units and repeats;
   - the accounting identity;
   - every observation traces to a kept body whose SHA-256 matches;
