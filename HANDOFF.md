@@ -4,12 +4,14 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 0 (toolchain, lockfile, quality gate, smoke checks) is Done on branch
-`phase-0-toolchain`, PR #3. All tasks pass, the code review is resolved, and the change is
-archived as `openspec/changes/archive/2026-10-12-phase-0-toolchain`. Its specs now live in
-`openspec/specs/` (dev-environment, quality-gate, hosted-ci). PR #3 is ready and waits only for
-the owner's go-ahead to merge. PR #2 (setup-kit update) was merged on 2026-10-11 and its branch
-deleted.
+Phase 0 (toolchain, lockfile, quality gate, smoke checks) is Done and merged: PR #3, merge
+commit 0f06a80 on main (2026-10-12), branch deleted. The change is archived as
+`openspec/changes/archive/2026-10-12-phase-0-toolchain`, and its specs live in `openspec/specs/`
+(dev-environment, quality-gate, hosted-ci). PR #2 (setup-kit update) was merged on 2026-10-11.
+PR #4 (`chore/verbatim-skill-bytes`) stores the verbatim skill copies byte-for-byte.
+
+Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is in grilling. No
+OpenSpec change or branch exists for it yet.
 
 No Vast.ai data has been fetched and no Figma diagram exists; both start in later phases.
 
@@ -55,8 +57,10 @@ review, no session links, Figma diagrams); see its README "Process updates from 
   the gate using the local `origin/main` without fetching (it prints which commit it used).
 - `uv audit --locked --preview-features audit-command`: no known vulnerabilities in 63
   packages. It is experimental in uv 0.13.
-- Not verified: GitHub's dependency graph detecting `uv.lock` and `package-lock.json`, which
-  needs the manifests on main. Check it after merge.
+- After merge, GitHub's dependency graph detects `pyproject.toml`, `uv.lock`, `package.json`,
+  `package-lock.json` and the CI workflow. Its SBOM lists 146 packages at the locked versions.
+  Its uv graph update is a Dependabot graph job, which uses no Actions minutes (GitHub docs,
+  dependency graph data). Main's CI run 38186804194 on the merge commit passed.
 
 ## Findings for later phases
 
@@ -65,10 +69,9 @@ review, no session links, Figma diagrams); see its README "Process updates from 
   for UTC retrieval times (PROJECT.md §3).
 - npm's Windows `.cmd` shims, including `npx`, break on the `&` in this folder name. Run Node
   CLIs as `node node_modules/<pkg>/<bin>.js`.
-- The build-safety source-manifest digests match only CRLF working copies of `.agents/`. They
-  fail on an LF checkout such as CI; `.gitattributes` leaves `.agents/` alone (design D21). The
-  fix is a small process PR: rehash the manifest from the LF bytes Git stores, or mark
-  `.agents/** -text`.
+- Verbatim skill copies (Agent Builder, grilling) are `-text` in `.gitattributes` and stored
+  with their exact bytes, so their manifest digests match on any checkout (PR #4).
+  `tests/repo/test_skill_provenance.py` checks all 26 digests in every gate run.
 - The globally installed OpenSpec CLI sends PostHog usage data unless `OPENSPEC_TELEMETRY=0`
   is set. The gate sets it; the owner may also set it user-wide.
 - Phase 2: add pytest-socket network blocking and a secret scanner. Phase 4: commit
@@ -76,7 +79,6 @@ review, no session links, Figma diagrams); see its README "Process updates from 
 
 ## Next action
 
-On the owner's go-ahead, merge PR #3 with a merge commit. Then pull main, confirm the merge,
-and delete `phase-0-toolchain` locally and on GitHub. Check that GitHub's dependency graph
-detects `uv.lock` and `package-lock.json`. Then begin Phase 1 (requirements, data schema,
-acceptance criteria, Figma diagrams) with next-phase grilling.
+Finish Phase 1 grilling: the informed answerer is researching round 1. Then propose the
+Phase 1 change (spec-only `docs:` commit, branch, draft PR) and build it. Merge PR #4 on the
+owner's go-ahead after its review.
