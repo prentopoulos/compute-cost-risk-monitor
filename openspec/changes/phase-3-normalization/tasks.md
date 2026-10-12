@@ -7,11 +7,11 @@
 
 ## 2. Normalization and independent checks
 
-- [ ] 2.1 Write the pure Azure classifier in `normalize.py`: the D4 exclusion order, the D13 OS rule, D5 retirement by snapshot date, and USD/GPU-hour. Add known-answer tests for the normal, missing, stale, fractional, unmapped, Windows, government, retired, non-hourly and impossible cases
-- [ ] 2.2 Add the database step: one transaction that stores the rules and map, then writes one row for each observation lacking one, idempotently. Test rollback on error and a re-run that adds nothing
-- [ ] 2.3 Write `checks.py`, independent of `normalize.py` (D16). Test that it passes on fixtures and fails on a tampered price, a missing row, a wrong GPU count, a reason on a normalized row and broken totals
-- [ ] 2.4 Write the `normalize` command: `--db`, the repo-anchored default, the checks, counts-only output, exit codes 0, 1 (check failed) and 2 (frozen mismatch). Test that the output holds no fixture prices
-- [ ] 2.5 Assert that a non-primary item never reaches `normalized_price` (ingest rejects it as `not_primary_meter`)
+- [x] 2.1 Write the pure Azure classifier in `normalize.py`: the D4 exclusion order, the D13 OS rule, D5 retirement by snapshot date, and USD/GPU-hour. Add known-answer tests for the normal, missing, stale, fractional, unmapped, Windows, government, retired, non-hourly and impossible cases
+- [x] 2.2 Add the database step: one transaction that stores the rules and map, then writes one row for each observation lacking one, idempotently. Test rollback on error and a re-run that adds nothing
+- [x] 2.3 Write `checks.py`, independent of `normalize.py` (D16). Test that it passes on fixtures and fails on a tampered price, a missing row, a wrong GPU count, a reason on a normalized row and broken totals
+- [x] 2.4 Write the `normalize` command: `--db`, the repo-anchored default, the checks, counts-only output, exit codes 0, 1 (check failed) and 2 (frozen mismatch). Test that the output holds no fixture prices
+- [x] 2.5 Assert that a non-primary item never reaches `normalized_price` (ingest rejects it as `not_primary_meter`)
 
 ## 3. Synthetic marketplace
 
