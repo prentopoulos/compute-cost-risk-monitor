@@ -111,7 +111,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| 0 | Toolchain, lockfile, quality gate, smoke checks | In progress |
+| 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Planned |
 | 2 | Working Vast.ai collector keeping original responses; observations start accumulating | Planned |
 | 3 | Normalization to USD/GPU-hour, comparable-offer grouping, duplicate handling, quality checks | Planned |

@@ -4,11 +4,12 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 0 (toolchain, lockfile, quality gate, smoke checks) is implemented on branch
-`phase-0-toolchain`, OpenSpec change `phase-0-toolchain`, draft PR #3. All tasks pass. Code review,
-archive and merge remain (WORKFLOW.md § Pull requests and code review, steps 3–5).
-The branch also carries commit e8195fa from PR #2 (setup-kit update), which is not merged yet.
-Merge #2 first, then #3; the second diff then shows only Phase 0.
+Phase 0 (toolchain, lockfile, quality gate, smoke checks) is Done on branch
+`phase-0-toolchain`, PR #3. All tasks pass, the code review is resolved, and the change is
+archived as `openspec/changes/archive/2026-10-12-phase-0-toolchain`. Its specs now live in
+`openspec/specs/` (dev-environment, quality-gate, hosted-ci). PR #3 is ready and waits only for
+the owner's go-ahead to merge. PR #2 (setup-kit update) was merged on 2026-10-11 and its branch
+deleted.
 
 No Vast.ai data has been fetched and no Figma diagram exists; both start in later phases.
 
@@ -40,7 +41,18 @@ review, no session links, Figma diagrams); see its README "Process updates from 
   a type error, an OpenSpec requirement without a scenario, and a commit titled "updated stuff".
   It reported format, types, openspec and commit messages as failed, and still ran every check.
 - CI run 38186096043 on PR #3 succeeded in 47 s on ubuntu-latest, with Python 3.13.16 and all
-  seven checks passing.
+  seven checks passing. After the review fixes, run 38186510955 succeeded in 37 s.
+- Fresh clone of the branch from GitHub: `uv sync --locked`, `npm ci` and the gate all
+  passed, code files checked out as LF, and `git status` was clean afterwards. Windows long
+  paths are off on this PC, so a clone into a deep folder needs `git clone -c core.longpaths=true`.
+- The gate reported a stale `uv.lock` as its only failed check and still ran every other check.
+  With no commits ahead of `origin/main`, the commit check is skipped and the gate passes.
+  `datetime.now()` without a time zone fails lint (DTZ005).
+- Code review (`/code-review` on PR #3) found 10 issues. Fixed: the `--frozen` gate
+  command, OpenSpec telemetry off, `npm ci --ignore-scripts`, main runs never cancelled, the
+  exact audit command, `.editorconfig` scope, a stronger install smoke test and a repeated
+  failure path. Answered rather than fixed: `.agents/` digests (pre-existing; see below) and
+  the gate using the local `origin/main` without fetching (it prints which commit it used).
 - `uv audit --locked --preview-features audit-command`: no known vulnerabilities in 63
   packages. It is experimental in uv 0.13.
 - Not verified: GitHub's dependency graph detecting `uv.lock` and `package-lock.json`, which
@@ -54,13 +66,17 @@ review, no session links, Figma diagrams); see its README "Process updates from 
 - npm's Windows `.cmd` shims, including `npx`, break on the `&` in this folder name. Run Node
   CLIs as `node node_modules/<pkg>/<bin>.js`.
 - The build-safety source-manifest digests match only CRLF working copies of `.agents/`. They
-  fail on an LF checkout such as CI; `.gitattributes` leaves `.agents/` alone (design D21).
+  fail on an LF checkout such as CI; `.gitattributes` leaves `.agents/` alone (design D21). The
+  fix is a small process PR: rehash the manifest from the LF bytes Git stores, or mark
+  `.agents/** -text`.
+- The globally installed OpenSpec CLI sends PostHog usage data unless `OPENSPEC_TELEMETRY=0`
+  is set. The gate sets it; the owner may also set it user-wide.
 - Phase 2: add pytest-socket network blocking and a secret scanner. Phase 4: commit
   `.streamlit/config.toml` with `gatherUsageStats = false`.
 
 ## Next action
 
-Phase 0 PR #3: run `/code-review` and check the diff against the specs, resolve the findings,
-archive the change on the branch (`chore:`, phase Done), rerun validation and the gate, push and
-mark ready. Merge #2 and then #3 only on the owner's go-ahead. Then begin Phase 1 with
-next-phase grilling.
+On the owner's go-ahead, merge PR #3 with a merge commit. Then pull main, confirm the merge,
+and delete `phase-0-toolchain` locally and on GitHub. Check that GitHub's dependency graph
+detects `uv.lock` and `package-lock.json`. Then begin Phase 1 (requirements, data schema,
+acceptance criteria, Figma diagrams) with next-phase grilling.
