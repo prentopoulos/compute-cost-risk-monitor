@@ -4,81 +4,71 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 0 (toolchain, lockfile, quality gate, smoke checks) is Done and merged: PR #3, merge
-commit 0f06a80 on main (2026-10-12), branch deleted. The change is archived as
-`openspec/changes/archive/2026-10-12-phase-0-toolchain`, and its specs live in `openspec/specs/`
-(dev-environment, quality-gate, hosted-ci). PR #2 (setup-kit update) was merged on 2026-10-11.
-PR #4 (`chore/verbatim-skill-bytes`) stores the verbatim skill copies byte-for-byte.
+Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is implemented on branch
+`phase-1-schema`, OpenSpec change `phase-1-schema-acceptance`, draft PR #5. All tasks pass. Code
+review, archive and merge remain (WORKFLOW.md § Pull requests and code review, steps 3–5).
+The branch was cut from PR #4 (`chore/verbatim-skill-bytes`), which is still open. Merge #4 first,
+then #5; the second diff then shows only Phase 1.
 
-Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is in grilling. No
-OpenSpec change or branch exists for it yet.
+Phase 0 is Done and merged (PR #3, merge commit 0f06a80); its specs live in `openspec/specs/`.
 
-No Vast.ai data has been fetched and no Figma diagram exists; both start in later phases.
-
-On 2026-10-11 the setup was compared with the updated kit (new_project_agent_setup_updated).
-Its verbatim Agent Builder and grilling files are unchanged. Adopted: the runtime-secret wording,
-recording operator gate decisions with scope and date, and `.env.*` ignore rules. AI-ops is
-deferred: PROJECT.md §2 says to install it before the optional brief drafter is proposed. The
-kit itself received this project's process improvements (informed answerer, PR TL;DRs and code
-review, no session links, Figma diagrams); see its README "Process updates from projects".
+**Data source changed in Phase 1 grilling (owner, 2026-10-11).** Vast.ai's terms (version
+2026-09-01) forbid automated collection, price-comparison use and redistribution without a
+written agreement. So does every GPU marketplace checked (SF Compute, RunPod, Lambda, TensorDock,
+Shadeform, Prime Intellect, io.net, Akash). The owner chose not to seek permission. The v1 source
+is the Azure Retail Prices API (public, no account), and the data is "published list prices for
+GPU VMs from one cloud provider". Labelled synthetic marketplace-style data covers the
+marketplace rules and the public demo. PROJECT.md, AGENTS.md, `openspec/config.yaml` and the
+skills are reframed. No provider has been called yet.
 
 ## Implemented behavior
 
-- Python 3.13.16 (uv-managed) with `uv.lock`: pandas 3.0.6, DuckDB 1.5.6, Streamlit 1.65.0;
-  dev tools pytest 9.1.1, pytest-cov, Ruff 0.17.0, mypy 2.4.0 (strict), pandas-stubs and
-  commitizen. OpenSpec CLI 1.6.0 pinned through `package.json` and `package-lock.json`.
-- Empty typed package `src/compute_cost_risk_monitor`; smoke tests in `tests/smoke`.
-- Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and
-  `npm ci --ignore-scripts`. `--frozen` lets a stale `uv.lock` show up as a failed check.
-- CI: `.github/workflows/ci.yml` runs the gate and `uv audit` on PRs and pushes to main.
-- Dependabot alerts and security updates are on; version updates are off.
-- uv 0.13.0 is installed on the owner's PC with winget. Its folder is on the user PATH, so it
-  is reachable from shells started after the install.
+- Phase 0 toolchain: Python 3.13.16 via uv (`uv.lock`), OpenSpec CLI 1.6.0 via npm, the gate
+  `uv run --frozen python scripts/gate.py` (after `uv sync --locked`, `npm ci --ignore-scripts`),
+  CI on GitHub Actions, and Dependabot alerts and security updates.
+- Phase 1 schema:
+  - `src/compute_cost_risk_monitor/db.py`: `connect()` pins TimeZone=UTC; `create_schema()`
+    applies numbered SQL files and records `schema_version`.
+  - `schema/001_initial.sql`: nine tables (design § Schema) with constraints for the evidence
+    rules. It ships in the wheel.
+- `pytz` is a runtime dependency (DuckDB needs it for TIMESTAMPTZ → Python); `data/` is gitignored.
+- Synthetic fixtures in `tests/fixtures/synthetic/`: an Azure-shaped page and marketplace offers,
+  all invented values.
+- Diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A) on the Projects
+  (Pro) team, with SVG exports in `docs/architecture/`.
+- Acceptance criteria for Phases 2–7: the table in the Phase 1 design.
 
 ## Verification
 
-- Gate green on 2026-10-11 in Git Bash and in Windows PowerShell: all seven checks pass, with
-  7 smoke tests passing.
-- The gate failed as designed on four deliberate defects, each reverted: a misformatted file,
-  a type error, an OpenSpec requirement without a scenario, and a commit titled "updated stuff".
-  It reported format, types, openspec and commit messages as failed, and still ran every check.
-- CI run 38186096043 on PR #3 succeeded in 47 s on ubuntu-latest, with Python 3.13.16 and all
-  seven checks passing. After the review fixes, run 38186510955 succeeded in 37 s.
-- Fresh clone of the branch from GitHub: `uv sync --locked`, `npm ci` and the gate all
-  passed, code files checked out as LF, and `git status` was clean afterwards. Windows long
-  paths are off on this PC, so a clone into a deep folder needs `git clone -c core.longpaths=true`.
-- The gate reported a stale `uv.lock` as its only failed check and still ran every other check.
-  With no commits ahead of `origin/main`, the commit check is skipped and the gate passes.
-  `datetime.now()` without a time zone fails lint (DTZ005).
-- Code review (`/code-review` on PR #3) found 10 issues. Fixed: the `--frozen` gate
-  command, OpenSpec telemetry off, `npm ci --ignore-scripts`, main runs never cancelled, the
-  exact audit command, `.editorconfig` scope, a stronger install smoke test and a repeated
-  failure path. Answered rather than fixed: `.agents/` digests (pre-existing; see below) and
-  the gate using the local `origin/main` without fetching (it prints which commit it used).
-- `uv audit --locked --preview-features audit-command`: no known vulnerabilities in 63
-  packages. It is experimental in uv 0.13.
-- After merge, GitHub's dependency graph detects `pyproject.toml`, `uv.lock`, `package.json`,
-  `package-lock.json` and the CI workflow. Its SBOM lists 146 packages at the locked versions.
-  Its uv graph update is a Dependabot graph job, which uses no Actions minutes (GitHub docs,
-  dependency graph data). Main's CI run 38186804194 on the merge commit passed.
+- Phase 1 gate green on 2026-10-12 in Git Bash and Windows PowerShell: 64 tests, including 30
+  schema tests (rejections, acceptances, and both fixtures end to end) and 27 provenance cases.
+- The wheel built with `uv build` contains `schema/001_initial.sql`.
+- Diagram screenshots were checked visually before export.
+- Phase 0 evidence (fresh clone, deliberate defects, CI runs, audit) is in the Phase 0 archive
+  and PR #3.
 
 ## Findings for later phases
 
-- DuckDB returns TIMESTAMPTZ in the machine's time zone (America/Toronto here) unless the
-  connection runs `SET TimeZone = 'UTC'`. Phase 1's schema and every connection must set it
-  for UTC retrieval times (PROJECT.md §3).
-- npm's Windows `.cmd` shims, including `npx`, break on the `&` in this folder name. Run Node
-  CLIs as `node node_modules/<pkg>/<bin>.js`.
-- Verbatim skill copies (Agent Builder, grilling) are `-text` in `.gitattributes` and stored
-  with their exact bytes, so their manifest digests match on any checkout (PR #4).
-  `tests/repo/test_skill_provenance.py` checks all 26 digests in every gate run.
-- The globally installed OpenSpec CLI sends PostHog usage data unless `OPENSPEC_TELEMETRY=0`
-  is set. The gate sets it; the owner may also set it user-wide.
-- Phase 2: add pytest-socket network blocking and a secret scanner. Phase 4: commit
-  `.streamlit/config.toml` with `gatherUsageStats = false`.
+- Azure reservation rows report `retailPrice` as the total for the term while
+  `unitOfMeasure` says "1 Hour". Phase 2 must not store them in a way that reads as an hourly
+  price: record the term next to the unit, or keep them out of `price_observation`. They are
+  never compared (design D11).
+- Live-data ⛔ gate for Azure (Phase 2): the operator confirms the Microsoft API terms and the
+  pacing (≤ 1 request/s, back off on 429) before the first live read. No key is needed.
+- Publishing live Azure figures is not expressly permitted by Microsoft's terms; the Phase 7
+  demo uses synthetic data unless the publishing gate approves derived figures.
+- DuckDB connections must go through `db.connect`; elsewhere TIMESTAMPTZ comes back in local time.
+- npm's Windows `.cmd` shims (`npx`) break on the `&` in this folder name; run Node CLIs as
+  `node node_modules/<pkg>/<bin>.js`.
+- The global OpenSpec CLI sends PostHog telemetry unless `OPENSPEC_TELEMETRY=0`; the gate sets it.
+- Phase 2: pytest-socket network blocking and a secret scanner. Phase 3: `gpu_sku_map` content
+  from Microsoft Learn (CC BY 4.0, credited). Phase 4: Streamlit `gatherUsageStats = false`.
+- CME's compute futures page still said "later this year, pending regulatory review" on
+  2026-10-12; recheck before reframing PROJECT §1 in Phase 7.
 
 ## Next action
 
-Finish Phase 1 grilling: the informed answerer is researching round 1. Then propose the
-Phase 1 change (spec-only `docs:` commit, branch, draft PR) and build it. Merge PR #4 on the
-owner's go-ahead after its review.
+Phase 1 PR #5: run `/code-review` and record the market-review read-through, resolve findings,
+archive the change (`chore:`, phase Done), rerun validation and the gate, push and mark ready.
+Merge #4 then #5 only on the owner's go-ahead. Then Phase 2 grilling (Azure collector, including
+the live-data gate).

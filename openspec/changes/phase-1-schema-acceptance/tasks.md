@@ -27,5 +27,5 @@
 ## 5. Review and documents
 
 - [ ] 5.1 Run the market-review read-through of the schema (units, labels, group-key columns, missing-value handling) and record it in the PR
-- [ ] 5.2 Run the gate green in Git Bash and PowerShell, and record the output
-- [ ] 5.3 Update HANDOFF with the checkpoint, evidence and the next task (Phase 2 grilling, including the live-data gate for Azure)
+- [x] 5.2 Run the gate green in Git Bash and PowerShell, and record the output
+- [x] 5.3 Update HANDOFF with the checkpoint, evidence and the next task (Phase 2 grilling, including the live-data gate for Azure)
