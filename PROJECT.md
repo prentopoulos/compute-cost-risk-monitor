@@ -162,7 +162,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 |---|---|---|
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Done |
-| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Planned |
+| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | In progress |
 | 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Planned |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |

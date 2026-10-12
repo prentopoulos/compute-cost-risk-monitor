@@ -9,8 +9,8 @@ The gate SHALL run these checks, in order:
 5. `pytest` with a branch-coverage report of `src` and no coverage minimum
 6. `openspec validate --all --strict --no-interactive` through the repo-local CLI, with its
    telemetry turned off
-7. a detect-secrets scan of the tracked files against the committed `.secrets.baseline`, with
-   network verification turned off
+7. a detect-secrets scan of the tracked files, and of new files Git does not ignore, against
+   the committed `.secrets.baseline`, with network verification turned off
 8. a Conventional Commits check of the commits on the branch
 
 The gate makes no network calls.
@@ -24,15 +24,16 @@ The gate makes no network calls.
 - **THEN** the OpenSpec check fails and the gate exits non-zero
 
 #### Scenario: Planted secret fails the gate
-- **WHEN** a tracked file gains a string that detect-secrets reports and the baseline does not list
+- **WHEN** a tracked or new unignored file gains a string that detect-secrets reports and the baseline does not list
 - **THEN** the secret scan fails and the gate exits non-zero
 
 ## ADDED Requirements
 
 ### Requirement: Tests run without network access
 pytest SHALL run with sockets disabled through pytest-socket, so a test that opens a network
-socket fails. The only exception SHALL be the Streamlit headless smoke test, which is marked to
-allow sockets because asyncio on Windows opens a loopback socket pair for its own use.
+socket fails. The only exception SHALL be the Streamlit headless smoke test. It is marked to allow
+connections to 127.0.0.1 only, because asyncio on Windows opens a loopback socket pair for its own
+use.
 
 #### Scenario: Network call in a test fails
 - **WHEN** a test without the marker tries to open a network connection

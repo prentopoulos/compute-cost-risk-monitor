@@ -1,9 +1,9 @@
 ## 1. Dependencies, network blocking and secret scan
 
-- [ ] 1.1 Add `pytest-socket` and `detect-secrets` as dev dependencies, relock, and confirm `uv lock --check` passes
-- [ ] 1.2 Run tests with `--disable-socket --allow-unix-socket`, mark the Streamlit smoke test to allow sockets, and show that a test opening a network socket fails
-- [ ] 1.3 Add the detect-secrets scan to `scripts/gate.py` with a committed `.secrets.baseline`. Show that a planted fake secret fails the gate, then remove it
-- [ ] 1.4 Reword the `pyproject.toml` description to the published Azure list-price framing
+- [x] 1.1 Add `pytest-socket` and `detect-secrets` as dev dependencies, relock, and confirm `uv lock --check` passes
+- [x] 1.2 Run tests with `--disable-socket --allow-unix-socket`, mark the Streamlit smoke test to allow sockets, and show that a test opening a network socket fails
+- [x] 1.3 Add the detect-secrets scan to `scripts/gate.py` with a committed `.secrets.baseline`. Show that a planted fake secret fails the gate, then remove it
+- [x] 1.4 Reword the `pyproject.toml` description to the published Azure list-price framing
 
 ## 2. Schema version 2
 
