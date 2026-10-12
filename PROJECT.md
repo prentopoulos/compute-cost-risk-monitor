@@ -67,8 +67,13 @@ user before each later phase. Evidence that counts in every phase:
   including missing data and stale offers.
 - Prices, costs, exposure figures and the brief pass the compute-cost-risk-monitor-market-review
   checks before they are shown or reported.
-- Every collection run is labelled synthetic, recorded or live; stale is a computed age flag
-  (latest snapshot older than 7 days), not a label. A mocked fetch is not a live result.
+- Every collection run is labelled by how its bytes were obtained:
+  - synthetic: invented data;
+  - recorded: a new run built from responses kept from an earlier fetch;
+  - live: fetched from the source by that run.
+
+  Stale is a computed age flag (latest snapshot older than 7 days), not a label. A snapshot is
+  one succeeded run. A mocked fetch is not a live result.
 - Trends need several weeks of observations; until then the app says the sample is thin.
 
 ## 4. Stack and commands
@@ -82,7 +87,9 @@ user before each later phase. Evidence that counts in every phase:
   bare `python` differs by shell on the owner's PC.
 - Data source: [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
   (unauthenticated; the docs invite "your own tools for internal analysis and price comparison
-  across SKUs and regions"). Not used yet; the first live read waits for its ⛔ gate. Vast.ai
+  across SKUs and regions"). The live-data gate is resolved for this API (§6, 2026-10-12), and
+  the Phase 2 collector reads it. Phase 2 grilling decisions are cited in
+  `openspec/changes/phase-2-collector/design.md` D1–D27. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -170,6 +177,18 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
   without a written agreement; the owner chose not to seek one and switched the source to
   the Azure Retail Prices API. That API needs no key; the operator still confirms its terms
   and the pacing (at most 1 request per second, back off on 429) before the first live read.
+- Decision, 2026-10-12 (owner, Phase 2 grilling): the operator accepts that the Azure Retail
+  Prices API may be read for this project, on the reading that portfolio use counts as internal
+  analysis and as personal, non-commercial use. Microsoft's API page invites "your own tools for
+  internal analysis and price comparison across SKUs and regions". No page says which terms
+  govern this unauthenticated API. Scope:
+  - unauthenticated GET of `https://prices.azure.com/api/retail/prices` only, with the Phase 2
+    GPU filter;
+  - runs the owner starts by hand, at most one a day;
+  - at most 1 request per second, backing off on 429 and honouring Retry-After;
+  - local storage and analysis only, with no redistribution.
+
+  It approves no other source, no scheduled runs and no publishing.
 - [ ] Before a second source: operator confirms access works and its fields are comparable.
 
 ### ⛔ Before scheduling unattended collection
