@@ -15,7 +15,7 @@
 
 ## 3. Synthetic marketplace
 
-- [ ] 3.1 Add labelled synthetic snapshot files under `tests/fixtures/synthetic/marketplace/` (at least three consecutive snapshots), covering:
+- [x] 3.1 Add labelled synthetic snapshot files under `tests/fixtures/synthetic/marketplace/` (at least three consecutive snapshots), covering:
   - same-group machine duplicates;
   - a re-listing;
   - a thin group and a group of at least 5 machines;
@@ -23,7 +23,7 @@
   - a non-compared rental type;
   - a price change;
   - a listing absent once and one absent twice
-- [ ] 3.2 Write `synthetic.py`: refuse unlabelled files and duplicate offer IDs, and ingest each file as one `synthetic` run in one transaction, with the file's SHA-256, defaulting to `data/synthetic.duckdb` and refusing `data/monitor.duckdb`. Add the synthetic name map and marketplace normalization (`unmapped_gpu_name`)
+- [x] 3.2 Write `synthetic.py`: refuse unlabelled files and duplicate offer IDs, and ingest each file as one `synthetic` run in one transaction, with the file's SHA-256, defaulting to `data/synthetic.duckdb` and refusing `data/monitor.duckdb`. Add the synthetic name map and marketplace normalization (`unmapped_gpu_name`)
 
 ## 4. Groups, history and quality
 

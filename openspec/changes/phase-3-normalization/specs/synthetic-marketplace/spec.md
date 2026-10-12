@@ -25,6 +25,7 @@ labelled `synthetic` and `succeeded`, started at the file's `observed_at`. It SH
 - one raw response recording the file's repository-relative path, SHA-256 and byte length;
 - one price observation and one `marketplace_offer` row per offer, keyed by offer ID and timed at
   `observed_at`.
+- a run summary whose counts equal the offers stored.
 
 Synthetic runs SHALL go to `data/synthetic.duckdb` by default and never to `data/monitor.duckdb`.
 Ingesting a run that is already stored SHALL be refused.
