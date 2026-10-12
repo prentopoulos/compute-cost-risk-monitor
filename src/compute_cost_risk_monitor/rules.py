@@ -145,8 +145,14 @@ def store(
         "SELECT parameters FROM rule_set WHERE rule_version = ?", [version]
     ).fetchone()
     if row is not None:
-        if json.loads(row[0]) != params:
-            raise FrozenMismatch(f"stored rule set {version} differs from the code")
+        kept = json.loads(row[0])
+        if kept != params:
+            keys = sorted(
+                k for k in set(kept) | set(params) if kept.get(k) != params.get(k)
+            )
+            raise FrozenMismatch(
+                f"stored rule set {version} differs from the code in: {', '.join(keys)}"
+            )
         return False
     connection.execute(
         "INSERT INTO rule_set VALUES (?, ?, ?, ?)",

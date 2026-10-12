@@ -144,7 +144,9 @@ def test_rule_set_stored_once(connection: duckdb.DuckDBPyConnection) -> None:
 def test_changed_rule_set_refused(connection: duckdb.DuckDBPyConnection) -> None:
     rules.store(connection, NOW)
     changed = {**rules.GROUPS_V1, "stale_after_days": 14}
-    with pytest.raises(rules.FrozenMismatch, match="groups-v1"):
+    with pytest.raises(
+        rules.FrozenMismatch, match="groups-v1 .* in: stale_after_days$"
+    ):
         rules.store(connection, NOW, changed)
 
 
