@@ -114,7 +114,7 @@ The scheduling, spend and publishing gates are untouched.
 - **DuckDB 1.5.6 limits:** a `collection_run` row cannot be updated once referenced, and
   migrations cannot add CHECKs or constrained columns (Phase 1 D23 was wrong). Changing a
   version-1 CHECK list means rebuilding into a new database file.
-- **D27 (owner review on PR #7):** `--ingest-run` restores a run under its own ID and label.
+- **D27 (owner-confirmed on PR #7, 2026-10-12):** `--ingest-run` restores a run under its own ID and label.
   `recorded` is for a new run built from kept responses (as in `test_real_page.py`).
 - **Local quirks:**
   - In the Phase 2 session, pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter`
