@@ -1,0 +1,10 @@
+{
+  "_label": "synthetic",
+  "provider": "Example Marketplace (fictional)",
+  "offers": [
+    {"offer_id": "S-1001", "machine_id": "M-01", "gpu_name": "H100 SXM", "num_gpus": 1, "gpu_vram_gb": 80, "country_code": "US", "region": "north-america", "rental_type": "on_demand", "usd_per_hour": 2.0},
+    {"offer_id": "S-1002", "machine_id": "M-01", "gpu_name": "H100 SXM", "num_gpus": 2, "gpu_vram_gb": 80, "country_code": "US", "region": "north-america", "rental_type": "on_demand", "usd_per_hour": 4.0},
+    {"offer_id": "S-1003", "machine_id": "M-02", "gpu_name": "H100 SXM", "num_gpus": 1, "gpu_vram_gb": 80, "country_code": "CA", "region": "north-america", "rental_type": "on_demand", "usd_per_hour": 2.4},
+    {"offer_id": "S-1004", "machine_id": "M-03", "gpu_name": "RTX 4090", "num_gpus": 1, "gpu_vram_gb": 24, "country_code": "DE", "region": "europe", "rental_type": "on_demand", "usd_per_hour": 0.4}
+  ]
+}

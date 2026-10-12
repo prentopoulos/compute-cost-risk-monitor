@@ -11,11 +11,11 @@
 
 ## 3. Schema tests on synthetic fixtures
 
-- [ ] 3.1 Add labelled synthetic fixture rows under `tests/fixtures/synthetic/` (one Azure-shaped price row set and one marketplace-shaped offer set, with no real data)
-- [ ] 3.2 Test connection UTC and the round trip of a TIMESTAMPTZ value to Python and pandas
-- [ ] 3.3 Test schema creation, then a re-run as a no-op
-- [ ] 3.4 Test the rejections: duplicate observation; zero, negative, NaN and infinite prices; each missing provenance field; unknown label and rental type; synthetic marketplace data labelled live; zero GPU count; detail and derived rows without parents; raw response without a SHA-256
-- [ ] 3.5 Test the acceptances: unmapped observation with NULL GPU fields, a failed request recorded, one observation under two rule versions, and inserting the synthetic fixtures end to end
+- [x] 3.1 Add labelled synthetic fixture rows under `tests/fixtures/synthetic/` (one Azure-shaped price row set and one marketplace-shaped offer set, with no real data)
+- [x] 3.2 Test connection UTC and the round trip of a TIMESTAMPTZ value to Python and pandas
+- [x] 3.3 Test schema creation, then a re-run as a no-op
+- [x] 3.4 Test the rejections: duplicate observation; zero, negative, NaN and infinite prices; each missing provenance field; unknown label and rental type; synthetic marketplace data labelled live; zero GPU count; detail and derived rows without parents; raw response without a SHA-256
+- [x] 3.5 Test the acceptances: unmapped observation with NULL GPU fields, a failed request recorded, one observation under two rule versions, and inserting the synthetic fixtures end to end
 
 ## 4. Architecture diagrams
 
