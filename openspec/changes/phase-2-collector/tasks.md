@@ -7,8 +7,8 @@
 
 ## 2. Schema version 2
 
-- [ ] 2.1 Write `schema/002_run_records.sql` with `collection_run_summary`, `collection_run_tally` and `observation_repeat`, as in design § Schema version 2
-- [ ] 2.2 Update the schema tests:
+- [x] 2.1 Write `schema/002_run_records.sql` with `collection_run_summary`, `collection_run_tally` and `observation_repeat`, as in design § Schema version 2
+- [x] 2.2 Update the schema tests:
   - fresh databases hold versions 1 and 2, and an upgrade from version 1 applies only 2;
   - a referenced run row cannot be updated;
   - the summary identity, negative counts, unknown runs and sources, tally kind and zero counts, and repeat references are each rejected;

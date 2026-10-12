@@ -110,7 +110,7 @@ collection_run_summary(run_id PK, (run_id, source) → collection_run, requests,
     counts ≥ 0; pages_parsed + failed_requests = requests; throttled ≤ failed_requests;
     items_seen = observations_stored + repeats + out_of_scope + rejected
 collection_run_tally((run_id, kind, reason) PK, (run_id, source) → collection_run,
-    kind IN ('rejected', 'flagged'), reason, item_count > 0)
+    kind IN ('rejected', 'flagged'), reason, occurrences > 0)
 observation_repeat((response_id, item_index) PK, (response_id, source) → raw_response,
     item_key, first_retrieved_at, (source, item_key, first_retrieved_at) → price_observation,
     same_price, same_fields)
