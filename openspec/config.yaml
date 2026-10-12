@@ -5,24 +5,30 @@ context: |
   Read PROJECT.md for current scope and WORKFLOW.md for the phase workflow.
   Stack: Python 3.13, pandas, DuckDB, Streamlit, pytest; uv with uv.lock; Ruff, strict mypy. Gate: uv run --frozen python scripts/gate.py.
   Phases 1-7 follow PROJECT.md section 6: schema and acceptance, Azure Retail Prices collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, public demo.
-  Data is published Azure list prices, never a marketplace, market price, benchmark or what customers pay; synthetic data is labelled synthetic. Exposure figures are labelled scenario calculations, not forecasts.
-  Compare offers only within a comparable group (GPU variant, GPU count, region, rental type); normalize to USD/GPU-hour and state cost exclusions.
-  Keep original API responses with retrieval time. Missing data stays missing. Flag duplicates, stale offers and thin samples.
-  Deterministic code computes all prices, costs and exposure. An optional AI agent may only draft the market brief from validated numbers.
-  The collector only reads published prices; never create or change cloud resources.
+  Normalize prices to USD/GPU-hour. Keep original API responses with retrieval time. Flag duplicates, stale offers and thin samples.
   Tests use synthetic or recorded fixtures with no network or credentials.
   Gated in PROJECT.md: live source reads, scheduled collection, paid calls, publishing or making the repo public.
   Remote: private GitHub repo prentopoulos/compute-cost-risk-monitor. One branch and PR per phase; code PRs are reviewed before merge.
-  Operator resolves PROJECT.md ⛔ gates; never waive them autonomously.
-  Never fabricate external results. Label mocked, local and live results accurately.
+
+  Non-negotiables, verbatim from PROJECT.md §5 (the constitution, which governs; only the owner amends it):
+  - Secrets use the runtime secret mechanism (gitignored .env for local development); never print, commit or include them in reports.
+  - Never fabricate results or external-service output. Label mocked, local and live results accurately. Preserve failed runs.
+  - Operator resolves all ⛔ gates. The agent never satisfies or waives one itself.
+  - Call the data published Azure list prices: never a marketplace, market price, index, benchmark, executed trades or what customers pay. Synthetic marketplace data is labelled synthetic. Label every exposure figure as a scenario calculation, not a forecast.
+  - Deterministic code computes every price, cost and exposure figure. An AI agent, if used, only drafts prose from validated numbers, and every number it writes must match a computed one.
+  - Compare offers only within a comparable group (GPU variant, GPU count, region, rental type), or say plainly that a comparison crosses groups. State cost exclusions with every workload figure.
+  - The collector only reads published prices. Never call endpoints that create or change resources or spend account credit.
+  - Use a data source only within its terms of use and rate limits. Missing observations stay missing; never fill them in to make a chart look complete.
 
 rules:
   proposal:
     - State which PROJECT.md phase this change implements.
     - Include a Non-goals section.
+    - If the change amends a PROJECT.md §5 rule or a ⛔ gate, say so; the amendment follows PROJECT.md § Amending the constitution in its own commit.
   design:
     - Designs that use paid or external services name the operator-approved budget and gate.
     - Offline phases have no live credential, network submission or secret dependency.
     - Any new price, cost or exposure figure names its comparable-group key, units and exclusions.
+    - "Include a Non-negotiables check: each PROJECT.md §5 rule and §6 ⛔ gate the change touches, how the design keeps it, and any exception with the owner's decision."
   tasks:
     - Keep tasks independently committable or group closely related tasks logically.

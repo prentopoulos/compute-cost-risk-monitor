@@ -104,22 +104,47 @@ merges only after its review and the user's go-ahead. Follow WORKFLOW.md for pha
 
 ## 5. Non-negotiables
 
+These rules and the ⛔ gates in §6 are this project's constitution. They override AGENTS.md,
+WORKFLOW.md, the skills, OpenSpec specs and HANDOFF.md; only the owner's current instructions
+and recorded gate decisions come before them.
+
+**Version 2.1.0** · Ratified 2026-10-11 · Last amended 2026-10-12
+
 - Secrets use the runtime secret mechanism (gitignored .env for local development); never
   print, commit or include them in reports.
-- Label mocked, local and live results accurately. Preserve failed runs.
+- Never fabricate results or external-service output. Label mocked, local and live results
+  accurately. Preserve failed runs.
 - Operator resolves all ⛔ gates. The agent never satisfies or waives one itself.
 - Call the data published Azure list prices: never a marketplace, market price, index,
   benchmark, executed trades or what customers pay. Synthetic marketplace data is labelled
   synthetic. Label every exposure figure as a scenario calculation, not a forecast.
 - Deterministic code computes every price, cost and exposure figure. An AI agent, if used,
-  only drafts prose from validated numbers, and every number it writes must match a computed one.
-- Compare offers only within a comparable group (GPU variant, GPU count, region, rental
-  type), or say plainly that a comparison crosses groups. State cost exclusions with every
-  workload figure.
+  only drafts prose from validated numbers, and every number it writes must match a computed
+  one.
+- Compare offers only within a comparable group (GPU variant, GPU count, region, rental type),
+  or say plainly that a comparison crosses groups. State cost exclusions with every workload
+  figure.
 - The collector only reads published prices. Never call endpoints that create or change
   resources or spend account credit.
 - Use a data source only within its terms of use and rate limits. Missing observations stay
   missing; never fill them in to make a chart look complete.
+
+### Amending the constitution
+
+- Only the owner amends it: a change to a rule above, or adding, removing or loosening a ⛔
+  gate. Recording an operator decision on a gate (§6) is not an amendment.
+- An amendment states its reason and goes in its own `docs:` commit. That commit updates the
+  verbatim copies in AGENTS.md and `openspec/config.yaml` and adds a row below.
+  `tests/repo/test_constitution.py` fails the gate if a copy or the version line drifts.
+- Version: major when a rule is removed or redefined, minor when one is added or materially
+  widened, patch for wording only.
+
+| Version | Date | Change | Decided by |
+|---|---|---|---|
+| 1.0.0 | 2026-10-11 | Ratified at setup, for observed marketplace asking prices | Owner (setup) |
+| 1.1.0 | 2026-10-11 | Secrets may use the runtime secret mechanism; .env stays for local development | Owner (PR #2) |
+| 2.0.0 | 2026-10-12 | Data redefined as published Azure list prices plus labelled synthetic marketplace data; the collector reads published prices only | Owner (Phase 1 grilling on 2026-10-11, PR #5) |
+| 2.1.0 | 2026-10-12 | §5–6 named the constitution, with precedence, versions and this amendment rule; "never fabricate" added | Owner (PR #6) |
 
 ## 6. Milestones and gates
 

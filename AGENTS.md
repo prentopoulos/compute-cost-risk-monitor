@@ -24,17 +24,30 @@ pricing, workload costs, budget exposure and the market brief.
 
 ## Non-negotiables
 
+Verbatim from PROJECT.md §5, the project's constitution, which governs. Only the owner amends
+it (PROJECT.md § Amending the constitution); a gate test fails if this copy drifts.
+
 - Secrets use the runtime secret mechanism (gitignored .env for local development); never
-  print, commit or put them in outputs.
-- ⛔ gates in PROJECT.md are operator-resolved. Surface and stop at the relevant gate; never
-  satisfy or waive one. Local work can proceed before deferred gates.
+  print, commit or include them in reports.
 - Never fabricate results or external-service output. Label mocked, local and live results
   accurately. Preserve failed runs.
-- Label data as published Azure list prices, never a marketplace, benchmark or what customers
-  pay; label synthetic data synthetic. Label exposure figures as scenario calculations, not
-  forecasts.
-- Deterministic code computes every price, cost and exposure figure. State cost exclusions.
-- Every PR that changes code gets a code review before merge (WORKFLOW.md).
+- Operator resolves all ⛔ gates. The agent never satisfies or waives one itself.
+- Call the data published Azure list prices: never a marketplace, market price, index,
+  benchmark, executed trades or what customers pay. Synthetic marketplace data is labelled
+  synthetic. Label every exposure figure as a scenario calculation, not a forecast.
+- Deterministic code computes every price, cost and exposure figure. An AI agent, if used,
+  only drafts prose from validated numbers, and every number it writes must match a computed
+  one.
+- Compare offers only within a comparable group (GPU variant, GPU count, region, rental type),
+  or say plainly that a comparison crosses groups. State cost exclusions with every workload
+  figure.
+- The collector only reads published prices. Never call endpoints that create or change
+  resources or spend account credit.
+- Use a data source only within its terms of use and rate limits. Missing observations stay
+  missing; never fill them in to make a chart look complete.
+
+Surface and stop at the relevant ⛔ gate; local work can proceed before deferred gates.
+Every PR that changes code gets a code review before merge (WORKFLOW.md).
 
 ## Development
 

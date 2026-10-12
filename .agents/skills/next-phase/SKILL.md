@@ -25,6 +25,9 @@ Choose review/setup, authorized implementation, new phase, or verified closure:
 State the selected change, branch, mode and next tasks briefly. Ask only when different
 plausible scopes would materially change the work.
 
+A new phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). If this session
+already closed a phase, recommend clearing the context first; go on only if the owner asks.
+
 ## 2. Apply relevant skills and prerequisites
 
 Use [compute-cost-risk-monitor-build-safety](../compute-cost-risk-monitor-build-safety/SKILL.md) for architecture/dependencies,
@@ -41,7 +44,9 @@ source. A skill recommendation does not justify adding its framework to the appl
 
 Distinguish technical checks, product decisions, and action authorization. Technical passes
 can be established from evidence; missing evidence stays missing. Reuse accepted decisions
-and existing implementation authorization. All PROJECT.md `⛔` gates remain operator-resolved:
+and existing implementation authorization. PROJECT.md §5–6 are the constitution and override
+the other project documents; only the owner amends them, in a separate commit
+(PROJECT.md § Amending the constitution). All PROJECT.md `⛔` gates remain operator-resolved:
 surface the relevant gate and stop its dependent action; never satisfy or waive it. Unresolved
 external access or budget gates do not block local development.
 Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
@@ -50,7 +55,7 @@ merges only after its review and the user's go-ahead.
 
 Before proposing a new phase or capability, grill on the phase's design tree with
 [grilling](../grilling/SKILL.md): goal and non-goals, acceptance evidence, PROJECT.md `TBD` items
-it depends on, affected `⛔` gates, and open feasibility. Resuming an authorized phase skips
+it depends on, the §5 rules and `⛔` gates it touches or would amend, and open feasibility. Resuming an authorized phase skips
 grilling unless a new material decision appears. Each round:
 
 1. Map the tree from the project documents and checkpoint, and fix the round's frontier
@@ -120,7 +125,9 @@ For a full phase, verify all tasks/requirements and required checks. Archive on 
 using OpenSpec, synchronize main specs, validate again, and commit archive plus phase Done
 as `chore:`. Push, mark the PR ready, and merge it with a merge commit only after the gate is
 green, the code review is resolved and the user gives the go-ahead. Preserve unfinished
-work and unrelated files. Delete a branch, locally and on GitHub, only after verifying it is merged.
+work and unrelated files. Delete a branch, locally and on GitHub, only after verifying it is
+merged. That is the clean checkpoint: stop, and tell the owner to clear the context and run
+`/next-phase` for the next phase (WORKFLOW.md § Fresh session per phase).
 
 For a partial milestone, record its completion and remaining tasks; do not archive or mark
 the whole phase Done. Local verification is not hosted CI, cloud execution or deployment.
@@ -128,4 +135,6 @@ the whole phase Done. Local verification is not hosted CI, cloud execution or de
 Keep personal schedules and correspondence in ignored `.local/` notes.
 
 Update HANDOFF with current branch/change, selected scope, implemented behavior, checks,
-limitations and the exact next task. Keep the roadmap in PROJECT, task ownership in OpenSpec.
+limitations and the exact next task, worded to stay true after the merge. Nothing the next
+session needs may live only in the conversation. Keep the roadmap in PROJECT, task ownership
+in OpenSpec.
