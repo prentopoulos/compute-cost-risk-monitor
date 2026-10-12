@@ -41,6 +41,6 @@
 
 - [x] 5.1 Run `normalize` on the local `data/monitor.duckdb`. Record counts by reason, mapped coverage and check results, without prices, and confirm the counts against an independent query
 - [x] 5.2 Update the FigJam container view (normalization built, synthetic database) and re-export `docs/architecture/c4-container.svg`
-- [ ] 5.3 Run the market-review read-through of the normalized live rows and groups (units, keys, exclusions, labels, thin and single-price flags) and the build-safety check, and record them in `docs/reviews/`
+- [x] 5.3 Run the market-review read-through of the normalized live rows and groups (units, keys, exclusions, labels, thin and single-price flags) and the build-safety check, and record them in `docs/reviews/`
 - [ ] 5.4 Run the gate green and `uv audit`, then record the output
 - [ ] 5.5 Update HANDOFF.md with the checkpoint, the corrected counts, evidence, limitations and the next task
