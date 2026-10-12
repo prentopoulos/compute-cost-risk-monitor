@@ -1,9 +1,9 @@
 ## 1. GPU size map and frozen rules
 
-- [ ] 1.1 Build `reference/gpu_sku_map_v1.csv` and `reference/README.md` from Microsoft Learn size pages, under the strict exact-name rule (D9). Every row needs its URL and retrieval date, labels follow D3, and the CC BY 4.0 credit is included. Re-check retirement dates and URLs on Learn
-- [ ] 1.2 Write `gpu_map.py`: load and validate the CSV (columns, duplicates, Learn URLs, counts and memory, fractions, label form), and insert-or-refuse into `gpu_sku_map`. Test valid, fractional and invalid maps
-- [ ] 1.3 Write `rules.py` with the `groups-v1` constant (design § Rule set) and insert-or-refuse into `rule_set`. Test first store, equal re-store and changed-parameter refusal
-- [ ] 1.4 Commit the map and rules before any live normalize (D2, D15)
+- [x] 1.1 Build `reference/gpu_sku_map_v1.csv` and `reference/README.md` from Microsoft Learn size pages, under the strict exact-name rule (D9). Every row needs its URL and retrieval date, labels follow D3, and the CC BY 4.0 credit is included. Re-check retirement dates and URLs on Learn
+- [x] 1.2 Write `gpu_map.py`: load and validate the CSV (columns, duplicates, Learn URLs, counts and memory, fractions, label form), and insert-or-refuse into `gpu_sku_map`. Test valid, fractional and invalid maps
+- [x] 1.3 Write `rules.py` with the `groups-v1` constant (design § Rule set) and insert-or-refuse into `rule_set`. Test first store, equal re-store and changed-parameter refusal
+- [x] 1.4 Commit the map and rules before any live normalize (D2, D15)
 
 ## 2. Normalization and independent checks
 

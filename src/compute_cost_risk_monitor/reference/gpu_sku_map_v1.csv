@@ -1,0 +1,56 @@
+# gpu-map-v1: Azure GPU VM sizes mapped to their GPUs, built only from Microsoft Learn VM size pages.
+# Contains material from Microsoft Learn, licensed CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+# A size is listed only when its exact ARM name appears on the cited page (phase-3-normalization D9).
+# gpu_vram_gb is memory per whole GPU; gpu_count is GPUs per VM, as a fraction for partial-GPU sizes.
+arm_sku_name,gpu_model,gpu_form_factor,gpu_vram_gb,gpu_count,source_url,notes
+Standard_NC36ds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1/4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC72ds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC144ds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC288ds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC24lds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1/4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC36lds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1/4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC72lds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC144lds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC288lds_xl_RTXPRO6000BSE_v6,RTX PRO 6000 BSE 96GB,,96,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nc-rtxpro6000-bse-v6-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC6s_v3,V100 16GB,,16,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncv3-series,Learn updated 2026-07-28; retrieved 2026-10-12; series retired 2025-09-30
+Standard_NC12s_v3,V100 16GB,,16,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncv3-series,Learn updated 2026-07-28; retrieved 2026-10-12; series retired 2025-09-30
+Standard_NC24s_v3,V100 16GB,,16,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncv3-series,Learn updated 2026-07-28; retrieved 2026-10-12; series retired 2025-09-30
+Standard_NC24rs_v3,V100 16GB,,16,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncv3-series,Learn updated 2026-07-28; retrieved 2026-10-12; series retired 2025-09-30
+Standard_NC4as_T4_v3,T4 16GB,,16,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncast4v3-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC8as_T4_v3,T4 16GB,,16,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncast4v3-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC16as_T4_v3,T4 16GB,,16,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncast4v3-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC64as_T4_v3,T4 16GB,,16,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncast4v3-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NC24ads_A100_v4,A100 PCIe 80GB,PCIe,80,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nca100v4-series,Learn updated 2026-09-25; retrieved 2026-10-12
+Standard_NC48ads_A100_v4,A100 PCIe 80GB,PCIe,80,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nca100v4-series,Learn updated 2026-09-25; retrieved 2026-10-12
+Standard_NC96ads_A100_v4,A100 PCIe 80GB,PCIe,80,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nca100v4-series,Learn updated 2026-09-25; retrieved 2026-10-12
+Standard_NC40ads_H100_v5,H100 NVL 94GB,NVL,94,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncadsh100v5-series,Learn updated 2026-07-28; retrieved 2026-10-12; the description names H100 NVL (the host table says PCIe)
+Standard_NC80adis_H100_v5,H100 NVL 94GB,NVL,94,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ncadsh100v5-series,Learn updated 2026-07-28; retrieved 2026-10-12; the description names H100 NVL (the host table says PCIe)
+Standard_NCC40ads_H100_v5,H100 NVL 94GB confidential,NVL,94,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nccadsh100v5-series,Learn updated 2026-07-28; retrieved 2026-10-12; confidential VM with a GPU trusted execution environment (D3)
+Standard_ND128isr_NDR_GB200_v6,GB200 Blackwell 192GB,,192,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nd-gb200-v6-series,Learn updated 2026-10-07; retrieved 2026-10-12; four Blackwell GPUs per VM so the count is Blackwell GPUs and not GB200 superchips
+Standard_ND40rs_v2,V100 NVLink 32GB,NVLink,32,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndv2-series,Learn updated 2026-07-28; retrieved 2026-10-12; count from the description (8 NVLINK-connected GPUs); the size table leaves it blank
+Standard_ND96asr_v4,A100 NVLink 40GB,NVLink,40,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndasra100v4-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_ND96amsr_A100_v4,A100 NVLink 80GB,NVLink,80,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndma100v4-series,Learn updated 2026-07-28; retrieved 2026-10-12; memory per GPU from the description; the size table gives 80 for the VM
+Standard_ND96isr_H100_v5,H100 NVLink 80GB,NVLink,80,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndh100v5-series,Learn updated 2026-09-27; retrieved 2026-10-12
+Standard_ND96isr_H200_v5,H200 NVLink 141GB,NVLink,141,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nd-h200-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_ND96isr_MI300X_v5,MI300X 192GB,,192,8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ndmi300xv5-series,Learn updated 2026-07-28; retrieved 2026-10-12; memory per GPU from the host table; the size table gives 1535 for the VM
+Standard_NG8ads_V620_v1,V620 32GB,,32,1/4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ngadsv620-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NG16ads_V620_v1,V620 32GB,,32,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ngadsv620-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NG32ads_V620_v1,V620 32GB,,32,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/ngadsv620-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV6ads_A10_v5,A10 24GB,,24,1/6,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV12ads_A10_v5,A10 24GB,,24,1/3,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV18ads_A10_v5,A10 24GB,,24,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV36ads_A10_v5,A10 24GB,,24,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV36adms_A10_v5,A10 24GB,,24,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV72ads_A10_v5,A10 24GB,,24,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsa10v5-series,Learn updated 2026-08-20; retrieved 2026-10-12
+Standard_NV4ads_V710_v5,V710 24GB,,24,1/6,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsv710-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV8ads_V710_v5,V710 24GB,,24,1/3,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsv710-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV12ads_V710_v5,V710 24GB,,24,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsv710-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV24ads_V710_v5,V710 24GB,,24,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsv710-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV28adms_V710_v5,V710 24GB,,24,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvadsv710-v5-series,Learn updated 2026-07-28; retrieved 2026-10-12
+Standard_NV12s_v3,M60 8GB,,8,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv3-series,Learn updated 2026-10-02; retrieved 2026-10-12; series retired 2026-09-30; Learn counts one M60 GPU die as a GPU
+Standard_NV24s_v3,M60 8GB,,8,2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv3-series,Learn updated 2026-10-02; retrieved 2026-10-12; series retired 2026-09-30; Learn counts one M60 GPU die as a GPU
+Standard_NV48s_v3,M60 8GB,,8,4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv3-series,Learn updated 2026-10-02; retrieved 2026-10-12; series retired 2026-09-30; Learn counts one M60 GPU die as a GPU
+Standard_NV4as_v4,MI25 16GB,,16,1/8,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv4-series,Learn updated 2026-09-30; retrieved 2026-10-12; series retired 2026-09-30
+Standard_NV8as_v4,MI25 16GB,,16,1/4,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv4-series,Learn updated 2026-09-30; retrieved 2026-10-12; series retired 2026-09-30
+Standard_NV16as_v4,MI25 16GB,,16,1/2,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv4-series,Learn updated 2026-09-30; retrieved 2026-10-12; series retired 2026-09-30
+Standard_NV32as_v4,MI25 16GB,,16,1,https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/gpu-accelerated/nvv4-series,Learn updated 2026-09-30; retrieved 2026-10-12; series retired 2026-09-30
