@@ -85,9 +85,9 @@ Use the OpenSpec apply workflow. Select task IDs and completion criteria before 
 behavior. Keep deterministic domain logic and validation separate from external adapters,
 persistence and presentation. Use synthetic fixtures. Tests need no credentials or network
 unless the task is an authorized live integration whose gate is resolved.
-Only the source adapter (Vast.ai first) touches the network: it saves each original response
+Only the source adapter (Azure Retail Prices API) touches the network: it saves each original response
 before parsing, and normalization, cost and exposure code read stored observations only.
-Never add a call that rents, creates or changes instances.
+Never add a call that creates or changes cloud resources.
 
 Update the phase to In progress with its first implementation commit. Use Conventional
 Commits per task or coherent task group. Mark tasks complete only after their required

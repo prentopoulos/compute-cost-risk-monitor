@@ -4,18 +4,25 @@ Owner: Peter Rentopoulos. Created: 2026-10-11.
 
 ## 1. Goal
 
-A tool that answers: **which comparable GPU rental offers are available, what would my
+A tool that answers: **which comparable GPU cloud options are listed, what would my
 workload cost, and how exposed is my budget to changing prices?** It works today from
-observed marketplace offers, without depending on compute futures launching.
+observed published prices, without depending on compute futures launching.
 
 - Users: a GPU buyer sizing a workload (the product persona). Audience for the demo:
   contacts and recruiters on trading-data, compute-market and AI-product teams. For sales
   recruiters, lead with the commercial decision it supports.
 - What it demonstrates: market curiosity, quantitative reasoning, product delivery and
   research discipline. The methodology (comparability, units, data quality) is the centrepiece.
-- What it is NOT: a market-wide benchmark or index, executed-trade prices, or a price
-  forecast. The dataset is **observed marketplace asking prices**. Budget exposure is a
-  calculation under labelled scenarios, not a prediction. Not a production service.
+- What it is NOT: a marketplace, a market-wide benchmark or index, executed-trade prices,
+  what customers actually pay, or a price forecast. The dataset is **published retail list
+  prices for GPU virtual machines from one cloud provider, Microsoft Azure**, observed
+  through its public Retail Prices API. Budget exposure is a calculation under labelled
+  scenarios, not a prediction. Not a production service.
+- Source decision (owner, 2026-10-11, Phase 1 grilling): every GPU marketplace whose terms
+  were checked (Vast.ai, SF Compute, RunPod, Lambda, TensorDock, Shadeform, Prime Intellect,
+  io.net, Akash) forbids automated collection into a database without a written agreement,
+  and the owner chose not to seek one. Labelled synthetic marketplace-style offers exercise
+  the marketplace-only rules (duplicates, re-listing, thin samples).
 - Budget: seven focused sessions, roughly 20–25 hours, built alongside exams by replacing
   some study blocks rather than adding a full workload.
 
@@ -23,10 +30,12 @@ observed marketplace offers, without depending on compute futures launching.
 
 In scope (one phase per session, see §6):
 
-- Live offer collection from one marketplace, Vast.ai: timestamped offers, original
-  responses retained.
-- Comparable pricing: separate GPU variants, GPU counts, regions and rental types; compute
-  USD/GPU-hour.
+- Live price collection from the Azure Retail Prices API (public, no account): timestamped
+  price rows, original responses retained.
+- Comparable pricing: separate GPU variants, GPU counts, regions and rental types
+  (pay-as-you-go and Spot, Linux); compute USD/GPU-hour.
+- Synthetic marketplace-style offers, labelled synthetic: they exercise marketplace-only rules
+  and are the public demo's dataset unless the publishing gate approves live Azure figures.
 - Workload calculator: GPU count, hours and storage in; cost out, with disclosed exclusions.
 - Budget exposure: cost changes under explicitly labelled price scenarios. Example:
   32 GPUs × 720 hours × a $0.50/hour increase = $11,520 additional monthly expense.
@@ -35,28 +44,31 @@ In scope (one phase per session, see §6):
 
 Deferred or out of scope:
 
-- A second source, added only after its access and comparable fields are verified (⛔ below).
+- A second source, added only after its access, terms and comparable fields are verified
+  (⛔ below). Cross-provider comparisons are out of scope.
 - Trend claims, made only after several weeks of collection.
 - The optional AI agent, which may only draft the market brief from validated numbers (⛔ spend).
   Before proposing it, install the setup kit's AI-ops skill and AI_OPS.md (deferred 2026-10-11).
 - Renting, creating or modifying instances, or any account action beyond reading offers.
 - Accounts, logins or multiple users. Hosting before Phase 7 (⛔ publishing).
 
-Data: real public offer data from Vast.ai once its ⛔ gate is resolved. Tests use synthetic
-or recorded fixtures, labelled as such. Runs single-user and local until the Phase 7 demo.
+Data: real public Azure list prices once the live-data ⛔ gate is resolved. Tests use
+synthetic fixtures, labelled as such; no real source data is committed to Git. Runs
+single-user and local until the Phase 7 demo.
 
 ## 3. Acceptance and evidence
 
 Per-phase acceptance criteria: Phase 1 writes them into OpenSpec; next-phase grills the
 user before each later phase. Evidence that counts in every phase:
 
-- Every price traces to its source record: offer ID, retrieval time (UTC), original
+- Every price traces to its source record: source item ID, retrieval time (UTC), original
   response, currency, unit and rental type. Normalized figures record how they were derived.
 - Units, normalization, cost and exposure maths pass pytest on fixtures with known answers,
   including missing data and stale offers.
 - Prices, costs, exposure figures and the brief pass the compute-cost-risk-monitor-market-review
   checks before they are shown or reported.
-- Synthetic, recorded, stale and live data are labelled; a mocked fetch is not a live result.
+- Every collection run is labelled synthetic, recorded or live; stale is a computed age flag
+  (latest snapshot older than 7 days), not a label. A mocked fetch is not a live result.
 - Trends need several weeks of observations; until then the app says the sample is thin.
 
 ## 4. Stack and commands
@@ -68,9 +80,11 @@ user before each later phase. Evidence that counts in every phase:
   commitizen for commit messages; OpenSpec CLI 1.6.0 pinned through npm; hosted CI on GitHub
   Actions (owner). Package `compute_cost_risk_monitor` (owner). Run Python only through uv:
   bare `python` differs by shell on the owner's PC.
-- Data source: [Vast.ai API](https://vast.ai/developers/api) offer search (by GPU, price,
-  location and other specifications). Not used yet; whether it needs an API key is checked in
-  Phase 2 under its ⛔ gate.
+- Data source: [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
+  (unauthenticated; the docs invite "your own tools for internal analysis and price comparison
+  across SKUs and regions"). Not used yet; the first live read waits for its ⛔ gate. Vast.ai
+  was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
+  use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
   adjusts for configuration and rental-condition differences. This project shows those
   problems are understood; it does not claim to be an index.
@@ -92,15 +106,16 @@ merges only after its review and the user's go-ahead. Follow WORKFLOW.md for pha
   print, commit or include them in reports.
 - Label mocked, local and live results accurately. Preserve failed runs.
 - Operator resolves all ⛔ gates. The agent never satisfies or waives one itself.
-- Call the data observed marketplace asking prices, never executed trades or a market-wide
-  benchmark. Label every exposure figure as a scenario calculation, not a forecast.
+- Call the data published Azure list prices: never a marketplace, market price, index,
+  benchmark, executed trades or what customers pay. Synthetic marketplace data is labelled
+  synthetic. Label every exposure figure as a scenario calculation, not a forecast.
 - Deterministic code computes every price, cost and exposure figure. An AI agent, if used,
   only drafts prose from validated numbers, and every number it writes must match a computed one.
 - Compare offers only within a comparable group (GPU variant, GPU count, region, rental
   type), or say plainly that a comparison crosses groups. State cost exclusions with every
   workload figure.
-- The collector only reads offers. Never call endpoints that rent, create or change
-  instances or spend account credit.
+- The collector only reads published prices. Never call endpoints that create or change
+  resources or spend account credit.
 - Use a data source only within its terms of use and rate limits. Missing observations stay
   missing; never fill them in to make a chart look complete.
 
@@ -113,17 +128,21 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 |---|---|---|
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Planned |
-| 2 | Working Vast.ai collector keeping original responses; observations start accumulating | Planned |
-| 3 | Normalization to USD/GPU-hour, comparable-offer grouping, duplicate handling, quality checks | Planned |
-| 4 | Streamlit dashboard with comparable-offer filters and the data-quality panel | Planned |
+| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Planned |
+| 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Planned |
+| 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
 | 6 | Tests for units, calculations, missing data and stale offers | Planned |
 | 7 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
-### ⛔ Before reading live data from Vast.ai or any other source
+### ⛔ Before reading live data from any source
 
 - [ ] Operator confirms the source's terms of use and rate limits allow the planned
       collection, and puts any API key in .env.
+- Finding, 2026-10-11 (Phase 1 grilling): Vast.ai's terms forbid the planned collection
+  without a written agreement; the owner chose not to seek one and switched the source to
+  the Azure Retail Prices API. That API needs no key; the operator still confirms its terms
+  and the pacing (at most 1 request per second, back off on 429) before the first live read.
 - [ ] Before a second source: operator confirms access works and its fields are comparable.
 
 ### ⛔ Before scheduling unattended collection
@@ -134,7 +153,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 ### ⛔ Before spending money or paid quota
 
 - [ ] Operator approves the service (paid API plan, LLM calls for the brief, hosting) and a
-      budget. This project never spends Vast.ai account credit.
+      budget. This project never spends cloud or marketplace account credit.
 - Decision, 2026-10-11 (owner, Phase 0 grilling): GitHub Actions CI may use the account's free
   included minutes; the owner confirmed overage cannot bill. Scope: the Phase 0 CI workflow
   and its later updates. It approves no paid service.

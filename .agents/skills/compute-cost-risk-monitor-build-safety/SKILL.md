@@ -22,11 +22,11 @@ and only workflows relevant to the current boundary. Source examples are not pro
 - Source frameworks, cloud defaults, inventory examples, sample budgets and evaluation counts
   are illustrative. Use this project's actual stack, lockfile and gate.
 - Current target: a single-owner local prototype (Python, pandas, DuckDB, Streamlit) built in
-  seven sessions as a portfolio demo; Phase 7 adds a public demo. Live Vast.ai reads,
+  seven sessions as a portfolio demo; Phase 7 adds a public demo. Live Azure Retail Prices reads,
   scheduled collection, paid calls, a second source, the optional AI brief drafter and
   hosting are absent/deferred until their PROJECT gates, not silently implemented. No
   accounts, multiple users, sensitive personal data or instance-changing actions.
-- Terms: "tools" are typed source adapters (Vast.ai offer search first). "Evaluation" is
+- Terms: "tools" are typed source adapters (Azure Retail Prices API first). "Evaluation" is
   deterministic pytest checks of units, comparability, cost and exposure maths on fixtures,
   plus the data-quality panel on collected data; LLM-judged cases apply only to the optional
   brief. "Model versions" are schema, comparability-rule, dependency and (if added)
@@ -45,7 +45,7 @@ and only workflows relevant to the current boundary. Source examples are not pro
 |---|---|
 | Architecture, data schema and phase scope | validate_architecture_spec.md, Architecturebuild.md |
 | Python dependencies, lockfile and repo layout | resolve_stack_dependencies.md, scaffold_repo_tree.md |
-| Source adapters (Vast.ai offer search; second source deferred until its access and fields are verified) | select_adk_tools.md, generate_tool_schema.md |
+| Source adapters (Azure Retail Prices API; second source deferred until its access, terms and fields are verified) | select_adk_tools.md, generate_tool_schema.md |
 | API keys, raw responses, dashboard inputs or new exposure | assess_threat_vectors.md, design_pii_redaction.md; map_rbac_policies.md when access roles exist (deferred until accounts exist) |
 | Collection runs, raw-response retention and rule versions | configure_telemetry_schema.md, generate_asset_metadata.md |
 | API rate limits, paid calls or hosting cost | apply_finops_governance.md |

@@ -1,8 +1,8 @@
 # Compute Cost & Risk Monitor
 
-Answers which comparable GPU rental offers are available, what a workload would cost, and how
-exposed a compute budget is to changing prices, using observed marketplace asking prices
-(starting with Vast.ai).
+Answers which comparable GPU cloud options are listed, what a workload would cost, and how
+exposed a compute budget is to changing prices, using published Azure list prices from the
+public Azure Retail Prices API, plus labelled synthetic marketplace-style data.
 
 Read PROJECT.md for scope, acceptance criteria and gates.
 Follow WORKFLOW.md and .agents/skills/next-phase/SKILL.md for phase/checkpoint work.
@@ -15,8 +15,9 @@ pricing, workload costs, budget exposure and the market brief.
 
 - Seven phases after Phase 0 (PROJECT.md §6): schema, collector, normalization and quality
   checks, Streamlit dashboard, workload costs and exposure scenarios, tests, public demo.
-- One marketplace (Vast.ai) until a second source's access and comparable fields are verified.
-- Data is observed asking prices, read-only. Never rent or change instances.
+- One source (Azure Retail Prices API) until a second source's access, terms and comparable
+  fields are verified. No GPU marketplace qualifies (terms checked 2026-10-11).
+- Data is published list prices, read-only. Never create or change cloud resources.
 - Tests use synthetic or recorded fixtures. Live reads, scheduled collection, paid calls and
   publishing wait for their ⛔ gates.
 - An AI agent is optional and only drafts the market brief from validated numbers.
@@ -29,8 +30,9 @@ pricing, workload costs, budget exposure and the market brief.
   satisfy or waive one. Local work can proceed before deferred gates.
 - Never fabricate results or external-service output. Label mocked, local and live results
   accurately. Preserve failed runs.
-- Label data as observed marketplace asking prices, not executed trades or a benchmark. Label
-  exposure figures as scenario calculations, not forecasts.
+- Label data as published Azure list prices, never a marketplace, benchmark or what customers
+  pay; label synthetic data synthetic. Label exposure figures as scenario calculations, not
+  forecasts.
 - Deterministic code computes every price, cost and exposure figure. State cost exclusions.
 - Every PR that changes code gets a code review before merge (WORKFLOW.md).
 

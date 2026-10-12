@@ -12,9 +12,10 @@ recording or paid-call behavior also change.
 ## Define the question before running
 
 The project makes three comparisons, and each is evidence of one thing only:
-- Offer versus offer inside a comparable group (same GPU variant, GPU count, region and
-  rental type): relative asking price on that marketplace at that time. Not a market price.
-- A group now versus earlier: a change in observed asking prices over the stated window.
+- Price versus price inside a comparable group (same GPU variant, GPU count, region and
+  rental type): relative published Azure list price at that time, or relative asking price in
+  labelled synthetic marketplace data. Not a market price or what customers pay.
+- A group now versus earlier: a change in observed published prices over the stated window.
   Not a trend until several weeks of data exist, and never a forecast.
 - Workload cost at observed prices versus a labelled scenario: budget exposure, i.e.
   GPUs × hours × price change. A calculation, not a prediction.
