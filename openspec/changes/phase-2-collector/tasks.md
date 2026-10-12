@@ -16,9 +16,9 @@
 
 ## 3. Azure row rules (pure)
 
-- [ ] 3.1 Write `azure_retail.py`: the fixed first-page URL, and the next-link check (host, scheme, port, path, missing parameters)
-- [ ] 3.2 Add item classification (scope, rejection reasons, rental type, flags), the item key and the price unit
-- [ ] 3.3 Add labelled synthetic item fixtures and known-answer tests for normal, edge and deliberately failing items:
+- [x] 3.1 Write `azure_retail.py`: the fixed first-page URL, and the next-link check (host, scheme, port, path, missing parameters)
+- [x] 3.2 Add item classification (scope, rejection reasons, rental type, flags), the item key and the price unit
+- [x] 3.3 Add labelled synthetic item fixtures and known-answer tests for normal, edge and deliberately failing items:
   - Spot on DevTest, disagreeing names, Low Priority and unknown types;
   - reservations with and without a term;
   - zero and NaN prices, non-USD, non-primary, missing fields and wrong types;

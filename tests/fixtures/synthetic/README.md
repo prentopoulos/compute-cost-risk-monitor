@@ -7,5 +7,7 @@ committed to this repository (Phase 1 design D4).
 - `azure_retail_page.json`: shaped like one page of the Azure Retail Prices API response
   (`Items`, `NextPageLink`, `Count`). It follows the field names in Microsoft's documentation.
   IDs are zero-filled placeholders and prices are round invented numbers.
+- `azure_items.json`: one invented Azure-shaped item plus labelled cases (normal, edge,
+  deliberately failing), each with its known answer for the collector's row rules.
 - `marketplace_offers.json`: marketplace-style offers for the hybrid plan's marketplace-only
   rules (duplicates, re-listing by machine, thin samples). The provider is fictional.
