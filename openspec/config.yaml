@@ -1,15 +1,15 @@
 schema: spec-driven
 
 context: |
-  Compute Cost & Risk Monitor: answers which comparable GPU rental offers are available, what a workload would cost, and how exposed a compute budget is to changing prices, using observed marketplace asking prices (starting with Vast.ai).
+  Compute Cost & Risk Monitor: answers which comparable GPU cloud options are listed, what a workload would cost, and how exposed a compute budget is to changing prices, using published Azure list prices (Azure Retail Prices API) plus labelled synthetic marketplace-style data.
   Read PROJECT.md for current scope and WORKFLOW.md for the phase workflow.
   Stack: Python 3.13, pandas, DuckDB, Streamlit, pytest; uv with uv.lock; Ruff, strict mypy. Gate: uv run --frozen python scripts/gate.py.
-  Phases 1-7 follow PROJECT.md section 6: schema and acceptance, Vast.ai collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, public demo.
-  Data is observed marketplace asking prices, never executed trades or a market-wide benchmark. Exposure figures are labelled scenario calculations, not forecasts.
+  Phases 1-7 follow PROJECT.md section 6: schema and acceptance, Azure Retail Prices collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, public demo.
+  Data is published Azure list prices, never a marketplace, market price, benchmark or what customers pay; synthetic data is labelled synthetic. Exposure figures are labelled scenario calculations, not forecasts.
   Compare offers only within a comparable group (GPU variant, GPU count, region, rental type); normalize to USD/GPU-hour and state cost exclusions.
   Keep original API responses with retrieval time. Missing data stays missing. Flag duplicates, stale offers and thin samples.
   Deterministic code computes all prices, costs and exposure. An optional AI agent may only draft the market brief from validated numbers.
-  The collector only reads offers; never rent, create or change instances.
+  The collector only reads published prices; never create or change cloud resources.
   Tests use synthetic or recorded fixtures with no network or credentials.
   Gated in PROJECT.md: live source reads, scheduled collection, paid calls, publishing or making the repo public.
   Remote: private GitHub repo prentopoulos/compute-cost-risk-monitor. One branch and PR per phase; code PRs are reviewed before merge.

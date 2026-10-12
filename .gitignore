@@ -24,3 +24,6 @@ build/
 
 # Node tooling for the OpenSpec CLI
 node_modules/
+
+# Collected data: local DuckDB file and retained raw responses (never committed)
+data/
