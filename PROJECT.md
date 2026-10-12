@@ -67,22 +67,29 @@ user before each later phase. Evidence that counts in every phase:
   including missing data and stale offers.
 - Prices, costs, exposure figures and the brief pass the compute-cost-risk-monitor-market-review
   checks before they are shown or reported.
-- Every collection run is labelled synthetic, recorded or live; stale is a computed age flag
-  (latest snapshot older than 7 days), not a label. A mocked fetch is not a live result.
+- Every collection run is labelled by how its bytes were obtained:
+  - synthetic: invented data;
+  - recorded: a new run built from responses kept from an earlier fetch;
+  - live: fetched from the source by that run.
+
+  Stale is a computed age flag (latest snapshot older than 7 days), not a label. A snapshot is
+  one succeeded run. A mocked fetch is not a live result.
 - Trends need several weeks of observations; until then the app says the sample is thin.
 
 ## 4. Stack and commands
 
 - Python, pandas, DuckDB, Streamlit, pytest (decided). Phase 0 grilling, 2026-10-11 (all
   owner calls answered by the owner; settled answers cited in
-  `openspec/changes/phase-0-toolchain/design.md` D1–D23): Python 3.13 managed by uv with a
+  `openspec/changes/archive/2026-10-12-phase-0-toolchain/design.md` D1–D23): Python 3.13 managed by uv with a
   committed `uv.lock`; Ruff for format and lint; mypy strict; pytest with pytest-cov;
   commitizen for commit messages; OpenSpec CLI 1.6.0 pinned through npm; hosted CI on GitHub
   Actions (owner). Package `compute_cost_risk_monitor` (owner). Run Python only through uv:
   bare `python` differs by shell on the owner's PC.
 - Data source: [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
   (unauthenticated; the docs invite "your own tools for internal analysis and price comparison
-  across SKUs and regions"). Not used yet; the first live read waits for its ⛔ gate. Vast.ai
+  across SKUs and regions"). The live-data gate is resolved for this API (§6, 2026-10-12), and
+  the Phase 2 collector reads it. Phase 2 grilling decisions are cited in
+  `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -155,7 +162,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 |---|---|---|
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Done |
-| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Planned |
+| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Done |
 | 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Planned |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
@@ -170,6 +177,18 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
   without a written agreement; the owner chose not to seek one and switched the source to
   the Azure Retail Prices API. That API needs no key; the operator still confirms its terms
   and the pacing (at most 1 request per second, back off on 429) before the first live read.
+- Decision, 2026-10-12 (owner, Phase 2 grilling): the operator accepts that the Azure Retail
+  Prices API may be read for this project, on the reading that portfolio use counts as internal
+  analysis and as personal, non-commercial use. Microsoft's API page invites "your own tools for
+  internal analysis and price comparison across SKUs and regions". No page says which terms
+  govern this unauthenticated API. Scope:
+  - unauthenticated GET of `https://prices.azure.com/api/retail/prices` only, with the Phase 2
+    GPU filter;
+  - runs the owner starts by hand, at most one a day;
+  - at most 1 request per second, backing off on 429 and honouring Retry-After;
+  - local storage and analysis only, with no redistribution.
+
+  It approves no other source, no scheduled runs and no publishing.
 - [ ] Before a second source: operator confirms access works and its fields are comparable.
 
 ### ⛔ Before scheduling unattended collection

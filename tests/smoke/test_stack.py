@@ -66,6 +66,9 @@ def _trivial_app() -> None:
     st.write("smoke")
 
 
+# asyncio on Windows builds its self-pipe from a loopback TCP socket pair, so this
+# test may connect to 127.0.0.1 and nowhere else.
+@pytest.mark.allow_hosts(["127.0.0.1"])
 def test_streamlit_script_runs_headlessly() -> None:
     at = AppTest.from_function(_trivial_app).run(timeout=30)
 

@@ -1,4 +1,4 @@
-"""Schema version 1 enforces the evidence rules at the storage boundary.
+"""Schema versions 1 and 2 enforce the evidence rules at the storage boundary.
 
 All rows are synthetic. The small loaders below are test scaffolding, not the Phase 2
 parser.
@@ -30,7 +30,11 @@ TABLES = {
     "gpu_sku_map",
     "rule_set",
     "normalized_price",
+    "collection_run_summary",
+    "collection_run_tally",
+    "observation_repeat",
 }
+VERSIONS = [(1,), (2,)]
 
 
 @pytest.fixture
@@ -131,12 +135,31 @@ def test_create_schema_builds_every_table(con: duckdb.DuckDBPyConnection) -> Non
         for row in con.execute("SELECT table_name FROM duckdb_tables()").fetchall()
     }
     assert tables == TABLES
-    assert con.execute("SELECT version FROM schema_version").fetchall() == [(1,)]
+    query = "SELECT version FROM schema_version ORDER BY version"
+    assert con.execute(query).fetchall() == VERSIONS
 
 
 def test_create_schema_rerun_is_a_no_op(con: duckdb.DuckDBPyConnection) -> None:
     assert db.create_schema(con) == []
-    assert con.execute("SELECT count(*) FROM schema_version").fetchone() == (1,)
+    assert con.execute(
+        "SELECT version, count(*) FROM schema_version GROUP BY version ORDER BY version"
+    ).fetchall() == [(1, 1), (2, 1)]
+
+
+def test_upgrade_from_version_1_applies_only_version_2() -> None:
+    connection = db.connect()
+    version, description, sql = db.migrations()[0]
+    assert version == 1
+    connection.execute(sql)
+    connection.execute(
+        "INSERT INTO schema_version VALUES (?, ?, ?)", [version, T0, description]
+    )
+    add_run(connection)
+    assert db.create_schema(connection) == [2]
+    assert connection.execute("SELECT run_id FROM collection_run").fetchall() == [
+        ("run-1",)
+    ]
+    connection.close()
 
 
 def test_duplicate_schema_versions_rejected() -> None:
@@ -159,7 +182,7 @@ def test_temp_schema_version_table_does_not_count_as_applied() -> None:
 
 
 def test_applied_versions_reads_this_database(con: duckdb.DuckDBPyConnection) -> None:
-    assert db.applied_versions(con) == {1}
+    assert db.applied_versions(con) == {1, 2}
 
 
 def test_create_schema_refuses_an_open_transaction() -> None:
@@ -596,3 +619,157 @@ def test_synthetic_marketplace_offers_load(con: duckdb.DuckDBPyConnection) -> No
         "SELECT count(DISTINCT machine_id) FROM marketplace_offer"
     ).fetchone()
     assert machines == (3,)
+
+
+# --- version 2: insert-only run records ---
+
+
+def test_referenced_run_cannot_be_updated(ready: duckdb.DuckDBPyConnection) -> None:
+    # DuckDB 1.5.6 limit that makes run records write-once. If this starts passing,
+    # revisit design D9 of phase-2-collector.
+    with pytest.raises(duckdb.ConstraintException, match="foreign key"):
+        ready.execute("UPDATE collection_run SET status = 'partial'")
+
+
+def test_reservation_with_term_unit_accepted(ready: duckdb.DuckDBPyConnection) -> None:
+    add_observation(
+        ready,
+        rental_type="reservation",
+        region="westeurope",
+        price=25007.0,
+        price_unit="1 Year term",
+        gpu_model=None,
+        gpu_count=None,
+    )
+    ready.execute(
+        "INSERT INTO azure_retail_price (source, item_key, retrieved_at, meter_id,"
+        " sku_id, arm_region_name, price_type, retail_price, unit_of_measure,"
+        " reservation_term) VALUES ('azure-retail', 'item-1', ?, 'm', 's',"
+        " 'westeurope', 'Reservation', 25007.0, '1 Hour', '1 Year')",
+        [T0],
+    )
+    assert ready.execute(
+        "SELECT o.price_unit, a.unit_of_measure FROM price_observation o"
+        " JOIN azure_retail_price a USING (source, item_key, retrieved_at)"
+    ).fetchone() == ("1 Year term", "1 Hour")
+
+
+def summary(**overrides: Any) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "run_id": "run-1",
+        "source": "azure-retail",
+        "requests": 3,
+        "pages_parsed": 2,
+        "failed_requests": 1,
+        "throttled": 1,
+        "items_seen": 10,
+        "observations_stored": 7,
+        "repeats": 1,
+        "out_of_scope": 1,
+        "rejected": 1,
+        "stop_reason": "completed",
+    }
+    row.update(overrides)
+    return row
+
+
+def add_summary(con: duckdb.DuckDBPyConnection, **overrides: Any) -> None:
+    row = summary(**overrides)
+    columns = ", ".join(row)
+    marks = ", ".join("?" for _ in row)
+    # Column names come from the fixed dict above, never from input.
+    sql = f"INSERT INTO collection_run_summary ({columns}) VALUES ({marks})"  # noqa: S608
+    con.execute(sql, list(row.values()))
+
+
+def test_summary_accepted(ready: duckdb.DuckDBPyConnection) -> None:
+    add_summary(ready)
+    assert ready.execute("SELECT count(*) FROM collection_run_summary").fetchone() == (
+        1,
+    )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"observations_stored": 6},  # 6 + 1 + 1 + 1 != 10
+        {"requests": -1, "pages_parsed": -1, "failed_requests": 0, "throttled": 0},
+        {"pages_parsed": 3},  # 3 + 1 != 3 requests
+        {"throttled": 2},  # more 429s than failures
+        {"stop_reason": ""},
+        {"run_id": "no-such-run"},
+        {"source": "synthetic-marketplace"},
+    ],
+)
+def test_bad_summary_rejected(
+    ready: duckdb.DuckDBPyConnection, overrides: dict[str, Any]
+) -> None:
+    with pytest.raises(duckdb.ConstraintException):
+        add_summary(ready, **overrides)
+
+
+def add_tally(
+    con: duckdb.DuckDBPyConnection, kind: str, reason: str, occurrences: int
+) -> None:
+    con.execute(
+        "INSERT INTO collection_run_tally VALUES ('run-1', 'azure-retail', ?, ?, ?)",
+        [kind, reason, occurrences],
+    )
+
+
+def test_tallies_accepted_once_per_reason(ready: duckdb.DuckDBPyConnection) -> None:
+    add_tally(ready, "rejected", "non_positive_price", 2)
+    add_tally(ready, "flagged", "shared_meter_key", 1)
+    with pytest.raises(duckdb.ConstraintException):
+        add_tally(ready, "rejected", "non_positive_price", 1)
+
+
+@pytest.mark.parametrize(
+    ("kind", "reason", "occurrences"),
+    [("warning", "x", 1), ("rejected", "x", 0), ("rejected", "", 1)],
+)
+def test_bad_tally_rejected(
+    ready: duckdb.DuckDBPyConnection, kind: str, reason: str, occurrences: int
+) -> None:
+    with pytest.raises(duckdb.ConstraintException):
+        add_tally(ready, kind, reason, occurrences)
+
+
+def add_repeat(
+    con: duckdb.DuckDBPyConnection,
+    response_id: str = "resp-2",
+    item_key: str = "item-1",
+    first_retrieved_at: datetime = T0,
+) -> None:
+    con.execute(
+        "INSERT INTO observation_repeat"
+        " VALUES (?, 4, 'azure-retail', ?, ?, false, true)",
+        [response_id, item_key, first_retrieved_at],
+    )
+
+
+def test_repeat_recorded(ready: duckdb.DuckDBPyConnection) -> None:
+    add_observation(ready)
+    add_response(ready, response_id="resp-2", seq=1)
+    add_repeat(ready)
+    assert ready.execute(
+        "SELECT response_id, item_index, same_price, same_fields"
+        " FROM observation_repeat"
+    ).fetchone() == ("resp-2", 4, False, True)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"item_key": "no-such-item"},
+        {"first_retrieved_at": datetime(2026, 1, 1, tzinfo=UTC)},
+        {"response_id": "no-such-response"},
+    ],
+)
+def test_repeat_needs_its_response_and_observation(
+    ready: duckdb.DuckDBPyConnection, overrides: dict[str, Any]
+) -> None:
+    add_observation(ready)
+    add_response(ready, response_id="resp-2", seq=1)
+    with pytest.raises(duckdb.ConstraintException):
+        add_repeat(ready, **overrides)

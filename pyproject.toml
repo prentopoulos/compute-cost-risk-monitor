@@ -1,7 +1,7 @@
 [project]
 name = "compute-cost-risk-monitor"
 version = "0.1.0"
-description = "Comparable GPU rental offers, workload costs and budget exposure from observed marketplace asking prices."
+description = "Comparable GPU VM options, workload costs and budget exposure from published Azure retail list prices."
 authors = [{ name = "Peter Rentopoulos" }]
 requires-python = ">=3.13"
 dependencies = [
@@ -14,10 +14,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     "commitizen>=4.19",
+    "detect-secrets>=1.5",
     "mypy>=2.4",
     "pandas-stubs==3.0.*",
     "pytest>=9.1",
     "pytest-cov>=7.1",
+    "pytest-socket>=0.8.1",
     "ruff>=0.17",
     "types-pytz>=2026.5",
 ]
@@ -41,11 +43,15 @@ select = ["E", "W", "F", "I", "UP", "B", "SIM", "DTZ", "S"]
 [tool.mypy]
 strict = true
 files = ["src", "tests", "scripts"]
+# Test helpers in tests/support.py import as `support`.
+mypy_path = "tests"
 
 [tool.pytest]
 strict = true
 testpaths = ["tests"]
-addopts = ["-ra", "--import-mode=importlib"]
+pythonpath = ["tests"]
+# Tests never touch the network (pytest-socket); Unix socket pairs stay allowed.
+addopts = ["-ra", "--import-mode=importlib", "--disable-socket", "--allow-unix-socket"]
 
 [tool.coverage.run]
 branch = true

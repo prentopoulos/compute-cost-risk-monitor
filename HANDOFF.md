@@ -4,89 +4,134 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is Done and merged
-(PR #5, merge commit cfeb41b), after PR #4 stored the verbatim skill copies byte for byte (merge
-commit 91ca8a0). Both branches are deleted. The change is archived as
-`openspec/changes/archive/2026-10-12-phase-1-schema-acceptance`, and its spec lives in
-`openspec/specs/price-data-schema`. No OpenSpec change is active.
+Phase 2 (Azure Retail Prices collector) is Done. It was delivered through PR #7 from branch
+`phase-2-collector` and archived as
+`openspec/changes/archive/2026-10-12-phase-2-collector`. Its specs live in
+`openspec/specs/azure-price-collector`, with updates to `price-data-schema` and
+`quality-gate`. After the merge, no OpenSpec change is active.
 
-Phase 0 is Done and merged (PR #3, merge commit 0f06a80); its specs live in `openspec/specs/`.
+Earlier phases are Done and merged: Phase 1 (PR #5) and Phase 0 (PR #3).
 
-From Phase 2 on, each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase).
-Everything the next phase needs is in this file, PROJECT.md, OpenSpec and Git.
+Each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). Everything the
+next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
-PROJECT.md §5–6 are the project's constitution. It overrides the other
-documents, only the owner amends it, and every design includes a non-negotiables check
-(`openspec/config.yaml` rules). AGENTS.md and `openspec/config.yaml` carry verbatim copies of
-§5, kept in step by `tests/repo/test_constitution.py`.
+PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 2). Copies in AGENTS.md
+and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`.
 
-**Data source changed in Phase 1 grilling (owner, 2026-10-11).** Vast.ai's terms (version
-2026-09-01) forbid automated collection, price-comparison use and redistribution without a
-written agreement. So does every GPU marketplace checked (SF Compute, RunPod, Lambda, TensorDock,
-Shadeform, Prime Intellect, io.net, Akash). The owner chose not to seek permission. The v1 source
-is the Azure Retail Prices API (public, no account), and the data is "published list prices for
-GPU VMs from one cloud provider". Labelled synthetic marketplace-style data covers the
-marketplace rules and the public demo. PROJECT.md, AGENTS.md, `openspec/config.yaml` and the
-skills are reframed. No provider has been called yet.
+**Live-data gate resolved for Azure (owner, 2026-10-12).** The scope, recorded in PROJECT.md §6:
+- unauthenticated GET of the Retail Prices API only, with the GPU filter;
+- runs the owner starts by hand, at most one a day;
+- at most 1 request/s, backing off on 429;
+- local storage and analysis only, with no redistribution.
 
-## Implemented behavior
+The scheduling, spend and publishing gates are untouched.
 
-- Phase 0 toolchain: Python 3.13.16 via uv (`uv.lock`), OpenSpec CLI 1.6.0 via npm, the gate
-  `uv run --frozen python scripts/gate.py` (after `uv sync --locked`, `npm ci --ignore-scripts`),
-  CI on GitHub Actions, and Dependabot alerts and security updates.
-- Phase 1 schema:
-  - `src/compute_cost_risk_monitor/db.py`: `connect()` pins TimeZone=UTC; `create_schema()`
-    applies numbered SQL files and records `schema_version`.
-  - `schema/001_initial.sql`: nine tables (design § Schema) with constraints for the evidence
-    rules. It ships in the wheel.
-- `pytz` is a runtime dependency (DuckDB needs it for TIMESTAMPTZ → Python); `data/` is gitignored.
-- Synthetic fixtures in `tests/fixtures/synthetic/`: an Azure-shaped page and marketplace offers,
-  all invented values.
-- Diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A) on the Projects
-  (Pro) team, with SVG exports in `docs/architecture/`.
-- Acceptance criteria for Phases 2–7: the table in the Phase 1 design.
+## Implemented behavior (Phase 2)
+
+- **Command:**
+  - `uv run python -m compute_cost_risk_monitor.collect` fetches one run labelled `live` into
+    `data/raw/azure-retail/YYYY/MM/DD/`, then ingests it into `data/monitor.duckdb`.
+  - Both paths are anchored to the repo, not the working directory.
+  - `--ingest-run RUN_ID` loads kept files without the network. It refuses a run that may still
+    be fetching (no end manifest, less than 35 minutes since its start).
+  - A live fetch within 24 hours of the last one that sent requests is refused.
+  - Output is counts only, never prices.
+  - In this environment's bash, uv lives at
+    `/c/Users/Peter/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`.
+- **Request:** `api-version=2023-01-01-preview`, `currencyCode='USD'`, `meterRegion='primary'`,
+  and `$filter=serviceName eq 'Virtual Machines' and contains(armSkuName, 'Standard_N')`.
+  - A client-side check keeps NC, ND, NG and NV sizes.
+  - Next links are pinned to the API: printable ASCII only, https, the API's host and path.
+- **Pacing:**
+  - requests ≥ 1 s apart, ≥ 2 s after a 429;
+  - waits follow Retry-After, or Azure's `x-ms-ratelimit-retailprices-retry-after` after a 429,
+    capped at 300 s;
+  - otherwise 60 s after a 429 and 2/4/8/16 s backoff;
+  - 5 attempts per page; caps of 200 pages, 30 minutes and 64 MiB per body;
+  - an empty first page, or an empty page after a full one, is fetched once more.
+- **Raw files:** each file is written once.
+  - Gzip bodies (level 9, mtime 0) plus JSON sidecars, and start and end manifests.
+  - The end manifest records the stop reason and the number of requests.
+  - Any unexpected error ends a run with stop reason `error`.
+- **Row rules (`azure_retail.py`):**
+  - scope, then rejection reasons counted per reason, then rental type and flags;
+  - item key = Phase 1 D15 + `armSkuName`;
+  - reservations get the unit "<term> term".
+- **Ingest:** one transaction, from the files only.
+  - Bodies are verified against their SHA-256 first.
+  - First copy wins; later copies go to `observation_repeat`.
+  - Status is `succeeded` only when paging completed; otherwise `partial` or `failed`.
+- **Schema v2:** `002_run_records.sql` adds `collection_run_summary` (with the accounting
+  identity), `collection_run_tally` and `observation_repeat`. Run rows are write-once.
+- **Gate:** detect-secrets scans against `.secrets.baseline`. pytest runs with sockets blocked;
+  only the Streamlit smoke test may connect, and only to 127.0.0.1.
+- **Diagrams:** the FigJam container view and the ERD (schema v2) are updated, and the SVGs in
+  `docs/architecture/` are re-exported.
+
+## Data collected so far
+
+- **First live run:** `20261012T151909Z-5473f1`, started by the owner on 2026-10-12. It
+  succeeded.
+  - 15 pages and 14,593 rows: 14,347 stored, 246 out of scope (NP FPGA and NM MA35D), 0 repeats,
+    0 rejected, no 429s.
+  - 100 GPU sizes in 60 regions.
+  - By rental type: on_demand 3,285, spot 3,048, dev_test 3,803, reservation 2,387, other (Low
+    Priority) 1,824.
+  - The data is local in `data/` (gitignored). Counts only are recorded anywhere in Git.
+- **Live-run observations (design Open Questions):**
+  - next links keep the fixed parameters;
+  - there is no standard Retry-After, but `x-ms-ratelimit-remaining-retailprices-requests: 9`
+    and `x-ms-ratelimit-retailprices-retry-after: 60` appear on every response;
+  - reservation terms include 5 Years;
+  - 8,014 rows are Windows products.
 
 ## Verification
 
-- Phase 1 gate green on 2026-10-12 in Git Bash and Windows PowerShell. After the review fixes
-  there are 83 tests: 49 schema and runner tests (rejections, acceptances, both fixtures end to
-  end) and 27 provenance cases.
-- Code review (`/code-review` on PR #5) found 10 issues; all are fixed with tests. The
-  owner asked for more spacing in the diagrams, so they were regenerated with wider layout spacing
-  and padded sections. Moving nodes through the plugin API leaves stale connector routes.
-- The wheel built with `uv build` contains `schema/001_initial.sql`.
-- After both merges, main has the same file tree as the reviewed PR #5 head (69f4433), whose CI
-  run passed the gate and `uv audit`.
-- Diagram screenshots were checked visually before export.
-- Phase 0 evidence (fresh clone, deliberate defects, CI runs, audit) is in the Phase 0 archive
-  and PR #3.
+- **Gate:** green at e0a51d3 in Windows PowerShell; 298 tests pass. Branch coverage is 100% for
+  the row rules, raw store and fetch loop, and about 99% overall.
+- **CI:** hosted CI (Linux) passed on the branch pushes. There the real-page test skips because
+  no data is kept.
+- **Audit:** `uv audit` found no known vulnerabilities in 67 packages.
+- **Live run:** a script independent of ingest re-hashed all 15 kept bodies and matched every
+  count in DuckDB.
+- **Code review:** `/code-review` on PR #7 found 14 defects, all fixed with tests (design D28).
+- **Read-through:** the market-review and build-safety read-through is in
+  `docs/reviews/2026-10-12-phase-2-collector.md`.
+- **Deliberate failures checked:**
+  - a planted fake AWS key fails the gate;
+  - the Streamlit test fails without its loopback marker;
+  - Windows-style sidecar paths could escape the raw root until fixed.
 
 ## Findings for later phases
 
-- Azure reservation rows report `retailPrice` as the total for the term while
-  `unitOfMeasure` says "1 Hour". Phase 2 must not store them in a way that reads as an hourly
-  price: record the term next to the unit, or keep them out of `price_observation`. They are
-  never compared (design D11).
-- Live-data ⛔ gate for Azure (Phase 2): the operator confirms the Microsoft API terms and the
-  pacing (≤ 1 request/s, back off on 429) before the first live read. No key is needed.
-- Publishing live Azure figures is not expressly permitted by Microsoft's terms; the Phase 7
-  demo uses synthetic data unless the publishing gate approves derived figures.
-- DuckDB connections must go through `db.connect`; elsewhere TIMESTAMPTZ comes back in local time.
-- npm's Windows `.cmd` shims (`npx`) break on the `&` in this folder name; run Node CLIs as
-  `node node_modules/<pkg>/<bin>.js`.
-- The global OpenSpec CLI sends PostHog telemetry unless `OPENSPEC_TELEMETRY=0`; the gate sets it.
-- Phase 2: pytest-socket network blocking and a secret scanner. Phase 3: `gpu_sku_map` content
-  from Microsoft Learn (CC BY 4.0, credited). Phase 4: Streamlit `gatherUsageStats = false`.
-- CME's compute futures page still said "later this year, pending regulatory review" on
-  2026-10-12; recheck before reframing PROJECT §1 in Phase 7.
-- Dependabot alert #1 (high, GHSA-vfj7-8cjw-p6xm): `braces` 3.0.3 can exhaust the stack on
-  deeply nested brace patterns. It is a development-only dependency of the OpenSpec CLI
-  (fast-glob → micromatch → braces), and no fixed release existed on 2026-10-12. OpenSpec only
-  sees this repo's own paths, never outside input. The alert stays open until a fix ships or
-  the owner dismisses it. `uv audit` finds nothing in the Python packages.
+- **Phase 3:**
+  - Exclude Windows rows and Low Priority (`other`) rows from comparisons (Phase 1 D11).
+  - Offset paging (`$skip`) can miss rows silently when the catalogue changes mid-run, so infer
+    "not listed" only from repeated absence across succeeded snapshots.
+  - Build `gpu_sku_map` from Microsoft Learn (CC BY 4.0); the live run has 100 distinct GPU
+    `armSkuName` values to map.
+  - Fractional NV sizes are left out of v1 (Phase 1 D12).
+- **DuckDB 1.5.6 limits:** a `collection_run` row cannot be updated once referenced, and
+  migrations cannot add CHECKs or constrained columns (Phase 1 D23 was wrong). Changing a
+  version-1 CHECK list means rebuilding into a new database file.
+- **D27 (owner-confirmed on PR #7, 2026-10-12):** `--ingest-run` restores a run under its own ID and label.
+  `recorded` is for a new run built from kept responses (as in `test_real_page.py`).
+- **Local quirks:**
+  - In the Phase 2 session, pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter`
+    ("access denied"). Gate runs there used `PYTEST_ADDOPTS=--basetemp=tmp/pytest` (`tmp/` is
+    gitignored and must exist). If you see the same error, delete that folder.
+  - npm's Windows `.cmd` shims break on the `&` in the folder name; run Node CLIs as
+    `node node_modules/<pkg>/<bin>.js`.
+- **Carried over:**
+  - Phase 7 stays synthetic unless the publishing gate approves derived live figures.
+  - Phase 4 sets Streamlit `gatherUsageStats = false`.
+  - Recheck CME futures before Phase 7.
+  - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
+  - detect-secrets scans files only: scan Git history before the repo goes public.
 
 ## Next action
 
-Start Phase 2 in a fresh session: the owner clears the context and runs `/next-phase`. Then
-grill Phase 2, the Azure Retail Prices collector, including the live-data ⛔ gate (the owner
-confirms Microsoft's API terms and the pacing) and how to store reservation rows.
+Start Phase 3 in a fresh session: the owner clears the context and runs `/next-phase`. Then
+grill Phase 3 (normalization to USD/GPU-hour, `gpu_sku_map` v1, comparable groups, duplicate and
+quality checks), using the Phase 1 acceptance row and the findings above. Collecting more live
+data is the owner's choice: one manual run a day at most.
