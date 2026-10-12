@@ -49,6 +49,7 @@ class QualityReport:
     summaries: int = 0
     thin: int = 0
     changes: int | None = None  # None when there is no previous snapshot
+    not_normalized: int = 0  # observations with no row under the rule version
     absent_once: int = 0
     not_listed: int = 0
 
@@ -120,6 +121,7 @@ def build(
             [run, rule_version],
         ).fetchall()
     }
+    report.not_normalized = report.observations - sum(report.by_status.values())
     report.unmapped_sizes = [
         row[0]
         for row in connection.execute(
@@ -202,8 +204,16 @@ def render(report: QualityReport) -> str:
         + f" as of {report.as_of.isoformat()}",
         f"  observations {report.observations}",
     ]
+    if report.not_normalized:
+        lines.append(
+            f"    NOT NORMALIZED: {report.not_normalized} observations have no row"
+            " under the rule set; run normalize"
+        )
     lines += [f"    {status}: {n}" for status, n in report.by_status.items()]
-    lines.append(f"  sizes not in the map: {len(report.unmapped_sizes)}")
+    lines.append(
+        f"  sizes not in the map: {len(report.unmapped_sizes)}"
+        + (f" ({', '.join(report.unmapped_sizes)})" if report.unmapped_sizes else "")
+    )
     lines.append(
         f"  run records: out of scope {report.out_of_scope}, repeats {report.repeats},"
         f" rejected {sum(report.rejected.values())}"
@@ -248,7 +258,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.db.is_file():
         print(f"refused: no database at {args.db}", file=sys.stderr)
         return 2
-    connection = db.connect(args.db)
+    try:
+        connection = db.connect(args.db)
+    except duckdb.Error as error:
+        print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
+        return 2
     try:
         reports = [build(connection, source, as_of) for source in SOURCES]
     except KeyError as error:

@@ -183,3 +183,53 @@ def test_command_never_writes_the_live_database(
     assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(synthetic.MONITOR_DB)]) == 2
     assert "never go to" in capsys.readouterr().err
     assert synthetic.DEFAULT_DB.name == "synthetic.duckdb"
+
+
+def test_run_id_uses_utc(tmp_path: Path, con: duckdb.DuckDBPyConnection) -> None:
+    doc = document()
+    doc["observed_at"] = "2026-10-01T23:30:00-05:00"
+    run_id = synthetic.ingest_snapshot(con, write(tmp_path, doc))
+    assert run_id.startswith("synthetic-20261002T043000Z-")
+
+
+@pytest.mark.parametrize(
+    ("change", "why"),
+    [
+        ({"gpu_vram_gb": 10**400}, "gpu_vram_gb"),
+        ({"usd_per_hour": 10**400}, "usd_per_hour"),
+        ({"num_gpus": 2**31}, "num_gpus"),
+    ],
+)
+def test_out_of_range_numbers_refused(
+    tmp_path: Path, con: duckdb.DuckDBPyConnection, change: dict[str, Any], why: str
+) -> None:
+    doc = document()
+    doc["offers"][0].update(change)
+    path = tmp_path / "s.json"
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    with pytest.raises(synthetic.SyntheticError, match=why):
+        synthetic.ingest_snapshot(con, path)
+
+
+def test_resaved_snapshot_refused(
+    tmp_path: Path, con: duckdb.DuckDBPyConnection
+) -> None:
+    # Same snapshot, different whitespace: a new digest, but the same observation time.
+    synthetic.ingest_snapshot(con, SNAPSHOTS[0])
+    resaved = tmp_path / "resaved.json"
+    resaved.write_text(json.dumps(document()), encoding="utf-8")
+    with pytest.raises(synthetic.SyntheticError, match="already stored as run"):
+        synthetic.ingest_snapshot(con, resaved)
+    assert one(con, "SELECT count(*) FROM collection_run") == 1
+
+
+def test_command_turns_database_errors_into_refusals(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def failing(*_: object) -> str:
+        raise duckdb.ConstraintException("duplicate key (simulated)")
+
+    monkeypatch.setattr(synthetic, "ingest_snapshot", failing)
+    target = tmp_path / "synthetic.duckdb"
+    assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(target)]) == 2
+    assert "refused: snapshot-1.json: duplicate key" in capsys.readouterr().err

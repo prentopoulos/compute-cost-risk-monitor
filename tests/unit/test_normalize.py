@@ -337,3 +337,28 @@ def test_command_fails_when_a_check_fails(
     failing = checks.Verdict("planted", 1, failed=1, failures=["planted failure"])
     monkeypatch.setattr(checks, "run", lambda *_: [failing])
     assert normalize.main(["--db", str(path)], now=NOW) == 1
+
+
+def test_command_refuses_a_bad_map_or_database(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "monitor.duckdb"
+    con = db.connect(path)
+    db.create_schema(con)
+    azure_run(con, "run-1", [Price()])
+    con.close()
+
+    def bad_map() -> None:
+        raise gpu_map.MapError("line 7 (x): GPU count must be ... (simulated)")
+
+    monkeypatch.setattr(gpu_map, "load", bad_map)
+    assert normalize.main(["--db", str(path)], now=NOW) == 2
+    assert "refused: line 7" in capsys.readouterr().err
+    monkeypatch.undo()
+
+    def locked(*_: object) -> None:
+        raise duckdb.IOException("file is locked (simulated)")
+
+    monkeypatch.setattr(db, "connect", locked)
+    assert normalize.main(["--db", str(path)], now=NOW) == 2
+    assert "cannot open" in capsys.readouterr().err

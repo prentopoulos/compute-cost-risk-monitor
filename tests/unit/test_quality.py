@@ -6,6 +6,7 @@ All runs are synthetic; expected counts are worked out from the seeded rows by h
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import duckdb
 import pytest
 
 from compute_cost_risk_monitor import db, normalize, quality, synthetic
@@ -118,3 +119,35 @@ def test_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     out = capsys.readouterr().out
     assert "synthetic-marketplace: no snapshot" in out and "not stale" in out
     assert quality.main(["--db", str(path), "--as-of", "2026-10-13T00:00:00"]) == 2
+
+
+def test_snapshot_not_yet_normalized_is_flagged() -> None:
+    con = database()
+    azure_run(con, "run-1", [Price()])
+    normalize.normalize_pending(con, NOW)
+    # A newer run arrives after the last normalize.
+    azure_run(
+        con, "run-2", [Price(), Price(meter="b")], started=DAY + timedelta(days=1)
+    )
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=2))
+    assert (report.observations, report.not_normalized) == (2, 2)
+    assert "NOT NORMALIZED: 2 observations" in quality.render(report)
+
+
+def test_render_names_unmapped_sizes() -> None:
+    text = quality.render(seeded())
+    assert "sizes not in the map: 1 (Standard_ND96is_noIB_H100_v5)" in text
+
+
+def test_command_refuses_a_database_it_cannot_open(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "monitor.duckdb"
+    path.write_bytes(b"")
+
+    def locked(*_: object) -> None:
+        raise duckdb.IOException("file is locked (simulated)")
+
+    monkeypatch.setattr(db, "connect", locked)
+    assert quality.main(["--db", str(path)]) == 2
+    assert "cannot open" in capsys.readouterr().err

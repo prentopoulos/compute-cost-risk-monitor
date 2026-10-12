@@ -11,10 +11,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 import duckdb
+import pandas as pd
 
-from compute_cost_risk_monitor import groups, rules
+from compute_cost_risk_monitor import groups, normalize, rules
 from compute_cost_risk_monitor.groups import GroupKey, Snapshot
 
 ABSENT_ONCE = "absent once (unconfirmed)"
@@ -93,7 +95,6 @@ def observed(
 ) -> list[Observed]:
     """A snapshot's listings, keyed for changes and absences."""
     params = rules.stored(connection, rule_version)
-    suffixes = set(params["windows_product_suffixes"])
     found: list[Observed] = []
     if snapshot.source == "synthetic-marketplace":
         seen: set[str] = set()
@@ -111,9 +112,7 @@ def observed(
         return found
     for row in connection.execute(_AZURE, [rule_version, snapshot.run_id]).fetchall():
         size, region, rental, product, key, at, price, per_gpu, model, count = row
-        words = (product or "").split()
-        system = "windows" if words and words[-1] in suffixes else "linux"
-        listing = (size, region, rental, system)
+        listing = (size, region, rental, _os(product, params))
         group = _group(model, count, region, rental, per_gpu)
         found.append(Observed(listing, key, key, at, price, per_gpu, group))
     return found
@@ -135,6 +134,71 @@ def changes(
     return sorted(found, key=lambda c: c.price_key)
 
 
+def _os(product: str | None, params: dict[str, Any]) -> str:
+    # The one OS rule (D13), shared with normalization so listings never flip.
+    return "windows" if normalize.is_windows(product, params) else "linux"
+
+
+_LAST_SEEN_AZURE = """
+SELECT a.arm_sku_name, p.region, p.rental_type, coalesce(o.os, 'linux'), max(s.idx)
+FROM price_observation p
+JOIN raw_response rr ON rr.response_id = p.response_id
+JOIN _snapshot_order s ON s.run_id = rr.run_id
+JOIN azure_retail_price a ON a.source = p.source AND a.item_key = p.item_key
+    AND a.retrieved_at = p.retrieved_at
+LEFT JOIN _product_os o ON o.product_name = a.product_name
+GROUP BY 1, 2, 3, 4
+"""
+
+_LAST_SEEN_MARKETPLACE = """
+SELECT m.machine_id, m.gpu_name_listed, CAST(m.num_gpus AS VARCHAR), p.region,
+       p.rental_type, max(s.idx)
+FROM price_observation p
+JOIN raw_response rr ON rr.response_id = p.response_id
+JOIN _snapshot_order s ON s.run_id = rr.run_id
+JOIN marketplace_offer m ON m.source = p.source AND m.item_key = p.item_key
+    AND m.retrieved_at = p.retrieved_at
+GROUP BY 1, 2, 3, 4, 5
+"""
+
+
+def _last_seen(
+    connection: duckdb.DuckDBPyConnection,
+    ordered: list[Snapshot],
+    params: dict[str, Any],
+) -> dict[tuple[str, ...], int]:
+    """Each listing's last snapshot index, aggregated in one query."""
+    order = pd.DataFrame(
+        {"run_id": [s.run_id for s in ordered], "idx": list(range(len(ordered)))}
+    )
+    connection.register("_snapshot_order", order)
+    try:
+        if ordered[0].source == "synthetic-marketplace":
+            rows = connection.execute(_LAST_SEEN_MARKETPLACE).fetchall()
+        else:
+            names = [
+                row[0]
+                for row in connection.execute(
+                    "SELECT DISTINCT product_name FROM azure_retail_price"
+                    " WHERE product_name IS NOT NULL"
+                ).fetchall()
+            ]
+            products = pd.DataFrame(
+                {
+                    "product_name": pd.array(names, dtype="string"),
+                    "os": pd.array([_os(n, params) for n in names], dtype="string"),
+                }
+            )
+            connection.register("_product_os", products)
+            try:
+                rows = connection.execute(_LAST_SEEN_AZURE).fetchall()
+            finally:
+                connection.unregister("_product_os")
+    finally:
+        connection.unregister("_snapshot_order")
+    return {tuple(row[:-1]): row[-1] for row in rows}
+
+
 def absences(
     connection: duckdb.DuckDBPyConnection,
     source: str,
@@ -144,13 +208,11 @@ def absences(
     params = rules.stored(connection, rule_version)
     needed = params["not_listed_after_absences"]
     ordered = groups.snapshots(connection, source)
-    last_seen: dict[tuple[str, ...], int] = {}
-    for index, snapshot in enumerate(ordered):
-        for item in observed(connection, snapshot, rule_version):
-            last_seen[item.listing] = index
+    if len(ordered) < 2:
+        return []
     latest = len(ordered) - 1
     found = []
-    for listing, index in sorted(last_seen.items()):
+    for listing, index in sorted(_last_seen(connection, ordered, params).items()):
         missing = latest - index
         if missing <= 0:
             continue

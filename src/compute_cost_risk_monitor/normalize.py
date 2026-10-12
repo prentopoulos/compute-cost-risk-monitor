@@ -303,7 +303,11 @@ def report(result: NormalizeResult, verdicts: list[checks.Verdict]) -> None:
 
 
 def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> int:
-    """Run the command: 0 when checks pass, 1 if a check fails, 2 when refused."""
+    """Run the command: 0 when checks pass, 1 if a check fails, 2 when refused.
+
+    Refused means nothing was written: a changed frozen row, a bad map file, or a
+    database that cannot be opened or written.
+    """
     parser = argparse.ArgumentParser(
         prog="python -m compute_cost_risk_monitor.normalize",
         description="Normalize stored prices to USD per GPU-hour under groups-v1.",
@@ -313,11 +317,15 @@ def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> i
     if not args.db.is_file():
         print(f"refused: no database at {args.db}", file=sys.stderr)
         return 2
-    connection = db.connect(args.db)
+    try:
+        connection = db.connect(args.db)
+    except duckdb.Error as error:
+        print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
+        return 2
     try:
         try:
             result = normalize_pending(connection, now or datetime.now(UTC))
-        except rules.FrozenMismatch as error:
+        except (rules.FrozenMismatch, gpu_map.MapError, duckdb.Error) as error:
             print(f"refused: {error}", file=sys.stderr)
             return 2
         verdicts = checks.run(connection, result.rule_version)

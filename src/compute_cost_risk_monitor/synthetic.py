@@ -14,8 +14,9 @@ import hashlib
 import json
 import math
 import sys
+from collections import Counter
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,7 @@ MONITOR_DB = collect.DEFAULT_DB
 DEFAULT_DB = REPO / "data" / "synthetic.duckdb"
 RENTAL_TYPES = ("on_demand", "spot", "reservation", "savings_plan", "dev_test", "other")
 _TEXT = ("offer_id", "machine_id", "gpu_name", "region", "rental_type")
+MAX_GPUS = 2**31 - 1  # the stored column is a 32-bit integer
 
 
 class SyntheticError(ValueError):
@@ -37,12 +39,13 @@ class SyntheticError(ValueError):
 
 
 def _positive(value: object) -> bool:
-    return (
-        isinstance(value, int | float)
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-        and value > 0
-    )
+    if not isinstance(value, int | float) or isinstance(value, bool):
+        return False
+    try:
+        number = float(value)
+    except OverflowError:  # an integer too large for a float
+        return False
+    return math.isfinite(number) and number > 0
 
 
 def _offer(index: int, offer: object) -> dict[str, Any]:
@@ -57,7 +60,7 @@ def _offer(index: int, offer: object) -> dict[str, Any]:
     if offer["rental_type"] not in RENTAL_TYPES:
         raise fail(f"unknown rental type {offer['rental_type']}")
     gpus = offer.get("num_gpus")
-    if not isinstance(gpus, int) or isinstance(gpus, bool) or gpus <= 0:
+    if not isinstance(gpus, int) or isinstance(gpus, bool) or not 0 < gpus <= MAX_GPUS:
         raise fail("num_gpus must be a whole number above zero")
     if not _positive(offer.get("usd_per_hour")):
         raise fail("usd_per_hour must be a finite number above zero")
@@ -90,8 +93,8 @@ def parse_snapshot(body: bytes) -> tuple[datetime, list[dict[str, Any]]]:
     if not isinstance(offers, list) or not offers:
         raise SyntheticError("offers must be a non-empty list")
     checked = [_offer(index, offer) for index, offer in enumerate(offers)]
-    ids = [offer["offer_id"] for offer in checked]
-    duplicates = sorted({oid for oid in ids if ids.count(oid) > 1})
+    counts = Counter(offer["offer_id"] for offer in checked)
+    duplicates = sorted(oid for oid, n in counts.items() if n > 1)
     if duplicates:
         raise SyntheticError(f"offer ID listed twice: {', '.join(duplicates)}")
     return observed, checked
@@ -111,13 +114,23 @@ def ingest_snapshot(
     body = path.read_bytes()
     observed, offers = parse_snapshot(body)
     digest = hashlib.sha256(body).hexdigest()
-    run_id = f"synthetic-{observed.strftime('%Y%m%dT%H%M%SZ')}-{digest[:6]}"
+    stamp = observed.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_id = f"synthetic-{stamp}-{digest[:6]}"
     db.create_schema(connection)
     exists = connection.execute(
         "SELECT count(*) FROM collection_run WHERE run_id = ?", [run_id]
     ).fetchone()
     if exists and exists[0]:
         raise SyntheticError(f"run {run_id} is already stored")
+    same_time = connection.execute(
+        "SELECT run_id FROM collection_run WHERE source = ? AND started_at = ?",
+        [SOURCE, observed],
+    ).fetchone()
+    if same_time:
+        raise SyntheticError(
+            f"a snapshot observed at {observed.isoformat()} is already stored as run"
+            f" {same_time[0]}"
+        )
     version = connection.execute("SELECT max(version) FROM schema_version").fetchone()
     shown = _display_path(path, repo)
     response = f"{run_id}-0000"
@@ -212,12 +225,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.db.resolve() == MONITOR_DB.resolve():
         print(f"refused: synthetic runs never go to {MONITOR_DB}", file=sys.stderr)
         return 2
-    connection = db.connect(args.db)
+    try:
+        connection = db.connect(args.db)
+    except duckdb.Error as error:
+        print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
+        return 2
     try:
         for path in args.files:
             try:
                 run_id = ingest_snapshot(connection, path)
-            except (OSError, SyntheticError) as error:
+            except (OSError, SyntheticError, duckdb.Error) as error:
                 print(f"refused: {path.name}: {error}", file=sys.stderr)
                 return 2
             print(f"stored {run_id} (synthetic) from {path.name}")

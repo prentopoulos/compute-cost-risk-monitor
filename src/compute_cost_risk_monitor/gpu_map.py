@@ -106,7 +106,7 @@ def parse(text: str) -> dict[str, MapRow]:
     """Validate map CSV text; '#' lines are comments. Raise MapError on any bad row."""
     lines = [
         (number, line)
-        for number, line in enumerate(text.splitlines(), start=1)
+        for number, line in enumerate(text.lstrip("﻿").splitlines(), start=1)
         if line.strip() and not line.startswith("#")
     ]
     if not lines:
@@ -130,7 +130,7 @@ def load() -> dict[str, MapRow]:
     path = resources.files("compute_cost_risk_monitor").joinpath(
         "reference", "gpu_sku_map_v1.csv"
     )
-    return parse(path.read_text("utf-8"))
+    return parse(path.read_text("utf-8-sig"))
 
 
 def store(

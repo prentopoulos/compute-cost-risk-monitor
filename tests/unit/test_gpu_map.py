@@ -166,3 +166,8 @@ def test_rules_name_the_map_and_cover_the_retired_mapped_sizes() -> None:
     for entry in params["retirements"]:
         assert entry["source_url"].startswith("https://learn.microsoft.com/")
         datetime.fromisoformat(entry["retired_on"])
+
+
+def test_byte_order_mark_tolerated() -> None:
+    rows = gpu_map.parse("﻿" + text(row()))
+    assert list(rows) == ["Standard_NC40ads_H100_v5"]
