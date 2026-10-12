@@ -1,12 +1,14 @@
 root = true
 
+# Whitespace rules apply to code and config only; Markdown and the verbatim .agents/
+# copies are left byte-for-byte as they are.
 [*]
 charset = utf-8
-insert_final_newline = true
-trim_trailing_whitespace = true
 
 [*.{py,toml,yml,yaml,json,cfg,ini,lock}]
 end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
 
 [*.py]
 indent_style = space

@@ -14,7 +14,7 @@ PowerShell. Python 3.10 reached end of life on 2026-10-01, and pandas 3 needs 3.
 - Pin the OpenSpec CLI at 1.6.0 through `package.json` and `package-lock.json`.
 - Add an empty, typed `compute_cost_risk_monitor` package in a src layout, `tests/smoke`, and
   line-ending and editor settings for code and config.
-- Add a single cross-platform gate, `uv run --locked python scripts/gate.py`. It runs the
+- Add a single cross-platform gate, `uv run --frozen python scripts/gate.py`. It runs the
   lockfile check, format check, lint, strict type check, pytest with branch coverage (no
   minimum), OpenSpec strict validation and a Conventional Commits check of the branch.
 - Add smoke tests: imports, a pandas → in-memory DuckDB → pandas round trip that checks values

@@ -37,11 +37,11 @@ pricing, workload costs, budget exposure and the market brief.
 ## Development
 
 Python 3.13 with pandas, DuckDB, Streamlit and pytest, managed by uv (`uv.lock`); the OpenSpec
-CLI is pinned through npm (`package-lock.json`). Bootstrap: `uv sync --locked` then `npm ci`.
-Run Python and its tools only through uv (`uv run --locked ...`): bare `python`, `ruff` and
-`mypy` on the owner's PC come from other environments and differ by shell.
+CLI is pinned through npm (`package-lock.json`). Bootstrap: `uv sync --locked` then
+`npm ci --ignore-scripts`. Run Python and its tools only through uv (`uv run ...`): bare
+`python`, `ruff` and `mypy` on the owner's PC come from other environments and differ by shell.
 Architecture diagrams: a Figma draft on the owner's Pro seat, created in Phase 1.
-Gate: `uv run --locked python scripts/gate.py`. CI runs it on every PR
+Gate: `uv run --frozen python scripts/gate.py`. CI runs it on every PR
 (`.github/workflows/ci.yml`).
 Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
 branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR

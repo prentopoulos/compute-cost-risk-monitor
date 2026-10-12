@@ -80,8 +80,8 @@ user before each later phase. Evidence that counts in every phase:
   confirm in Phase 1). Exported into `docs/` so the repo shows them.
 - Code review: every PR that changes code is reviewed before merge (WORKFLOW.md).
 
-Gate: `uv run --locked python scripts/gate.py` after `uv sync --locked` and `npm ci`; CI runs it plus
-`uv audit --locked` on every PR and push to main.
+Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and `npm ci --ignore-scripts`; CI runs it plus
+`uv audit --locked --preview-features audit-command` on every PR and push to main.
 Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
 branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR
 merges only after its review and the user's go-ahead. Follow WORKFLOW.md for phase work.

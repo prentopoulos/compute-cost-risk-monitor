@@ -4,6 +4,7 @@ Synthetic data only; no network or credentials.
 """
 
 import importlib
+from importlib import metadata
 from pathlib import Path
 
 import duckdb
@@ -24,6 +25,8 @@ def test_package_is_installed_from_src() -> None:
 
     assert compute_cost_risk_monitor.__file__ is not None
     assert Path(compute_cost_risk_monitor.__file__).parent.parent.name == "src"
+    # Installed into the environment, not just importable from a path entry.
+    assert metadata.distribution("compute-cost-risk-monitor").version == "0.1.0"
 
 
 def test_pandas_duckdb_round_trip_keeps_values_and_dtypes() -> None:

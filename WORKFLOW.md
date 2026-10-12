@@ -72,9 +72,9 @@ Skills grant no spending, outreach, deployment or real-data transfer authority.
 
 - Planning/skills: frontmatter where relevant, local links, source digests for carryover,
   consistency, strict OpenSpec validation, whitespace and candidate-file inspection.
-- Runtime: `uv run --locked python scripts/gate.py`. It runs the lockfile check, Ruff format and lint, strict mypy,
+- Runtime: `uv run --frozen python scripts/gate.py`. It runs the lockfile check, Ruff format and lint, strict mypy,
   pytest with coverage, `openspec validate --all --strict` and the commit-message check. Run
-  `uv audit --locked` before marking a code PR ready (CI also runs it). Add meaningful affected
+  `uv audit --locked --preview-features audit-command` before marking a code PR ready (CI also runs it). Add meaningful affected
   boundary tests.
 - Results and model behavior: independent checks of outputs, cases fixed before measuring,
   honest run records. No fabricated remote results.

@@ -1,13 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: Single gate command
-The project SHALL provide one gate command, `uv run --locked python scripts/gate.py`, that
+The project SHALL provide one gate command, `uv run --frozen python scripts/gate.py`, that
 behaves the same in Git Bash, Windows PowerShell and Linux. It SHALL run every check even after
 one fails, print each check's outcome and a summary, and exit non-zero if any check failed.
 
 #### Scenario: All checks pass
 - **WHEN** every check passes
 - **THEN** the gate prints a passing summary that lists each check and exits 0
+
+#### Scenario: Stale lockfile reported by the gate
+- **WHEN** `pyproject.toml` changes a dependency without re-locking and the gate runs
+- **THEN** the lockfile check fails, every other check still runs, and the summary names the lockfile check
 
 #### Scenario: One check fails
 - **WHEN** one check fails, for example on a deliberately misformatted file
@@ -17,7 +21,8 @@ one fails, print each check's outcome and a summary, and exit non-zero if any ch
 The gate SHALL run, in order: `uv lock --check`; `ruff format --check`; `ruff check`; `mypy` in
 strict mode over `src`, `tests` and `scripts`; `pytest` with a branch-coverage report of `src`
 and no coverage minimum; `openspec validate --all --strict --no-interactive` through the
-repo-local CLI; and a Conventional Commits check of the commits on the branch.
+repo-local CLI with its telemetry turned off; and a Conventional Commits check of the commits
+on the branch. The gate makes no network calls.
 
 #### Scenario: Type error fails the gate
 - **WHEN** code under `src` assigns a value of the wrong type for its annotation

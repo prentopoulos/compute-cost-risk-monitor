@@ -1,4 +1,4 @@
-"""Local quality gate. Run with: uv run --locked python scripts/gate.py
+"""Local quality gate. Run with: uv run --frozen python scripts/gate.py
 
 Runs every check even after one fails, prints a summary, and exits non-zero if any
 check failed. Tools run from the locked environment (sys.executable) or by full path,
@@ -30,10 +30,10 @@ class Result:
     note: str = ""
 
 
-def run(argv: list[str]) -> int:
+def run(argv: list[str], env: dict[str, str] | None = None) -> int:
     print("$ " + " ".join(argv), flush=True)
     # Fixed argument lists built in this file; no shell and no untrusted input.
-    return subprocess.run(argv, cwd=ROOT, check=False).returncode  # noqa: S603
+    return subprocess.run(argv, cwd=ROOT, env=env, check=False).returncode  # noqa: S603
 
 
 def tool(name: str) -> str | None:
@@ -42,17 +42,27 @@ def tool(name: str) -> str | None:
     return shutil.which(name)
 
 
-def check(name: str, argv: list[str] | None, missing: str = "") -> Result:
+def check(
+    name: str,
+    argv: list[str] | None,
+    missing: str = "",
+    env: dict[str, str] | None = None,
+) -> Result:
     print(f"\n=== {name} ===", flush=True)
-    return execute(name, argv, missing)
+    return execute(name, argv, missing, env)
 
 
-def execute(name: str, argv: list[str] | None, missing: str = "") -> Result:
+def execute(
+    name: str,
+    argv: list[str] | None,
+    missing: str = "",
+    env: dict[str, str] | None = None,
+) -> Result:
     start = time.monotonic()
     if argv is None:
         print(f"FAIL: {missing}", flush=True)
         return Result(name, "fail", 0.0, missing)
-    code = run(argv)
+    code = run(argv, env)
     status = "pass" if code == 0 else "fail"
     note = "" if code == 0 else f"exit {code}"
     return Result(name, status, time.monotonic() - start, note)
@@ -63,8 +73,16 @@ def commit_check() -> Result:
     print(f"\n=== {name} ===", flush=True)
     git = tool("git")
     if git is None:
-        print("FAIL: git not found", flush=True)
-        return Result(name, "fail", 0.0, "git not found")
+        return execute(name, None, "git not found")
+    base = subprocess.run(  # noqa: S603
+        [git, "rev-parse", "--short", "origin/main"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    # The range uses the local origin/main ref; the gate stays offline, never fetching.
+    print(f"origin/main is {base.stdout.strip() or 'missing'} (fetch to refresh)")
     count = subprocess.run(  # noqa: S603
         [git, "rev-list", "--count", COMMIT_RANGE],
         cwd=ROOT,
@@ -112,7 +130,9 @@ def main() -> int:
             ]
             if node and OPENSPEC_CLI.is_file()
             else None,
-            "node or the pinned OpenSpec CLI not found; run `npm ci`",
+            "node or the pinned OpenSpec CLI not found; run `npm ci --ignore-scripts`",
+            # The OpenSpec CLI sends usage telemetry unless this is set.
+            env={**os.environ, "OPENSPEC_TELEMETRY": "0"},
         ),
         commit_check(),
     ]

@@ -2,8 +2,8 @@
 
 ### Requirement: CI runs the gate
 A GitHub Actions workflow SHALL run on pull requests and on pushes to `main`. It SHALL
-bootstrap with `uv sync --locked` and `npm ci`, run the same gate command as local
-development, and fail when the gate fails.
+bootstrap with `uv sync --locked` and `npm ci --ignore-scripts` (no package install
+scripts), run the same gate command as local development, and fail when the gate fails.
 
 #### Scenario: Pull request with a failing check
 - **WHEN** a pull request contains a lint error
@@ -24,7 +24,8 @@ SHALL NOT require this network check.
 
 ### Requirement: CI bounds
 The workflow SHALL run on `ubuntu-latest` with `permissions: contents: read`, a 10-minute job
-timeout, a per-ref concurrency group that cancels superseded runs, actions pinned by full
+timeout, a per-ref concurrency group that cancels superseded pull-request runs (runs for
+pushes to `main` always complete), actions pinned by full
 commit SHA, and no repository secrets. It SHALL use only GitHub's free included Actions
 minutes, per the operator's 2026-10-11 decision under the spend ⛔ gate.
 

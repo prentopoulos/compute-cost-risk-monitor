@@ -14,7 +14,7 @@ with the recommended option.
 ## Goals / Non-Goals
 
 **Goals:**
-- From a fresh clone, `uv sync --locked` and `npm ci` followed by one gate command give a green
+- From a fresh clone, `uv sync --locked` and `npm ci --ignore-scripts` followed by one gate command give a green
   result on Windows and on Linux CI.
 - The gate exercises every check Phases 1–7 will rely on, and smoke tests prove the decided
   stack works together.
@@ -42,8 +42,8 @@ their basis.
 | D10 | Ruff format and lint, rules `E,W,F,I,UP,B,SIM,DTZ,S`, `S101` allowed in tests | default. Source: Ruff docs. DTZ supports PROJECT §3 UTC times |
 | D11 | mypy `strict = true`; pandas-stubs pinned to the pandas minor | default. Source: pandas-stubs PyPI page (tested with mypy). Relax per module if pandas typing costs more than it saves |
 | D12 | pytest 9 native `[tool.pytest]` with `strict = true`; branch coverage reported, no minimum until Phase 6 | default. Source: pytest docs (`[tool.pytest]` since 9.0; `strict`) |
-| D13 | OpenSpec CLI pinned at 1.6.0 via `package.json` and `package-lock.json`; `npm ci` bootstrap. The gate runs `node node_modules/@fission-ai/openspec/bin/openspec.js`, because npm's Windows `.cmd` shims (used by `npx`) break on the `&` in the folder name (found in implementation) | default. Source: npm registry (latest 1.14.1; global 1.6.0 matches the skills' `generatedBy`) |
-| D14 | Gate: `uv run --locked python scripts/gate.py`. It runs every step, prints a summary and exits non-zero on any failure. Tools are never called by bare name | default. Make and just are absent, and conda tools shadow PATH in Git Bash |
+| D13 | OpenSpec CLI pinned at 1.6.0 via `package.json` and `package-lock.json`; `npm ci --ignore-scripts` bootstrap. The gate runs `node node_modules/@fission-ai/openspec/bin/openspec.js`, because npm's Windows `.cmd` shims (used by `npx`) break on the `&` in the folder name (found in implementation) | default. Source: npm registry (latest 1.14.1; global 1.6.0 matches the skills' `generatedBy`) |
+| D14 | Gate: `uv run --frozen python scripts/gate.py`. It runs every step, prints a summary and exits non-zero on any failure. Tools are never called by bare name. `--frozen`, not `--locked`, so a stale lock is reported by the gate's own lockfile check instead of stopping uv before the gate starts (code review) | default. Make and just are absent, and conda tools shadow PATH in Git Bash |
 | D15 | Commit check: `cz check --rev-range origin/main..HEAD` (commitizen), skipped with a notice on an empty range | default. Source: commitizen source (default `allowed_prefixes` include Merge/Revert; `NoCommitsFoundError` on an empty range) |
 | D16 | CI: one `ubuntu-latest` job, `contents: read`, 10-minute timeout, per-ref cancel-in-progress, SHA-pinned actions, gate then `uv audit --locked` | default. Source: build-safety `orchestrate_ci_cd.md` step 1 |
 | D17 | `uv audit --locked` runs in CI and before marking a PR ready, not in the offline local gate. It is experimental in uv 0.13, so CI pins uv 0.13.0 and passes `--preview-features audit-command` (found in implementation) | default. Source: uv CLI reference (`uv audit`, needs network); local run warning |
@@ -52,6 +52,8 @@ their basis.
 | D20 | src layout; `tests/smoke` now, `tests/unit` and `tests/fixtures` later; `.gitattributes` forces LF for code and config only; `.editorconfig`; no `.env.example` until Phase 2 | default |
 | D21 | Leave `.agents/` line endings alone. The skill source-manifest digests verify only on CRLF checkouts, and HANDOFF notes it | default. Checked: one file's working-copy digest matches the manifest, but its committed bytes do not |
 | D22 | Replace the stale "Python 3.10 is installed" lines and every `TBD in Phase 0` gate line | fact |
+| D24 | The gate runs the OpenSpec CLI with `OPENSPEC_TELEMETRY=0`: the CLI otherwise sends PostHog usage data to edge.openspec.dev on every run (code review; confirmed in `dist/telemetry/index.js`) | default. SECURITY_BASELINE B05 (minimise data sent out) |
+| D25 | `npm ci --ignore-scripts` locally and in CI. The only install script (OpenSpec's postinstall) prints a tip; skipping it removes install-time code execution (code review) | default. SECURITY_BASELINE B08 |
 | D23 | Later phases: pytest-socket network blocking in Phase 2; Streamlit `gatherUsageStats = false` in Phase 4 | default, recorded for those phases |
 
 **Alternatives considered:**

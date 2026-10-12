@@ -24,7 +24,7 @@
 
 ## 5. Hosted CI and repository settings
 
-- [x] 5.1 Add `.github/workflows/ci.yml` per D16 (ubuntu-latest, `contents: read`, 10-minute timeout, cancel-in-progress, SHA-pinned actions, `fetch-depth: 0`, `uv sync --locked`, `npm ci`, gate, `uv audit --locked`)
+- [x] 5.1 Add `.github/workflows/ci.yml` per D16 (ubuntu-latest, `contents: read`, 10-minute timeout, cancel-in-progress for PR runs, SHA-pinned actions, `fetch-depth: 0`, `uv sync --locked`, `npm ci --ignore-scripts`, gate, `uv audit --locked`)
 - [x] 5.2 Push and confirm the CI run on the Phase 0 PR is green; record the run URL and duration
 - [x] 5.3 Turn on Dependabot alerts and security updates (D6). GitHub's dependency graph reads only the default branch, so detection of `uv.lock` and `package-lock.json` is checked on main after merge and recorded in HANDOFF
 

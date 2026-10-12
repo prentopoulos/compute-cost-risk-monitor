@@ -25,7 +25,8 @@ review, no session links, Figma diagrams); see its README "Process updates from 
   dev tools pytest 9.1.1, pytest-cov, Ruff 0.17.0, mypy 2.4.0 (strict), pandas-stubs and
   commitizen. OpenSpec CLI 1.6.0 pinned through `package.json` and `package-lock.json`.
 - Empty typed package `src/compute_cost_risk_monitor`; smoke tests in `tests/smoke`.
-- Gate: `uv run --locked python scripts/gate.py` after `uv sync --locked` and `npm ci`.
+- Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and
+  `npm ci --ignore-scripts`. `--frozen` lets a stale `uv.lock` show up as a failed check.
 - CI: `.github/workflows/ci.yml` runs the gate and `uv audit` on PRs and pushes to main.
 - Dependabot alerts and security updates are on; version updates are off.
 - uv 0.13.0 is installed on the owner's PC with winget. Its folder is on the user PATH, so it
@@ -40,7 +41,8 @@ review, no session links, Figma diagrams); see its README "Process updates from 
   It reported format, types, openspec and commit messages as failed, and still ran every check.
 - CI run 38186096043 on PR #3 succeeded in 47 s on ubuntu-latest, with Python 3.13.16 and all
   seven checks passing.
-- `uv audit --locked`: no known vulnerabilities in 63 packages. It is experimental in uv 0.13.
+- `uv audit --locked --preview-features audit-command`: no known vulnerabilities in 63
+  packages. It is experimental in uv 0.13.
 - Not verified: GitHub's dependency graph detecting `uv.lock` and `package-lock.json`, which
   needs the manifests on main. Check it after merge.
 
