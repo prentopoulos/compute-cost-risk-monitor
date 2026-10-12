@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass, field
+from datetime import UTC, date
 from typing import Any
 
 import duckdb
@@ -86,13 +87,16 @@ def reason_or_price(connection: duckdb.DuckDBPyConnection, version: str) -> Verd
         [version],
     ).fetchall()
     params = _params(connection, version)
-    known = set(params["exclusion_order"]) | set(params["marketplace_exclusion_order"])
+    known = {
+        "azure-retail": set(params["exclusion_order"]),
+        "synthetic-marketplace": set(params["marketplace_exclusion_order"]),
+    }
     verdict = Verdict("reason_or_price", len(rows))
     for source, key, reason, per_gpu, model, exclusions in rows:
         if (reason is None) == (per_gpu is None):
             verdict.fail(f"{source} {key}: reason and price must exclude each other")
-        elif reason is not None and reason not in known:
-            verdict.fail(f"{source} {key}: unknown reason {reason}")
+        elif reason is not None and reason not in known.get(source, set()):
+            verdict.fail(f"{source} {key}: reason {reason} is not one of its source's")
         elif reason is None and model is None:
             verdict.fail(f"{source} {key}: normalized without a GPU variant")
         elif exclusions != params["exclusions"]:
@@ -101,29 +105,38 @@ def reason_or_price(connection: duckdb.DuckDBPyConnection, version: str) -> Verd
 
 
 def gpu_fields_match(connection: duckdb.DuckDBPyConnection, version: str) -> Verdict:
+    """GPU fields equal the map row for the observation's own size, or the offer's."""
     params = _params(connection, version)
     rows = connection.execute(
         "SELECT n.source, n.item_key, n.excluded_reason, n.gpu_model, n.gpu_count,"
-        " n.mapping_version, g.gpu_model, g.gpu_count, m.gpu_name_listed, m.num_gpus,"
-        " m.gpu_vram_gb FROM normalized_price n"
-        " LEFT JOIN gpu_sku_map g ON g.mapping_version = n.mapping_version"
-        " AND g.arm_sku_name = n.arm_sku_name"
+        " n.mapping_version, n.arm_sku_name, a.arm_sku_name, g.gpu_model, g.gpu_count,"
+        " m.gpu_name_listed, m.num_gpus, m.gpu_vram_gb FROM normalized_price n"
+        " LEFT JOIN azure_retail_price a ON a.source = n.source"
+        " AND a.item_key = n.item_key AND a.retrieved_at = n.retrieved_at"
+        " LEFT JOIN gpu_sku_map g ON g.mapping_version = ?"
+        " AND g.arm_sku_name = a.arm_sku_name"
         " LEFT JOIN marketplace_offer m ON m.source = n.source"
         " AND m.item_key = n.item_key AND m.retrieved_at = n.retrieved_at"
         " WHERE n.rule_version = ?",
-        [version],
+        [params["map_version"], version],
     ).fetchall()
     names = params["marketplace_gpu_names"]
     verdict = Verdict("gpu_fields_match", len(rows))
     for row in rows:
-        source, key, reason, model, count, map_version = row[:6]
-        map_model, map_count, listed, gpus, vram = row[6:]
+        source, key, reason, model, count, map_version, used, size = row[:8]
+        map_model, map_count, listed, gpus, vram = row[8:]
         if source == "azure-retail":
-            if map_version is None:
-                if reason is None or model is not None or count is not None:
-                    verdict.fail(f"{source} {key}: unmapped row carries GPU fields")
-            elif map_version != params["map_version"]:
-                verdict.fail(f"{source} {key}: map {map_version} is not the rule set's")
+            if map_model is None:
+                if (
+                    reason is None
+                    or model is not None
+                    or count is not None
+                    or map_version is not None
+                    or used is not None
+                ):
+                    verdict.fail(f"{source} {key}: {size} is not in the map")
+            elif (map_version, used) != (params["map_version"], size):
+                verdict.fail(f"{source} {key}: does not use the map row for {size}")
             elif (model, count) != (map_model, map_count):
                 verdict.fail(f"{source} {key}: GPU fields differ from the map")
         else:
@@ -131,6 +144,72 @@ def gpu_fields_match(connection: duckdb.DuckDBPyConnection, version: str) -> Ver
             expected = entry["variant"] if entry and entry["vram_gb"] == vram else None
             if count != gpus or model != expected:
                 verdict.fail(f"{source} {key}: GPU fields differ from the offer")
+    return verdict
+
+
+def _retired(params: dict[str, Any], size: str, region: str, day: date) -> bool:
+    for entry in params["retirements"]:
+        if size in entry["sizes"]:
+            limit = entry["region_extensions"].get(region, entry["retired_on"])
+            return date.fromisoformat(limit) <= day
+    return False
+
+
+def reasons_rederived(connection: duckdb.DuckDBPyConnection, version: str) -> Verdict:
+    """Each row's reason is the first one the stored rules give, re-derived here."""
+    params = _params(connection, version)
+    rows = connection.execute(
+        "SELECT n.source, n.item_key, n.excluded_reason, p.rental_type, p.region,"
+        " p.price_unit, a.arm_sku_name, a.product_name, g.gpu_count, r.started_at,"
+        " m.gpu_name_listed, m.gpu_vram_gb FROM normalized_price n"
+        " JOIN price_observation p ON p.source = n.source"
+        " AND p.item_key = n.item_key AND p.retrieved_at = n.retrieved_at"
+        " JOIN raw_response rr ON rr.response_id = p.response_id"
+        " JOIN collection_run r ON r.run_id = rr.run_id"
+        " LEFT JOIN azure_retail_price a ON a.source = n.source"
+        " AND a.item_key = n.item_key AND a.retrieved_at = n.retrieved_at"
+        " LEFT JOIN gpu_sku_map g ON g.mapping_version = ?"
+        " AND g.arm_sku_name = a.arm_sku_name"
+        " LEFT JOIN marketplace_offer m ON m.source = n.source"
+        " AND m.item_key = n.item_key AND m.retrieved_at = n.retrieved_at"
+        " WHERE n.rule_version = ?",
+        [params["map_version"], version],
+    ).fetchall()
+    compared = set(params["compared_rental_types"])
+    government = tuple(params["government_region_prefixes"])
+    windows = set(params["windows_product_suffixes"])
+    names = params["marketplace_gpu_names"]
+    verdict = Verdict("reasons_rederived", len(rows))
+    for row in rows:
+        source, key, reason, rental, region, unit, size, product, gpus = row[:9]
+        started, listed, vram = row[9:]
+        if source == "azure-retail":
+            day = started.astimezone(UTC).date()
+            words = (product or "").split()
+            holds = {
+                "rental_type_not_compared": rental not in compared,
+                "government_cloud": region.startswith(government),
+                "windows": bool(words) and words[-1] in windows,
+                "unit_not_hourly": unit != params["hourly_unit"],
+                "unmapped_sku": gpus is None,
+                "fractional_gpu": gpus is not None and gpus != math.floor(gpus),
+                "retired_size": _retired(params, size or "", region, day),
+            }
+            order = params["exclusion_order"]
+        else:
+            entry = names.get(listed)
+            holds = {
+                "rental_type_not_compared": rental not in compared,
+                "unmapped_gpu_name": entry is None or entry["vram_gb"] != vram,
+            }
+            order = params["marketplace_exclusion_order"]
+        unknown = [name for name in order if name not in holds]
+        if unknown:
+            verdict.fail(f"{source} {key}: the checker cannot test {unknown[0]}")
+            continue
+        expected = next((name for name in order if holds[name]), None)
+        if reason != expected:
+            verdict.fail(f"{source} {key}: reason {reason}, rules give {expected}")
     return verdict
 
 
@@ -190,6 +269,7 @@ CHECKS = (
     one_row_per_observation,
     reason_or_price,
     gpu_fields_match,
+    reasons_rederived,
     compared_rows_follow_rules,
     totals_reconcile,
 )

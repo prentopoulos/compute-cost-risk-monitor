@@ -79,8 +79,14 @@ def test_unknown_reason_and_text_caught(con: duckdb.DuckDBPyConnection) -> None:
         [UNMAPPED.key()],
     )
     found = failing(con)
-    assert set(found) == {"reason_or_price"}
+    # The text change and the unknown reason both fail reason_or_price; the unknown
+    # reason also disagrees with the re-derived one.
+    assert set(found) == {"reason_or_price", "reasons_rederived"}
     assert len(found["reason_or_price"]) == 2
+    assert found["reasons_rederived"] == [
+        f"azure-retail {FRACTIONAL.key()}: reason looks_expensive,"
+        " rules give fractional_gpu"
+    ]
 
 
 def test_unmapped_row_with_gpu_fields_caught(con: duckdb.DuckDBPyConnection) -> None:
@@ -99,7 +105,10 @@ def test_compared_row_breaking_rules_caught(con: duckdb.DuckDBPyConnection) -> N
         [NORMAL.key()],
     )
     assert failing(con) == {
-        "compared_rows_follow_rules": [f"azure-retail {NORMAL.key()}: Windows product"]
+        "reasons_rederived": [
+            f"azure-retail {NORMAL.key()}: reason None, rules give windows"
+        ],
+        "compared_rows_follow_rules": [f"azure-retail {NORMAL.key()}: Windows product"],
     }
 
 
@@ -147,8 +156,9 @@ def test_checker_catches_a_classifier_that_ignores_the_rules() -> None:
     gpu_map.store(con, mapping)
     normalize._write(con, lax, normalize._rows(con, lax, mapping))
     found = failing_for(con, "groups-test")
-    # Excluded-looking rows are now "compared"; only the rule check can see why.
-    assert set(found) == {"compared_rows_follow_rules"}
+    # Excluded-looking rows are now "compared"; the rule checks see why.
+    assert set(found) == {"reasons_rederived", "compared_rows_follow_rules"}
+    assert len(found["reasons_rederived"]) == 5
     reasons = sorted(f.split(": ", 1)[1] for f in found["compared_rows_follow_rules"])
     assert reasons == [
         "GPU count is not whole",
@@ -170,7 +180,8 @@ def test_map_version_and_offer_mismatches_caught() -> None:
     con.execute("UPDATE normalized_price SET mapping_version = 'gpu-map-v0'")
     assert failing(con) == {
         "gpu_fields_match": [
-            f"azure-retail {NORMAL.key()}: map gpu-map-v0 is not the rule set's"
+            f"azure-retail {NORMAL.key()}: does not use the map row for"
+            " Standard_ND96isr_H100_v5"
         ]
     }
     market = database()
@@ -189,3 +200,109 @@ def test_map_version_and_offer_mismatches_caught() -> None:
 
 def failing_for(con: duckdb.DuckDBPyConnection, version: str) -> dict[str, list[str]]:
     return {v.name: v.failures for v in checks.run(con, version) if not v.passed}
+
+
+def test_wrong_map_row_caught() -> None:
+    # A classifier that picks another size's map row; every figure still
+    # multiplies back.
+    con = database()
+    azure_run(con, "run-1", [NORMAL])
+    normalize.normalize_pending(con, NOW)
+    con.execute(
+        "UPDATE normalized_price SET arm_sku_name = 'Standard_NC24s_v3',"
+        " gpu_model = 'V100 16GB', gpu_count = 4, usd_per_gpu_hour = 20"
+    )
+    found = failing(con)
+    assert found["gpu_fields_match"] == [
+        f"azure-retail {NORMAL.key()}: does not use the map row for"
+        " Standard_ND96isr_H100_v5"
+    ]
+    assert "multiply_back" not in found
+
+
+def test_mapped_size_marked_unmapped_caught() -> None:
+    con = database()
+    azure_run(con, "run-1", [NORMAL])
+    normalize.normalize_pending(con, NOW)
+    con.execute(
+        "UPDATE normalized_price SET excluded_reason = 'unmapped_sku',"
+        " usd_per_gpu_hour = NULL, gpu_model = NULL, gpu_count = NULL,"
+        " mapping_version = NULL, arm_sku_name = NULL"
+    )
+    found = failing(con)
+    assert set(found) == {"gpu_fields_match", "reasons_rederived"}
+    assert found["reasons_rederived"] == [
+        f"azure-retail {NORMAL.key()}: reason unmapped_sku, rules give None"
+    ]
+
+
+def test_retired_size_compared_caught() -> None:
+    # A classifier that ignores retirements: only the re-derived reason sees it.
+    con = database()
+    retired = Price("Standard_NC24s_v3", meter="r", price=12.0)
+    azure_run(con, "run-1", [retired])
+    strict = {**rules.GROUPS_V1, "rule_version": "groups-test"}
+    lax = {
+        **strict,
+        "exclusion_order": [
+            r for r in strict["exclusion_order"] if r != "retired_size"
+        ],
+    }
+    mapping = gpu_map.load()
+    rules.store(con, NOW, strict)
+    gpu_map.store(con, mapping)
+    normalize._write(con, lax, normalize._rows(con, lax, mapping))
+    assert failing_for(con, "groups-test") == {
+        "reasons_rederived": [
+            f"azure-retail {retired.key()}: reason None, rules give retired_size"
+        ]
+    }
+
+
+def test_wrong_source_and_wrong_order_reasons_caught() -> None:
+    con = database()
+    gov_windows = Price(
+        meter="gw", region="usgovvirginia", product="Virtual Machines X Windows"
+    )
+    azure_run(con, "run-1", [UNMAPPED, gov_windows])
+    normalize.normalize_pending(con, NOW)
+    con.execute(
+        "UPDATE normalized_price SET excluded_reason = 'unmapped_gpu_name'"
+        " WHERE item_key = ?",
+        [UNMAPPED.key()],
+    )
+    con.execute(
+        "UPDATE normalized_price SET excluded_reason = 'windows' WHERE item_key = ?",
+        [gov_windows.key()],
+    )
+    found = failing(con)
+    assert found["reason_or_price"] == [
+        f"azure-retail {UNMAPPED.key()}: reason unmapped_gpu_name is not one of its"
+        " source's"
+    ]
+    assert sorted(found["reasons_rederived"]) == sorted(
+        [
+            f"azure-retail {UNMAPPED.key()}: reason unmapped_gpu_name, rules give"
+            " unmapped_sku",
+            f"azure-retail {gov_windows.key()}: reason windows, rules give"
+            " government_cloud",
+        ]
+    )
+
+
+def test_checker_refuses_a_reason_it_cannot_test() -> None:
+    con = database()
+    azure_run(con, "run-1", [NORMAL])
+    params = {
+        **rules.GROUPS_V1,
+        "rule_version": "groups-test",
+        "exclusion_order": ["looks_odd", *rules.GROUPS_V1["exclusion_order"]],
+    }
+    mapping = gpu_map.load()
+    rules.store(con, NOW, params)
+    gpu_map.store(con, mapping)
+    safe = {**params, "exclusion_order": rules.GROUPS_V1["exclusion_order"]}
+    normalize._write(con, safe, normalize._rows(con, safe, mapping))
+    assert failing_for(con, "groups-test")["reasons_rederived"] == [
+        f"azure-retail {NORMAL.key()}: the checker cannot test looks_odd"
+    ]
