@@ -60,14 +60,15 @@ def add_response(
     run_id: str = "run-1",
     seq: int = 0,
     sha256: str | None = SHA,
+    source: str = "azure-retail",
 ) -> None:
     con.execute(
-        "INSERT INTO raw_response (response_id, run_id, seq, file_path, sha256,"
+        "INSERT INTO raw_response (response_id, run_id, source, seq, file_path, sha256,"
         " byte_length, request_url, http_status, requested_at, item_count,"
         " parse_status)"
-        " VALUES (?, ?, ?, 'data/raw/synthetic.json.gz', ?, 10, 'https://example.test',"
-        " 200, ?, 1, 'parsed')",
-        [response_id, run_id, seq, sha256, T0],
+        " VALUES (?, ?, ?, ?, 'data/raw/synthetic.json.gz', ?, 10,"
+        " 'https://example.test', 200, ?, 1, 'parsed')",
+        [response_id, run_id, source, seq, sha256, T0],
     )
 
 
@@ -138,7 +139,62 @@ def test_create_schema_rerun_is_a_no_op(con: duckdb.DuckDBPyConnection) -> None:
     assert con.execute("SELECT count(*) FROM schema_version").fetchone() == (1,)
 
 
+def test_duplicate_schema_versions_rejected() -> None:
+    files = [("002_a.sql", "SELECT 1"), ("002_b.sql", "SELECT 2")]
+    with pytest.raises(ValueError, match="share version 002"):
+        db.parse_migrations(files)
+
+
+def test_parse_migrations_orders_and_ignores_other_files() -> None:
+    files = [("010_b.sql", "B"), ("README.md", "x"), ("002_a_b.sql", "A")]
+    assert db.parse_migrations(files) == [(2, "a b", "A"), (10, "b", "B")]
+
+
+def test_temp_schema_version_table_does_not_count_as_applied() -> None:
+    connection = db.connect()
+    connection.execute("CREATE TEMP TABLE schema_version (version INTEGER)")
+    connection.execute("INSERT INTO schema_version VALUES (1)")
+    assert db.applied_versions(connection) == set()
+    connection.close()
+
+
+def test_applied_versions_reads_this_database(con: duckdb.DuckDBPyConnection) -> None:
+    assert db.applied_versions(con) == {1}
+
+
+def test_create_schema_refuses_an_open_transaction() -> None:
+    connection = db.connect()
+    connection.begin()
+    with pytest.raises(RuntimeError, match="outside one"):
+        db.create_schema(connection)
+    connection.close()
+
+
 # --- collection runs and raw responses ---
+
+
+def test_run_schema_version_must_exist(con: duckdb.DuckDBPyConnection) -> None:
+    with pytest.raises(duckdb.ConstraintException):
+        con.execute(
+            "INSERT INTO collection_run (run_id, source, data_label, started_at,"
+            " status, schema_version) VALUES ('r', 'azure-retail', 'live', ?,"
+            " 'succeeded', 99)",
+            [T0],
+        )
+
+
+def test_response_source_must_match_its_run(con: duckdb.DuckDBPyConnection) -> None:
+    add_run(con, label="live")
+    with pytest.raises(duckdb.ConstraintException):
+        add_response(con, source="synthetic-marketplace")
+
+
+def test_observation_source_must_match_its_run(con: duckdb.DuckDBPyConnection) -> None:
+    # A live Azure run cannot carry synthetic marketplace prices.
+    add_run(con, label="live")
+    add_response(con)
+    with pytest.raises(duckdb.ConstraintException):
+        add_observation(con, source="synthetic-marketplace")
 
 
 def test_unknown_data_label_rejected(con: duckdb.DuckDBPyConnection) -> None:
@@ -165,10 +221,11 @@ def test_raw_response_needs_a_valid_sha256(
 def test_failed_request_is_recorded(con: duckdb.DuckDBPyConnection) -> None:
     add_run(con)
     con.execute(
-        "INSERT INTO raw_response (response_id, run_id, seq, file_path, sha256,"
-        " byte_length, request_url, http_status, requested_at, item_count,"
+        "INSERT INTO raw_response (response_id, run_id, source, seq, file_path,"
+        " sha256, byte_length, request_url, http_status, requested_at, item_count,"
         " parse_status, error)"
-        " VALUES ('resp-429', 'run-1', 0, 'data/raw/synthetic.json.gz', ?, 29,"
+        " VALUES ('resp-429', 'run-1', 'azure-retail', 0,"
+        " 'data/raw/synthetic.json.gz', ?, 29,"
         " 'https://example.test', 429, ?, NULL, 'failed', 'Too Many Requests')",
         [SHA, T0],
     )
@@ -253,6 +310,72 @@ def test_azure_detail_needs_an_observation(ready: duckdb.DuckDBPyConnection) -> 
         )
 
 
+def test_azure_detail_must_agree_with_its_observation(
+    ready: duckdb.DuckDBPyConnection,
+) -> None:
+    add_observation(ready)
+    with pytest.raises(duckdb.ConstraintException):
+        ready.execute(
+            "INSERT INTO azure_retail_price (source, item_key, retrieved_at, meter_id,"
+            " sku_id, arm_region_name, price_type, retail_price, unit_of_measure)"
+            " VALUES ('azure-retail', 'item-1', ?, 'm', 's', 'westus', 'Consumption',"
+            " 6.5, '1 Hour')",
+            [T0],
+        )
+
+
+@pytest.mark.parametrize(
+    ("table", "column", "value"),
+    [
+        ("gpu_sku_map", "gpu_vram_gb", math.nan),
+        ("gpu_sku_map", "gpu_vram_gb", math.inf),
+        ("marketplace_offer", "gpu_vram_gb", math.nan),
+        ("azure_retail_price", "tier_minimum_units", math.nan),
+        ("azure_retail_price", "unit_price", -1.0),
+    ],
+)
+def test_non_finite_or_negative_attributes_rejected(
+    ready: duckdb.DuckDBPyConnection, table: str, column: str, value: float
+) -> None:
+    if table == "gpu_sku_map":
+        sql = (
+            "INSERT INTO gpu_sku_map (mapping_version, arm_sku_name, gpu_model,"
+            " gpu_count, source_url, gpu_vram_gb) VALUES ('m1', 'S', 'H100', 1,"
+            " 'https://example.test', ?)"
+        )
+    elif table == "marketplace_offer":
+        add_run(ready, run_id="run-m", source="synthetic-marketplace")
+        add_response(
+            ready, response_id="resp-m", run_id="run-m", source="synthetic-marketplace"
+        )
+        add_observation(ready, source="synthetic-marketplace", response_id="resp-m")
+        sql = (
+            "INSERT INTO marketplace_offer (source, item_key, retrieved_at, offer_id,"
+            " machine_id, gpu_name_listed, num_gpus, gpu_vram_gb)"
+            " VALUES ('synthetic-marketplace', 'item-1', ?, 'o', 'm', 'H100', 1, ?)"
+        )
+    else:
+        add_observation(ready)
+        azure_sql = {
+            "tier_minimum_units": (
+                "INSERT INTO azure_retail_price (source, item_key, retrieved_at,"
+                " meter_id, sku_id, arm_region_name, price_type, retail_price,"
+                " unit_of_measure, tier_minimum_units) VALUES ('azure-retail',"
+                " 'item-1', ?, 'm', 's', 'eastus', 'Consumption', 7.0, '1 Hour', ?)"
+            ),
+            "unit_price": (
+                "INSERT INTO azure_retail_price (source, item_key, retrieved_at,"
+                " meter_id, sku_id, arm_region_name, price_type, retail_price,"
+                " unit_of_measure, unit_price) VALUES ('azure-retail', 'item-1', ?,"
+                " 'm', 's', 'eastus', 'Consumption', 7.0, '1 Hour', ?)"
+            ),
+        }
+        sql = azure_sql[column]
+    params = [value] if table == "gpu_sku_map" else [T0, value]
+    with pytest.raises(duckdb.ConstraintException):
+        ready.execute(sql, params)
+
+
 def add_rule(con: duckdb.DuckDBPyConnection, version: str) -> None:
     con.execute(
         "INSERT INTO rule_set VALUES (?, ?, 'synthetic test rules', ?)",
@@ -276,6 +399,71 @@ def test_derived_price_needs_a_known_rule_version(
     add_observation(ready)
     with pytest.raises(duckdb.ConstraintException):
         add_normalized(ready, "groups-v1")
+
+
+def test_excluded_row_is_stored_without_a_price(
+    ready: duckdb.DuckDBPyConnection,
+) -> None:
+    add_observation(ready, gpu_model=None, gpu_count=None)
+    add_rule(ready, "groups-v1")
+    ready.execute(
+        "INSERT INTO normalized_price (source, item_key, retrieved_at, rule_version,"
+        " region, rental_type, exclusions, excluded_reason) VALUES ('azure-retail',"
+        " 'item-1', ?, 'groups-v1', 'eastus', 'on_demand', 'n/a', 'unmapped SKU')",
+        [T0],
+    )
+    row = ready.execute(
+        "SELECT usd_per_gpu_hour, excluded_reason FROM normalized_price"
+    ).fetchone()
+    assert row == (None, "unmapped SKU")
+
+
+def test_excluded_row_cannot_carry_a_price(ready: duckdb.DuckDBPyConnection) -> None:
+    add_observation(ready)
+    add_rule(ready, "groups-v1")
+    with pytest.raises(duckdb.ConstraintException):
+        ready.execute(
+            "INSERT INTO normalized_price (source, item_key, retrieved_at,"
+            " rule_version, region, rental_type, usd_per_gpu_hour, gpu_model,"
+            " gpu_count, exclusions, excluded_reason) VALUES ('azure-retail',"
+            " 'item-1', ?, 'groups-v1', 'eastus', 'on_demand', 7.0, 'H100 NVL', 1,"
+            " 'n/a', 'unmapped SKU')",
+            [T0],
+        )
+
+
+@pytest.mark.parametrize(
+    ("region", "rental_type"), [("westus", "on_demand"), ("eastus", "bogus")]
+)
+def test_derived_group_key_must_match_its_observation(
+    ready: duckdb.DuckDBPyConnection, region: str, rental_type: str
+) -> None:
+    add_observation(ready)
+    add_rule(ready, "groups-v1")
+    with pytest.raises(duckdb.ConstraintException):
+        ready.execute(
+            "INSERT INTO normalized_price (source, item_key, retrieved_at,"
+            " rule_version, region, rental_type, usd_per_gpu_hour, gpu_model,"
+            " gpu_count, exclusions) VALUES ('azure-retail', 'item-1', ?,"
+            " 'groups-v1', ?, ?, 7.0, 'H100 NVL', 1, 'storage')",
+            [T0, region, rental_type],
+        )
+
+
+def test_derived_price_must_use_an_existing_mapping(
+    ready: duckdb.DuckDBPyConnection,
+) -> None:
+    add_observation(ready)
+    add_rule(ready, "groups-v1")
+    with pytest.raises(duckdb.ConstraintException):
+        ready.execute(
+            "INSERT INTO normalized_price (source, item_key, retrieved_at,"
+            " rule_version, region, rental_type, usd_per_gpu_hour, gpu_model,"
+            " gpu_count, mapping_version, arm_sku_name, exclusions)"
+            " VALUES ('azure-retail', 'item-1', ?, 'groups-v1', 'eastus',"
+            " 'on_demand', 7.0, 'H100 NVL', 1, 'nomap', 'Standard_X', 'storage')",
+            [T0],
+        )
 
 
 def test_one_observation_under_two_rule_versions(
@@ -374,7 +562,9 @@ def test_synthetic_marketplace_offers_load(con: duckdb.DuckDBPyConnection) -> No
     )
     assert data["_label"] == "synthetic"
     add_run(con, run_id="run-m", source="synthetic-marketplace", label="synthetic")
-    add_response(con, response_id="resp-m", run_id="run-m")
+    add_response(
+        con, response_id="resp-m", run_id="run-m", source="synthetic-marketplace"
+    )
     for offer in data["offers"]:
         add_observation(
             con,

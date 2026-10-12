@@ -63,11 +63,12 @@ Measured facts this design relies on:
 ```text
 schema_version(version PK, applied_at, description)
 collection_run(run_id PK, source, data_label, started_at, finished_at, status,
-               code_version, schema_version, dependency_versions JSON, request_params JSON, notes)
-raw_response(response_id PK, run_id → collection_run, seq, file_path, sha256, byte_length,
-             request_url, http_status, requested_at, received_at, item_count, parse_status,
-             error; UNIQUE(run_id, seq))
-price_observation(source, item_key, retrieved_at  [PK], response_id → raw_response,
+               code_version, schema_version → schema_version, dependency_versions JSON,
+               request_params JSON, notes)
+raw_response(response_id PK, (run_id, source) → collection_run, seq, file_path, sha256,
+             byte_length, request_url, http_status, requested_at, received_at, item_count,
+             parse_status, error; UNIQUE(run_id, seq))
+price_observation(source, item_key, retrieved_at  [PK], (response_id, source) → raw_response,
                   rental_type, region, price, currency, price_unit, gpu_model?, gpu_count?)
 azure_retail_price(source, item_key, retrieved_at [PK, → price_observation], meter_id, sku_id,
                    arm_sku_name, arm_region_name, location, price_type, retail_price,
@@ -80,10 +81,20 @@ marketplace_offer(source, item_key, retrieved_at [PK, → price_observation], of
 gpu_sku_map(mapping_version, arm_sku_name [PK], gpu_model, gpu_form_factor, gpu_vram_gb,
             gpu_count, source_url, notes)
 rule_set(rule_version PK, created_at, description, parameters JSON)
-normalized_price(source, item_key, retrieved_at, rule_version [PK]; → price_observation,
-                 → rule_set; usd_per_gpu_hour, gpu_model, gpu_count, region, rental_type,
-                 mapping_version, exclusions, excluded_reason)
+normalized_price(source, item_key, retrieved_at, rule_version [PK];
+                 (…, region, rental_type) → price_observation, → rule_set,
+                 (mapping_version?, arm_sku_name?) → gpu_sku_map; usd_per_gpu_hour?,
+                 gpu_model?, gpu_count?, exclusions, excluded_reason?)
 ```
+
+Agreement rules, added after code review:
+- **Source:** it travels run → response → observation through composite foreign keys, so
+  synthetic marketplace rows can never sit under a recorded or live Azure run.
+- **Agreement with the observation:** detail and derived rows repeat the observation's region
+  and price (detail) or region and rental type (derived), and the foreign keys check they match.
+- **Excluded derived rows:** these keep their reason and have no USD/GPU-hour; normalized rows
+  need USD/GPU-hour, GPU model and count.
+- **NaN:** DuckDB orders NaN above every number, so every numeric check also uses `isfinite()`.
 
 `?` marks a nullable field that stays NULL when unknown. A `price_observation.price` is the
 source's price for the whole item: one VM-hour for Azure, one offer-hour for a marketplace.

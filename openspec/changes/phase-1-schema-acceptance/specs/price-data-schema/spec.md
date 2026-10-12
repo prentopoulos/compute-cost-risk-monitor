@@ -26,6 +26,14 @@ SHALL skip versions that are already applied.
 - **WHEN** `create_schema` runs a second time on the same database
 - **THEN** no error is raised and `schema_version` still holds exactly one row for version 1
 
+#### Scenario: Duplicate version numbers rejected
+- **WHEN** two schema files share a version number, such as `002_a.sql` and `002_b.sql`
+- **THEN** loading the files raises an error naming the version, before any SQL runs
+
+#### Scenario: Only this database's version table counts
+- **WHEN** a temporary table named `schema_version` exists on the connection
+- **THEN** it does not count as an applied schema version
+
 ### Requirement: Collection runs carry a source and a provenance label
 Every `collection_run` row SHALL name its source (`azure-retail` or `synthetic-marketplace`)
 and exactly one data label (`synthetic`, `recorded` or `live`). A `synthetic-marketplace` run
@@ -38,6 +46,14 @@ SHALL carry the `synthetic` label. Staleness SHALL NOT be stored as a label.
 #### Scenario: Synthetic marketplace data cannot pass as live
 - **WHEN** a run with source `synthetic-marketplace` is inserted with label `live`
 - **THEN** DuckDB rejects the insert with a constraint error
+
+#### Scenario: Source carries through to every observation
+- **WHEN** a raw response or price observation names a source that differs from its run's source, for example a `synthetic-marketplace` observation under a live `azure-retail` run
+- **THEN** DuckDB rejects the insert with a constraint error
+
+#### Scenario: Run points at a real schema version
+- **WHEN** a run records schema version 99 on a database that has only version 1
+- **THEN** DuckDB rejects the insert
 
 ### Requirement: Raw responses are recorded with their fingerprint
 Every `raw_response` row SHALL record its run, its sequence within the run, the file path of
@@ -107,12 +123,22 @@ SHALL reference exactly one observation.
 - **WHEN** an `azure_retail_price` row references an observation that does not exist
 - **THEN** DuckDB rejects the insert with a foreign key error
 
+#### Scenario: Detail row must agree with its observation
+- **WHEN** an `azure_retail_price` row gives a region or retail price that differs from its observation's
+- **THEN** DuckDB rejects the insert
+
+#### Scenario: Non-finite attributes rejected
+- **WHEN** a VRAM size, tier minimum or unit price is NaN or infinite, or a unit price is negative
+- **THEN** DuckDB rejects the insert
+
 ### Requirement: Versioned rules, mappings and derived prices
 `rule_set` SHALL store each rule version with its frozen parameters as JSON and its creation
 time. `gpu_sku_map` SHALL key each mapping row by (mapping version, ARM SKU name), with a GPU
 count greater than zero and a source URL. `normalized_price` SHALL key each derived row by its
-observation and rule version. It SHALL reference both, and store a finite, positive USD/GPU-hour
-with the comparable-group columns and the mapping version used.
+observation and rule version and reference both. Its region and rental type SHALL equal the
+observation's, and any SKU mapping it names SHALL exist. A normalized row SHALL store a finite,
+positive USD/GPU-hour with its GPU model and count. An excluded row SHALL store the reason
+instead, with no USD/GPU-hour.
 
 #### Scenario: Derived price without a rule version rejected
 - **WHEN** a `normalized_price` row references a rule version that is not in `rule_set`
@@ -121,3 +147,11 @@ with the comparable-group columns and the mapping version used.
 #### Scenario: Same observation under two rule versions
 - **WHEN** one observation is normalized under rule versions `groups-v1` and `groups-v2`
 - **THEN** both rows are stored side by side
+
+#### Scenario: Excluded row kept with its reason
+- **WHEN** an unmapped observation is recorded under a rule version with reason `unmapped SKU` and no USD/GPU-hour
+- **THEN** the insert succeeds, and an excluded row that also carries a USD/GPU-hour is rejected
+
+#### Scenario: Derived group key must match its evidence
+- **WHEN** a derived row's region or rental type differs from its observation's, or it names a SKU mapping that does not exist
+- **THEN** DuckDB rejects the insert
