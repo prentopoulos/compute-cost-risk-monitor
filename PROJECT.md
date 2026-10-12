@@ -80,7 +80,7 @@ user before each later phase. Evidence that counts in every phase:
 
 - Python, pandas, DuckDB, Streamlit, pytest (decided). Phase 0 grilling, 2026-10-11 (all
   owner calls answered by the owner; settled answers cited in
-  `openspec/changes/phase-0-toolchain/design.md` D1–D23): Python 3.13 managed by uv with a
+  `openspec/changes/archive/2026-10-12-phase-0-toolchain/design.md` D1–D23): Python 3.13 managed by uv with a
   committed `uv.lock`; Ruff for format and lint; mypy strict; pytest with pytest-cov;
   commitizen for commit messages; OpenSpec CLI 1.6.0 pinned through npm; hosted CI on GitHub
   Actions (owner). Package `compute_cost_risk_monitor` (owner). Run Python only through uv:
@@ -89,7 +89,7 @@ user before each later phase. Evidence that counts in every phase:
   (unauthenticated; the docs invite "your own tools for internal analysis and price comparison
   across SKUs and regions"). The live-data gate is resolved for this API (§6, 2026-10-12), and
   the Phase 2 collector reads it. Phase 2 grilling decisions are cited in
-  `openspec/changes/phase-2-collector/design.md` D1–D27. Vast.ai
+  `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -162,7 +162,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 |---|---|---|
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Done |
-| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | In progress |
+| 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Done |
 | 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Planned |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
