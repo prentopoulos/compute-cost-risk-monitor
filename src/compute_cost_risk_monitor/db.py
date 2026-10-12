@@ -11,10 +11,13 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 import duckdb
+import pandas as pd
 
 MEMORY = ":memory:"
+TEXT = "string[python]"
 _MIGRATION = re.compile(r"(?P<version>\d{3})_(?P<name>[a-z0-9_]+)\.sql")
 
 
@@ -96,3 +99,40 @@ def create_schema(connection: duckdb.DuckDBPyConnection) -> list[int]:
             raise
         applied.append(version)
     return applied
+
+
+# Nullable dtypes, so a missing value reaches DuckDB as NULL, never NaN or "None".
+_DTYPES: dict[str, Any] = {
+    TEXT: pd.StringDtype("python"),
+    "Float64": pd.Float64Dtype(),
+    "Int64": pd.Int64Dtype(),
+    "boolean": pd.BooleanDtype(),
+}
+
+
+def frame(columns: dict[str, tuple[str, list[Any]]]) -> pd.DataFrame:
+    """Build a DataFrame from (dtype, values) columns, for a bulk insert."""
+    data: dict[str, Any] = {}
+    for name, (kind, values) in columns.items():
+        if kind == "timestamp":
+            data[name] = pd.to_datetime(pd.Series(values, dtype="object"), utc=True)
+        else:
+            data[name] = pd.array(values, dtype=_DTYPES[kind])
+    return pd.DataFrame(data)
+
+
+def insert_frame(
+    connection: duckdb.DuckDBPyConnection, table: str, rows: pd.DataFrame
+) -> None:
+    """Insert every row of a frame into a table, matching columns by name."""
+    if rows.empty:
+        return
+    columns = ", ".join(rows.columns)
+    connection.register("_frame_rows", rows)
+    try:
+        # Table and column names come from calling code, never from input data.
+        connection.execute(
+            f"INSERT INTO {table} ({columns}) SELECT {columns} FROM _frame_rows"  # noqa: S608
+        )
+    finally:
+        connection.unregister("_frame_rows")

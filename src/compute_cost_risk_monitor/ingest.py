@@ -17,12 +17,14 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-import pandas as pd
 
 from compute_cost_risk_monitor import azure_retail as az
 from compute_cost_risk_monitor import db, raw_store
+from compute_cost_risk_monitor.db import TEXT
 
-TEXT = "string[python]"
+# Module names, so a test can make one insert fail.
+_frame = db.frame
+_insert = db.insert_frame
 
 
 class AlreadyIngested(Exception):
@@ -61,41 +63,6 @@ def run_status(stop_reason: str, pages_parsed: int) -> str:
     if stop_reason == "completed" and pages_parsed > 0:
         return "succeeded"
     return "partial" if pages_parsed > 0 else "failed"
-
-
-# Nullable dtypes, so a missing value reaches DuckDB as NULL, never NaN or "None".
-_DTYPES: dict[str, Any] = {
-    TEXT: pd.StringDtype("python"),
-    "Float64": pd.Float64Dtype(),
-    "Int64": pd.Int64Dtype(),
-    "boolean": pd.BooleanDtype(),
-}
-
-
-def _frame(columns: dict[str, tuple[str, list[Any]]]) -> pd.DataFrame:
-    data: dict[str, Any] = {}
-    for name, (kind, values) in columns.items():
-        if kind == "timestamp":
-            data[name] = pd.to_datetime(pd.Series(values, dtype="object"), utc=True)
-        else:
-            data[name] = pd.array(values, dtype=_DTYPES[kind])
-    return pd.DataFrame(data)
-
-
-def _insert(
-    connection: duckdb.DuckDBPyConnection, table: str, frame: pd.DataFrame
-) -> None:
-    if frame.empty:
-        return
-    columns = ", ".join(frame.columns)
-    connection.register("_ingest_rows", frame)
-    try:
-        # Table and column names are fixed in this module, never taken from input.
-        connection.execute(
-            f"INSERT INTO {table} ({columns}) SELECT {columns} FROM _ingest_rows"  # noqa: S608
-        )
-    finally:
-        connection.unregister("_ingest_rows")
 
 
 def ingest_run(
