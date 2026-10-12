@@ -95,8 +95,8 @@ user before each later phase. Evidence that counts in every phase:
   the Phase 2 collector reads it. Phase 2 grilling decisions are cited in
   `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Phase 3 grilling
   decisions (normalization, comparable groups, history, synthetic marketplace rules; owner
-  answered every owner call on 2026-10-12) are cited in the `phase-3-normalization` change's
-  `design.md` D1–D25. Vast.ai
+  answered every owner call on 2026-10-12) are cited in
+  `openspec/changes/archive/2026-10-12-phase-3-normalization/design.md` D1–D25. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -170,7 +170,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Done |
 | 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Done |
-| 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | In progress |
+| 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Done |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
 | 6 | Tests for units, calculations, missing data and stale offers | Planned |
