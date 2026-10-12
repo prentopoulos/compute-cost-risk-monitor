@@ -4,6 +4,11 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
+**Phase 3 (normalization and quality checks) is in planning** on branch `phase-3-normalization`,
+OpenSpec change `phase-3-normalization`. Grilling finished on 2026-10-12 (the owner accepted
+every recommendation; decisions are in the change's `design.md` D1–D23). The spec-only commit
+and a draft PR come first; implementation follows `tasks.md`.
+
 Phase 2 (Azure Retail Prices collector) is Done. It was delivered through PR #7 from branch
 `phase-2-collector` and archived as
 `openspec/changes/archive/2026-10-12-phase-2-collector`. Its specs live in
@@ -83,7 +88,9 @@ The scheduling, spend and publishing gates are untouched.
   - there is no standard Retry-After, but `x-ms-ratelimit-remaining-retailprices-requests: 9`
     and `x-ms-ratelimit-retailprices-retry-after: 60` appear on every response;
   - reservation terms include 5 Years;
-  - 8,014 rows are Windows products.
+  - 7,878 stored rows are Windows (productName ending "Windows" or "Win"); all 3,803 Dev/Test
+    rows are Windows. An earlier figure of 8,014 counted raw rows containing "Windows",
+    including out-of-scope NP/NM rows (corrected in the Phase 3 grilling).
 
 ## Verification
 
@@ -131,7 +138,6 @@ The scheduling, spend and publishing gates are untouched.
 
 ## Next action
 
-Start Phase 3 in a fresh session: the owner clears the context and runs `/next-phase`. Then
-grill Phase 3 (normalization to USD/GPU-hour, `gpu_sku_map` v1, comparable groups, duplicate and
-quality checks), using the Phase 1 acceptance row and the findings above. Collecting more live
-data is the owner's choice: one manual run a day at most.
+Implement `phase-3-normalization` from task 1.1 (the strict Learn-only GPU map), following
+`tasks.md` in order. Collecting more live data is the owner's choice: one manual run a day at
+most, and not needed for Phase 3 acceptance (design D11).
