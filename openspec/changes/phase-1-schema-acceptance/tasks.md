@@ -5,9 +5,9 @@
 
 ## 2. Schema and connection helper
 
-- [ ] 2.1 Write `src/compute_cost_risk_monitor/schema/001_initial.sql` with every table, key, foreign key and CHECK in design § Schema
-- [ ] 2.2 Write `src/compute_cost_risk_monitor/db.py`: `connect(path)` with `TimeZone=UTC`, and `create_schema(connection)`, which applies numbered SQL files in order, records `schema_version` and skips applied versions
-- [ ] 2.3 Confirm the SQL file ships with the installed package (read through `importlib.resources` from the synced environment)
+- [x] 2.1 Write `src/compute_cost_risk_monitor/schema/001_initial.sql` with every table, key, foreign key and CHECK in design § Schema
+- [x] 2.2 Write `src/compute_cost_risk_monitor/db.py`: `connect(path)` with `TimeZone=UTC`, and `create_schema(connection)`, which applies numbered SQL files in order, records `schema_version` and skips applied versions
+- [x] 2.3 Confirm the SQL file ships with the installed package (read through `importlib.resources` from the synced environment)
 
 ## 3. Schema tests on synthetic fixtures
 
