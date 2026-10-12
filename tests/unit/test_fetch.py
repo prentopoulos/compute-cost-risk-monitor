@@ -220,6 +220,20 @@ def test_throttled_request_without_retry_after_waits_a_minute(tmp_path: Path) ->
     assert clock.sleeps == [60.0]
 
 
+def test_azure_retry_header_honoured_after_a_429(tmp_path: Path) -> None:
+    azure = ("x-ms-ratelimit-retailprices-retry-after", "45")
+    responses = [status(429, "", azure), ok(page_bytes([item()]))]
+    _, _, clock = collect(tmp_path, responses)
+    assert clock.sleeps == [45.0]
+
+
+def test_azure_retry_header_ignored_after_a_server_error(tmp_path: Path) -> None:
+    azure = ("x-ms-ratelimit-retailprices-retry-after", "60")
+    responses = [status(503, "", azure), ok(page_bytes([item()]))]
+    _, _, clock = collect(tmp_path, responses)
+    assert clock.sleeps == [2.0]
+
+
 def test_retry_after_is_capped(tmp_path: Path) -> None:
     responses = [status(429, "", ("Retry-After", "3600")), ok(page_bytes([item()]))]
     _, _, clock = collect(tmp_path, responses)

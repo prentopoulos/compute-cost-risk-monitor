@@ -171,10 +171,28 @@ applies version 2 on top of version 1. To roll back, revert the merge commit and
 
 ## Open Questions
 
-To answer from the first live run, recorded without prices:
-- whether `contains(armSkuName, …)` filters on the server (out-of-scope count);
-- page and row counts;
-- whether next links keep the fixed parameters;
-- whether 429s or `Retry-After` appear;
-- whether `shared_meter_key` occurs for GPU sizes;
-- whether Low Priority or unknown types appear.
+Answered by the first live run, `20261012T151909Z-5473f1`, started by the owner on
+2026-10-12 at commit 73b35ac. Counts only, checked against the kept files by a script
+independent of ingest:
+
+- **Server filter:** `contains(armSkuName, 'Standard_N')` filters on the server. Of 14,593
+  rows, 246 were out of scope: NP FPGA sizes and `Standard_NM16ads_MA35D` (an AMD media
+  accelerator), whose `armSkuName` carries two trailing spaces. No in-scope name had stray
+  whitespace.
+- **Pages and status:** 15 pages (14 × 1,000 + 593), all HTTP 200. The run succeeded.
+  14,347 rows were stored, with 0 repeats and 0 rejected.
+- **Rows by rental type:** on_demand 3,285, spot 3,048, dev_test 3,803, reservation 2,387,
+  other (Low Priority) 1,824. That covers 100 GPU sizes in 60 regions.
+- **Next links:** they kept all four fixed parameters, so `next_link_missing_params` stayed 0.
+- **Throttling:** no 429 occurred, and no standard `Retry-After` header was sent. Every
+  response carried `x-ms-ratelimit-remaining-retailprices-requests: 9` and
+  `x-ms-ratelimit-retailprices-retry-after: 60`. The fetch loop now honours the latter after
+  a 429 (spec "Pacing, retries and limits"). The meaning of the remaining-requests count is
+  not documented, and it did not fall during the run.
+- **Flags:** no `shared_meter_key`, `rental_type_ambiguous`, `unknown_price_type` or
+  `unit_not_hourly` flags. Every unit was "1 Hour".
+- **Reservation terms:** 1 Year, 3 Years and **5 Years**, stored as "<term> term".
+- **Other fields:** savings-plan arrays were on 1,262 stored rows. Every row had an
+  `effectiveStartDate`.
+- **Retrieval times:** each observation's retrieval time equals its response's receive
+  time.

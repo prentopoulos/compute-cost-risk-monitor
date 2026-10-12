@@ -21,6 +21,7 @@ from compute_cost_risk_monitor import azure_retail as az
 from compute_cost_risk_monitor import raw_store
 
 MAX_BODY = 64 * 1024 * 1024
+AZURE_RETRY_AFTER = "x-ms-ratelimit-retailprices-retry-after"
 
 
 @dataclass(frozen=True)
@@ -140,6 +141,10 @@ def retry_wait(
     response: Response, attempt: int, limits: Limits, now: datetime
 ) -> float:
     asked = retry_after(header(response.headers, "retry-after"), now)
+    if asked is None and response.status == 429:
+        # Azure's own header, seen on every response of the first live run (value 60).
+        # It only governs throttling, so it is read after a 429 and never after a 5xx.
+        asked = retry_after(header(response.headers, AZURE_RETRY_AFTER), now)
     if asked is not None:
         return min(asked, limits.retry_after_cap)
     if response.status == 429:

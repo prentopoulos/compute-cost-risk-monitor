@@ -36,7 +36,9 @@ page SHALL be attempted at most 5 times. Retries SHALL happen only after HTTP 42
 timeout or connection error, or a 200 response whose body is not a valid page. The wait before a
 retry SHALL be:
 - the `Retry-After` header's value (seconds or HTTP date), capped at 300 seconds, when present;
-- 60 seconds after a 429 without it;
+- after a 429 without it, Azure's `x-ms-ratelimit-retailprices-retry-after` header, also
+  capped, when present;
+- 60 seconds after a 429 with neither;
 - otherwise 2, 4, 8 and 16 seconds for the four retries.
 
 Any other status SHALL stop the run without a retry. A run SHALL stop after 200 pages or 30 minutes.
@@ -50,6 +52,10 @@ seconds, before it is accepted.
 #### Scenario: Throttled request retried after Retry-After
 - **WHEN** a page returns 429 with `Retry-After: 7`, then 200
 - **THEN** the collector waits 7 seconds before the retry, both attempts are recorded, and later requests in the run start at least 2 seconds apart
+
+#### Scenario: Azure's own retry header honoured only for throttling
+- **WHEN** a page returns 429 with `x-ms-ratelimit-retailprices-retry-after: 45` and no `Retry-After`, or returns 503 with that header
+- **THEN** the collector waits 45 seconds after the 429, but the usual 2 seconds after the 503
 
 #### Scenario: Retries exhausted
 - **WHEN** a page returns 503 five times

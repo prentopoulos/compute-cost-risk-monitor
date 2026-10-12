@@ -50,8 +50,8 @@
 
 ## 6. Live run (owner)
 
-- [ ] 6.1 The owner runs `uv run python -m compute_cost_risk_monitor.collect` once. Record the status and counts, and the answers to the design's Open Questions, without prices
-- [ ] 6.2 Keep one real page under `data/`, and add the local-only contract test that skips when the file is absent
+- [x] 6.1 The owner runs `uv run python -m compute_cost_risk_monitor.collect` once. Record the status and counts, and the answers to the design's Open Questions, without prices
+- [x] 6.2 Keep one real page under `data/`, and add the local-only contract test that skips when the file is absent
 
 ## 7. Diagrams, review and documents
 
