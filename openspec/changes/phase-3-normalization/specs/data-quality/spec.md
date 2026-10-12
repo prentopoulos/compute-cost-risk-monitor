@@ -5,7 +5,8 @@ For each source with stored data, a quality report SHALL describe the latest sna
 injected time. It SHALL hold counts only, never prices:
 - run ID, label and start time;
 - `stale`, when the latest snapshot started more than 7 days before the as-of time;
-- observations, normalized rows and excluded rows by reason under the rule version;
+- observations, normalized rows and excluded rows by reason under the rule version, and a
+  `NOT NORMALIZED` flag with the count of observations that have no row yet;
 - distinct unmapped sizes, with their names;
 - rejected rows by reason, out-of-scope rows and repeats, from the run records;
 - duplicates: repeats and `shared_meter_key` flags for Azure, `machine_duplicate` offers for
@@ -31,6 +32,10 @@ prices.
 #### Scenario: Counts reconcile
 - **WHEN** a report is built after normalizing a known-answer fixture
 - **THEN** normalized plus excluded rows equal the snapshot's observations, and the reason counts match the fixture's known answers
+
+#### Scenario: Not normalized yet
+- **WHEN** the latest snapshot was stored after the last normalize
+- **THEN** the report flags `NOT NORMALIZED` with the count of observations lacking a row, instead of showing empty groups as if nothing were comparable
 
 #### Scenario: No snapshot
 - **WHEN** a source has only a failed run

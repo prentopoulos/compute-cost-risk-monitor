@@ -96,7 +96,7 @@ user before each later phase. Evidence that counts in every phase:
   `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Phase 3 grilling
   decisions (normalization, comparable groups, history, synthetic marketplace rules; owner
   answered every owner call on 2026-10-12) are cited in the `phase-3-normalization` change's
-  `design.md` D1–D24. Vast.ai
+  `design.md` D1–D25. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)

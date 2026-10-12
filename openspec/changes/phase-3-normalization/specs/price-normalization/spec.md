@@ -124,7 +124,10 @@ only the database and the stored rule set:
 - each observation SHALL have exactly one row per rule version;
 - an excluded row SHALL have a reason and no USD/GPU-hour, and a normalized row SHALL have no
   reason;
-- the GPU count and variant SHALL equal the mapped values;
+- each Azure row SHALL use the map row for its observation's own size, or name no map row when
+  the size is not mapped, and its GPU count and variant SHALL equal that row's;
+- each row's reason SHALL equal the first matching reason re-derived from the stored rules, and
+  SHALL belong to its source;
 - a normalized row SHALL have a compared rental type, a whole GPU count and an hourly unit;
 - normalized plus excluded rows SHALL equal the observations, and per run SHALL equal the run
   summary's stored count.
@@ -138,6 +141,14 @@ The normalize command SHALL run the checks and exit non-zero when any fails.
 #### Scenario: Tampered row caught
 - **WHEN** a stored normalized row's USD/GPU-hour is changed so it no longer multiplies back
 - **THEN** the multiply-back check fails, names the row, and the command exits non-zero
+
+#### Scenario: Wrong map row caught
+- **WHEN** a stored row for an H100 size names another size's map row and GPU fields, so its figure still multiplies back
+- **THEN** the map check fails and names the observation's size
+
+#### Scenario: Wrong reason caught
+- **WHEN** a retired size is stored as compared, or a row in a government region is stored with reason `windows`
+- **THEN** the re-derived reason check fails and names the reason the rules give
 
 #### Scenario: Missing row caught
 - **WHEN** an observation has no row under `groups-v1`
