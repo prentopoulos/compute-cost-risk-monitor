@@ -4,89 +4,127 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is Done and merged
-(PR #5, merge commit cfeb41b), after PR #4 stored the verbatim skill copies byte for byte (merge
-commit 91ca8a0). Both branches are deleted. The change is archived as
-`openspec/changes/archive/2026-10-12-phase-1-schema-acceptance`, and its spec lives in
-`openspec/specs/price-data-schema`. No OpenSpec change is active.
+Phase 2 (Azure Retail Prices collector) is **In progress** on branch `phase-2-collector`, with
+draft PR #7. The OpenSpec change is `openspec/changes/phase-2-collector`. Tasks 1.1–5.3 and 7.1
+are done. Open tasks:
+- 6.1: the first live run, started by the owner.
+- 6.2: the local real-page test.
+- 7.2: the market-review and build-safety read-through.
+- 7.3: the gate in both shells, plus `uv audit`.
+- 7.4: this handoff.
 
-Phase 0 is Done and merged (PR #3, merge commit 0f06a80); its specs live in `openspec/specs/`.
+After that comes the code review, then archive, ready and merge (WORKFLOW.md).
 
-From Phase 2 on, each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase).
-Everything the next phase needs is in this file, PROJECT.md, OpenSpec and Git.
+Phase 1 is Done and merged (PR #5), and Phase 0 too (PR #3). Their specs live in
+`openspec/specs/`.
 
-PROJECT.md §5–6 are the project's constitution. It overrides the other
-documents, only the owner amends it, and every design includes a non-negotiables check
-(`openspec/config.yaml` rules). AGENTS.md and `openspec/config.yaml` carry verbatim copies of
-§5, kept in step by `tests/repo/test_constitution.py`.
+PROJECT.md §5–6 are the constitution: version 2.1.0, unchanged by Phase 2. AGENTS.md and
+`openspec/config.yaml` carry verbatim copies of §5, kept in step by
+`tests/repo/test_constitution.py`.
 
-**Data source changed in Phase 1 grilling (owner, 2026-10-11).** Vast.ai's terms (version
-2026-09-01) forbid automated collection, price-comparison use and redistribution without a
-written agreement. So does every GPU marketplace checked (SF Compute, RunPod, Lambda, TensorDock,
-Shadeform, Prime Intellect, io.net, Akash). The owner chose not to seek permission. The v1 source
-is the Azure Retail Prices API (public, no account), and the data is "published list prices for
-GPU VMs from one cloud provider". Labelled synthetic marketplace-style data covers the
-marketplace rules and the public demo. PROJECT.md, AGENTS.md, `openspec/config.yaml` and the
-skills are reframed. No provider has been called yet.
+**Live-data gate resolved for Azure (owner, 2026-10-12, Phase 2 grilling).** The scope, recorded
+in PROJECT.md §6:
+- unauthenticated GET of the Retail Prices API only, with the GPU filter;
+- runs the owner starts by hand, at most one a day;
+- at most 1 request/s, backing off on 429;
+- local storage and analysis only, with no redistribution.
+
+The scheduling, spend and publishing gates are untouched.
+
+## Grilling decisions
+
+Phase 2 grilling ran one round on 2026-10-12, and the owner accepted every recommendation.
+Decisions D1–D27 are in the change's design. The main ones:
+- **D2:** Phase 2 is Done only after one successful live run.
+- **D3:** every N-series GPU family is collected (NC, ND, NG, NV), with all regions and price
+  types.
+- **D4:** reservations are stored with the unit "<term> term".
+- **D6:** item key = Phase 1 D15's key + `armSkuName`.
+- **D7:** a snapshot is one `succeeded` run.
+- **D8:** later copies of a row go to `observation_repeat`.
+- **D9:** run records are written once, and migration 002 adds whole tables.
+- **D10:** fetch writes files, and ingest reads them.
+
+**D27 is flagged for owner review on PR #7.** Restoring a run with `--ingest-run` keeps its own
+ID and its `live` label, rather than becoming a new `recorded` run. Re-labelling would date the
+snapshot to the restore and break the stale flag.
 
 ## Implemented behavior
 
-- Phase 0 toolchain: Python 3.13.16 via uv (`uv.lock`), OpenSpec CLI 1.6.0 via npm, the gate
-  `uv run --frozen python scripts/gate.py` (after `uv sync --locked`, `npm ci --ignore-scripts`),
-  CI on GitHub Actions, and Dependabot alerts and security updates.
-- Phase 1 schema:
-  - `src/compute_cost_risk_monitor/db.py`: `connect()` pins TimeZone=UTC; `create_schema()`
-    applies numbered SQL files and records `schema_version`.
-  - `schema/001_initial.sql`: nine tables (design § Schema) with constraints for the evidence
-    rules. It ships in the wheel.
-- `pytz` is a runtime dependency (DuckDB needs it for TIMESTAMPTZ → Python); `data/` is gitignored.
-- Synthetic fixtures in `tests/fixtures/synthetic/`: an Azure-shaped page and marketplace offers,
-  all invented values.
-- Diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A) on the Projects
-  (Pro) team, with SVG exports in `docs/architecture/`.
-- Acceptance criteria for Phases 2–7: the table in the Phase 1 design.
+- `azure_retail.py` holds the pure rules:
+  - the fixed request;
+  - the next-link checks;
+  - item classification (scope, rejection reasons, rental type, flags);
+  - the item key and the reservation unit.
+- `raw_store.py` keeps files written once: gzip bodies (level 9, mtime 0), sidecars, and start
+  and end manifests under `data/raw/azure-retail/YYYY/MM/DD/`. Read-back checks SHA-256 and
+  refuses paths that escape the raw root.
+- `fetch.py` has the urllib fetcher and the paced loop:
+  - GET only, no redirects;
+  - requests ≥ 1 s apart, ≥ 2 s after a 429;
+  - Retry-After honoured, capped at 300 s;
+  - 5 attempts per page;
+  - caps of 200 pages and 30 minutes.
+- `ingest.py` builds one run's records in one transaction, from the files only.
+- `collect.py` is the command: `uv run python -m compute_cost_risk_monitor.collect` fetches and
+  ingests one live run. `--ingest-run RUN_ID` loads a kept run without the network. A live fetch
+  within 24 h of the last one is refused.
+- `schema/002_run_records.sql` adds `collection_run_summary`, `collection_run_tally` and
+  `observation_repeat`.
+- The gate now runs detect-secrets against `.secrets.baseline`, and pytest runs with sockets
+  blocked (pytest-socket). The Streamlit smoke test may connect to 127.0.0.1 only.
+- Diagrams: the FigJam container view marks the collector and raw files built, and the ERD is
+  regenerated for schema v2. The SVGs in `docs/architecture/` are re-exported.
 
-## Verification
+## Verification so far
 
-- Phase 1 gate green on 2026-10-12 in Git Bash and Windows PowerShell. After the review fixes
-  there are 83 tests: 49 schema and runner tests (rejections, acceptances, both fixtures end to
-  end) and 27 provenance cases.
-- Code review (`/code-review` on PR #5) found 10 issues; all are fixed with tests. The
-  owner asked for more spacing in the diagrams, so they were regenerated with wider layout spacing
-  and padded sections. Moving nodes through the plugin API leaves stale connector routes.
-- The wheel built with `uv build` contains `schema/001_initial.sql`.
-- After both merges, main has the same file tree as the reviewed PR #5 head (69f4433), whose CI
-  run passed the gate and `uv audit`.
-- Diagram screenshots were checked visually before export.
-- Phase 0 evidence (fresh clone, deliberate defects, CI runs, audit) is in the Phase 0 archive
-  and PR #3.
+- The gate is green on Windows for every commit (latest 54f52ae), with 222 unit tests plus
+  smoke and repo tests. Branch coverage is 100% for the row rules, raw store and fetch loop.
+- Deliberate failures checked:
+  - a planted fake AWS key fails the gate;
+  - the Streamlit test fails without its loopback marker;
+  - a sidecar path like `/abs/x` escaped the raw root on Windows until fixed.
+- No live request has been sent yet.
 
 ## Findings for later phases
 
-- Azure reservation rows report `retailPrice` as the total for the term while
-  `unitOfMeasure` says "1 Hour". Phase 2 must not store them in a way that reads as an hourly
-  price: record the term next to the unit, or keep them out of `price_observation`. They are
-  never compared (design D11).
-- Live-data ⛔ gate for Azure (Phase 2): the operator confirms the Microsoft API terms and the
-  pacing (≤ 1 request/s, back off on 429) before the first live read. No key is needed.
-- Publishing live Azure figures is not expressly permitted by Microsoft's terms; the Phase 7
-  demo uses synthetic data unless the publishing gate approves derived figures.
-- DuckDB connections must go through `db.connect`; elsewhere TIMESTAMPTZ comes back in local time.
-- npm's Windows `.cmd` shims (`npx`) break on the `&` in this folder name; run Node CLIs as
-  `node node_modules/<pkg>/<bin>.js`.
-- The global OpenSpec CLI sends PostHog telemetry unless `OPENSPEC_TELEMETRY=0`; the gate sets it.
-- Phase 2: pytest-socket network blocking and a secret scanner. Phase 3: `gpu_sku_map` content
-  from Microsoft Learn (CC BY 4.0, credited). Phase 4: Streamlit `gatherUsageStats = false`.
-- CME's compute futures page still said "later this year, pending regulatory review" on
-  2026-10-12; recheck before reframing PROJECT §1 in Phase 7.
-- Dependabot alert #1 (high, GHSA-vfj7-8cjw-p6xm): `braces` 3.0.3 can exhaust the stack on
-  deeply nested brace patterns. It is a development-only dependency of the OpenSpec CLI
-  (fast-glob → micromatch → braces), and no fixed release existed on 2026-10-12. OpenSpec only
-  sees this repo's own paths, never outside input. The alert stays open until a fix ships or
-  the owner dismisses it. `uv audit` finds nothing in the Python packages.
+- **DuckDB 1.5.6 limits.** A `collection_run` row cannot be updated once a raw response
+  references it, and migrations cannot add CHECK constraints or constrained columns. Phase 1's
+  D23 was wrong about this. Version-1 CHECK lists change only by rebuilding into a new database
+  file.
+- **Offset paging (`$skip`)** can repeat or miss rows when the catalogue changes mid-run. Repeats
+  are recorded; misses are undetectable. Phase 3 decides how "not listed" is inferred, for
+  example by requiring absence from two succeeded snapshots.
+- **To check on the first live run:**
+  - whether `contains(armSkuName, …)` filters on the server (the out-of-scope count);
+  - page counts;
+  - whether next links keep the fixed parameters (`next_link_missing_params`);
+  - whether 429s or Retry-After appear;
+  - whether `shared_meter_key` and Low Priority rows occur.
+- **Local environment quirks:**
+  - pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter` in this session ("access
+    denied"). The long scratchpad path also hit the 260-character limit. Local gate runs used
+    `PYTEST_ADDOPTS=--basetemp=tmp/pytest` (`tmp/` is gitignored and must exist). If you see the
+    same error, delete that folder.
+  - uv was not on the session's PATH; it lives in
+    `%LOCALAPPDATA%\Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe`.
+- **Carried from Phase 1:**
+  - Publishing live Azure figures is not expressly permitted; the Phase 7 demo stays synthetic
+    unless the publishing gate approves.
+  - DuckDB connections go through `db.connect`.
+  - Run Node CLIs as `node node_modules/<pkg>/<bin>.js` (the `&` in the folder name breaks
+    `npx`).
+  - Phase 3 builds the `gpu_sku_map` content from Microsoft Learn (CC BY 4.0).
+  - Phase 4 sets Streamlit `gatherUsageStats = false`.
+  - CME futures: recheck before Phase 7.
+  - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
+  - detect-secrets scans files, not history: scan Git history before the repo goes public.
 
 ## Next action
 
-Start Phase 2 in a fresh session: the owner clears the context and runs `/next-phase`. Then
-grill Phase 2, the Azure Retail Prices collector, including the live-data ⛔ gate (the owner
-confirms Microsoft's API terms and the pacing) and how to store reservation rows.
+Task 6.1: the owner runs `uv run python -m compute_cost_risk_monitor.collect` once from the repo
+root. Then:
+1. Record the run's counts and the open questions above, without prices.
+2. Do task 6.2 (keep one real page under `data/` and add the skip-if-absent test).
+3. Run the read-through (7.2), the gate in both shells and `uv audit` (7.3).
+4. Run `/code-review` on PR #7, then archive and mark the PR ready.
