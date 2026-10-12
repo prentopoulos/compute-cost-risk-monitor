@@ -4,9 +4,10 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is implemented on branch
-`phase-1-schema`, OpenSpec change `phase-1-schema-acceptance`, draft PR #5. All tasks pass. Code
-review, archive and merge remain (WORKFLOW.md § Pull requests and code review, steps 3–5).
+Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is Done on branch
+`phase-1-schema`, PR #5. All tasks pass and the code review is resolved. The change is archived
+as `openspec/changes/archive/2026-10-12-phase-1-schema-acceptance`, and its spec now lives in
+`openspec/specs/price-data-schema`. PR #5 waits only for the owner's go-ahead to merge.
 The branch was cut from PR #4 (`chore/verbatim-skill-bytes`), which is still open. Merge #4 first,
 then #5; the second diff then shows only Phase 1.
 
@@ -40,8 +41,12 @@ skills are reframed. No provider has been called yet.
 
 ## Verification
 
-- Phase 1 gate green on 2026-10-12 in Git Bash and Windows PowerShell: 64 tests, including 30
-  schema tests (rejections, acceptances, and both fixtures end to end) and 27 provenance cases.
+- Phase 1 gate green on 2026-10-12 in Git Bash and Windows PowerShell. After the review fixes
+  there are 83 tests: 49 schema and runner tests (rejections, acceptances, both fixtures end to
+  end) and 27 provenance cases.
+- Code review (`/code-review` on PR #5) found 10 issues; all are fixed with tests. The
+  owner asked for more spacing in the diagrams, so they were regenerated with wider layout spacing
+  and padded sections. Moving nodes through the plugin API leaves stale connector routes.
 - The wheel built with `uv build` contains `schema/001_initial.sql`.
 - Diagram screenshots were checked visually before export.
 - Phase 0 evidence (fresh clone, deliberate defects, CI runs, audit) is in the Phase 0 archive
@@ -68,7 +73,7 @@ skills are reframed. No provider has been called yet.
 
 ## Next action
 
-Phase 1 PR #5: run `/code-review` and record the market-review read-through, resolve findings,
-archive the change (`chore:`, phase Done), rerun validation and the gate, push and mark ready.
-Merge #4 then #5 only on the owner's go-ahead. Then Phase 2 grilling (Azure collector, including
-the live-data gate).
+Merge PR #4, then PR #5, only on the owner's go-ahead, with merge commits. Then pull main, confirm
+the merges, and delete both branches locally and on GitHub. Then start Phase 2 grilling: the Azure
+Retail Prices collector, including the live-data ⛔ gate (the owner confirms Microsoft's API
+terms and the pacing) and how to store reservation rows.
