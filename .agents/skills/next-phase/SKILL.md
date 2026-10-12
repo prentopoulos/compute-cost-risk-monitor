@@ -25,6 +25,9 @@ Choose review/setup, authorized implementation, new phase, or verified closure:
 State the selected change, branch, mode and next tasks briefly. Ask only when different
 plausible scopes would materially change the work.
 
+A new phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). If this session
+already closed a phase, recommend clearing the context first; go on only if the owner asks.
+
 ## 2. Apply relevant skills and prerequisites
 
 Use [compute-cost-risk-monitor-build-safety](../compute-cost-risk-monitor-build-safety/SKILL.md) for architecture/dependencies,
@@ -120,7 +123,9 @@ For a full phase, verify all tasks/requirements and required checks. Archive on 
 using OpenSpec, synchronize main specs, validate again, and commit archive plus phase Done
 as `chore:`. Push, mark the PR ready, and merge it with a merge commit only after the gate is
 green, the code review is resolved and the user gives the go-ahead. Preserve unfinished
-work and unrelated files. Delete a branch, locally and on GitHub, only after verifying it is merged.
+work and unrelated files. Delete a branch, locally and on GitHub, only after verifying it is
+merged. That is the clean checkpoint: stop, and tell the owner to clear the context and run
+`/next-phase` for the next phase (WORKFLOW.md § Fresh session per phase).
 
 For a partial milestone, record its completion and remaining tasks; do not archive or mark
 the whole phase Done. Local verification is not hosted CI, cloud execution or deployment.
@@ -128,4 +133,6 @@ the whole phase Done. Local verification is not hosted CI, cloud execution or de
 Keep personal schedules and correspondence in ignored `.local/` notes.
 
 Update HANDOFF with current branch/change, selected scope, implemented behavior, checks,
-limitations and the exact next task. Keep the roadmap in PROJECT, task ownership in OpenSpec.
+limitations and the exact next task, worded to stay true after the merge. Nothing the next
+session needs may live only in the conversation. Keep the roadmap in PROJECT, task ownership
+in OpenSpec.

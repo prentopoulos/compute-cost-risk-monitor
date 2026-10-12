@@ -34,10 +34,29 @@ current as the PR changes, with the technical detail below it.
    on the PR, and record the outcome in the PR body.
 4. Ready: archive on the branch (`chore:`), rerun validation and the gate, push, mark ready.
 5. Merge: only on the user's go-ahead, with a merge commit. Then pull main, confirm the merge
-   landed, and delete the branch locally and on GitHub.
+   landed, and delete the branch locally and on GitHub. The phase is now at its clean
+   checkpoint (below).
 
 Docs- or process-only PRs get a read-through instead of a code review. `/code-review ultra`
 is billed and user-triggered: suggest it for high-stakes PRs, never launch it.
+
+## Fresh session per phase
+
+Each phase starts in a fresh agent session. A conversation left over from the last phase
+crowds the context and lets stale details leak into new decisions (context rot), so nothing
+the next phase needs may live only in the chat.
+
+- **Before the PR is marked ready:** move what the conversation decided or learned into the
+  repo: decisions to PROJECT.md and the design, findings and the next action to HANDOFF.md.
+  Word the next action so it is still true after the merge.
+- **Clean checkpoint:** the phase PR and any process PR opened alongside it are merged,
+  their branches are deleted locally and on GitHub, main is pulled and the tree is clean.
+  Stop there and tell the owner the context can be cleared. Don't start the next phase's
+  grilling in the same session unless the owner asks.
+- **Next phase:** the owner clears the context (`/clear` in Claude Code) and runs
+  `/next-phase`, which rebuilds the picture from PROJECT.md, HANDOFF.md, OpenSpec and Git.
+- **Mid-phase:** if a session must end before its phase does, first commit and push a HANDOFF
+  update naming the branch, the finished and open tasks and the next step.
 
 ## Phase loop
 
@@ -59,7 +78,7 @@ is billed and user-triggered: suggest it for high-stakes PRs, never launch it.
    (code review, ready, merge on the user's go-ahead) as above.
    Delete only a verified merged branch. No force deletion to finish a checklist.
 7. Update HANDOFF with scope, checks, limitations and the next task; begin a genuinely new
-   phase from the appropriate clean baseline.
+   phase in a fresh session from the clean checkpoint (§ Fresh session per phase).
 
 ## Prerequisites and authority
 

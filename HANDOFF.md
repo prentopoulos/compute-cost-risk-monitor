@@ -4,14 +4,16 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is Done on branch
-`phase-1-schema`, PR #5. All tasks pass and the code review is resolved. The change is archived
-as `openspec/changes/archive/2026-10-12-phase-1-schema-acceptance`, and its spec now lives in
-`openspec/specs/price-data-schema`. PR #5 waits only for the owner's go-ahead to merge.
-The branch was cut from PR #4 (`chore/verbatim-skill-bytes`), which is still open. Merge #4 first,
-then #5; the second diff then shows only Phase 1.
+Phase 1 (requirements, data schema, acceptance criteria, Figma diagrams) is Done and merged
+(PR #5, merge commit cfeb41b), after PR #4 stored the verbatim skill copies byte for byte (merge
+commit 91ca8a0). Both branches are deleted. The change is archived as
+`openspec/changes/archive/2026-10-12-phase-1-schema-acceptance`, and its spec lives in
+`openspec/specs/price-data-schema`. No OpenSpec change is active.
 
 Phase 0 is Done and merged (PR #3, merge commit 0f06a80); its specs live in `openspec/specs/`.
+
+From Phase 2 on, each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase).
+Everything the next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
 **Data source changed in Phase 1 grilling (owner, 2026-10-11).** Vast.ai's terms (version
 2026-09-01) forbid automated collection, price-comparison use and redistribution without a
@@ -48,6 +50,8 @@ skills are reframed. No provider has been called yet.
   owner asked for more spacing in the diagrams, so they were regenerated with wider layout spacing
   and padded sections. Moving nodes through the plugin API leaves stale connector routes.
 - The wheel built with `uv build` contains `schema/001_initial.sql`.
+- After both merges, main has the same file tree as the reviewed PR #5 head (69f4433), whose CI
+  run passed the gate and `uv audit`.
 - Diagram screenshots were checked visually before export.
 - Phase 0 evidence (fresh clone, deliberate defects, CI runs, audit) is in the Phase 0 archive
   and PR #3.
@@ -70,10 +74,14 @@ skills are reframed. No provider has been called yet.
   from Microsoft Learn (CC BY 4.0, credited). Phase 4: Streamlit `gatherUsageStats = false`.
 - CME's compute futures page still said "later this year, pending regulatory review" on
   2026-10-12; recheck before reframing PROJECT §1 in Phase 7.
+- Dependabot alert #1 (high, GHSA-vfj7-8cjw-p6xm): `braces` 3.0.3 can exhaust the stack on
+  deeply nested brace patterns. It is a development-only dependency of the OpenSpec CLI
+  (fast-glob → micromatch → braces), and no fixed release existed on 2026-10-12. OpenSpec only
+  sees this repo's own paths, never outside input. The alert stays open until a fix ships or
+  the owner dismisses it. `uv audit` finds nothing in the Python packages.
 
 ## Next action
 
-Merge PR #4, then PR #5, only on the owner's go-ahead, with merge commits. Then pull main, confirm
-the merges, and delete both branches locally and on GitHub. Then start Phase 2 grilling: the Azure
-Retail Prices collector, including the live-data ⛔ gate (the owner confirms Microsoft's API
-terms and the pacing) and how to store reservation rows.
+Start Phase 2 in a fresh session: the owner clears the context and runs `/next-phase`. Then
+grill Phase 2, the Azure Retail Prices collector, including the live-data ⛔ gate (the owner
+confirms Microsoft's API terms and the pacing) and how to store reservation rows.
