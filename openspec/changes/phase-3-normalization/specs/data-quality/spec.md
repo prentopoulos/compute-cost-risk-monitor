@@ -39,3 +39,16 @@ prices.
 #### Scenario: Counts only
 - **WHEN** a report is rendered as text
 - **THEN** it contains none of the fixture's price values
+
+### Requirement: Quality command
+`uv run python -m compute_cost_risk_monitor.quality [--db PATH] [--as-of TIME]` SHALL print the
+report for each source, counts only. It SHALL refuse, with exit code 2, a missing database, an
+`--as-of` time without a time zone, or a database whose rule set is not stored yet.
+
+#### Scenario: Before normalizing
+- **WHEN** the command runs on a database that holds a run but no rule set
+- **THEN** it exits with code 2 and says to run normalize first
+
+#### Scenario: Report printed
+- **WHEN** the command runs after normalize, with `--as-of` one day after the snapshot
+- **THEN** it prints one report per source, the Azure one `not stale`, and a source without runs as having no snapshot

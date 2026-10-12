@@ -1,0 +1,120 @@
+"""The counts-only quality report: freshness, reconciliation, flags and rendering.
+
+All runs are synthetic; expected counts are worked out from the seeded rows by hand.
+"""
+
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import pytest
+
+from compute_cost_risk_monitor import db, normalize, quality, synthetic
+from seed import DAY, Price, azure_run, database
+from support import FIXTURES
+
+NOW = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
+PRICES = [
+    Price(meter="a", price=80.0),
+    Price(meter="b", price=96.0, product=None),
+    Price(meter="c", product="Virtual Machines NDsr H100 v5 Series Windows"),
+    Price(meter="d", rental="reservation", unit="1 Year term"),
+    Price("Standard_ND96is_noIB_H100_v5", meter="e"),
+    Price("Standard_NV18ads_A10_v5", meter="f"),
+    Price(meter="g", product="Virtual Machines Win Thing Series"),
+]
+
+
+def seeded() -> quality.QualityReport:
+    con = database()
+    azure_run(
+        con,
+        "run-1",
+        PRICES,
+        tallies={("rejected", "missing_field"): 2, ("flagged", "shared_meter_key"): 1},
+        repeats=1,
+    )
+    normalize.normalize_pending(con, NOW)
+    return quality.build(con, "azure-retail", DAY + timedelta(days=2))
+
+
+def test_counts_reconcile() -> None:
+    report = seeded()
+    assert report.observations == 7
+    assert report.by_status == {
+        "normalized": 3,
+        "windows": 1,
+        "rental_type_not_compared": 1,
+        "unmapped_sku": 1,
+        "fractional_gpu": 1,
+    }
+    assert sum(report.by_status.values()) == report.observations
+    assert report.unmapped_sizes == ["Standard_ND96is_noIB_H100_v5"]
+    assert report.rejected == {"missing_field": 2}
+    assert report.duplicates == {"repeats": 1, "shared_meter_key": 1}
+    # Seeded rows have a location but no effective start date; one has no product name.
+    assert report.missing_fields == {
+        "location": 0,
+        "product_name": 1,
+        "effective_start_date": 3,
+    }
+    assert report.os_ambiguous == 1
+    assert (report.region_groups, report.single_price_groups) == (1, 0)
+    assert (report.summaries, report.thin) == (1, 1)
+    assert report.changes is None and report.not_listed == 0
+
+
+def test_fresh_and_stale() -> None:
+    con = database()
+    azure_run(con, "run-1", [Price()])
+    normalize.normalize_pending(con, NOW)
+    fresh = quality.build(con, "azure-retail", DAY + timedelta(days=2))
+    stale = quality.build(con, "azure-retail", DAY + timedelta(days=8))
+    assert fresh.stale is False and stale.stale is True
+    assert "STALE" in quality.render(stale) and "not stale" in quality.render(fresh)
+
+
+def test_no_snapshot_is_not_zero_prices() -> None:
+    con = database()
+    azure_run(con, "run-1", [], status="failed")
+    report = quality.build(con, "azure-retail", NOW)
+    assert report.snapshot is None and report.stale is None
+    assert quality.render(report) == "azure-retail: no snapshot (no succeeded run)"
+
+
+def test_render_holds_no_prices() -> None:
+    text = quality.render(seeded())
+    for value in ("80.0", "96.0", "10.0", "12.0"):
+        assert value not in text
+    assert "observations 7" in text and "normalized: 3" in text
+
+
+def test_marketplace_report() -> None:
+    con = database()
+    for path in sorted((FIXTURES / "marketplace").glob("snapshot-*.json")):
+        synthetic.ingest_snapshot(con, path)
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(
+        con, "synthetic-marketplace", datetime(2026, 10, 4, tzinfo=UTC)
+    )
+    assert report.observations == 11
+    assert report.duplicates == {"machine_duplicate": 0}
+    assert report.thin == 2  # H100 x2 (one machine) and RTX 4090 Spot (two)
+    assert (report.changes, report.absent_once, report.not_listed) == (0, 0, 1)
+
+
+def test_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    path = tmp_path / "monitor.duckdb"
+    assert quality.main(["--db", str(path)]) == 2
+    con = db.connect(path)
+    db.create_schema(con)
+    azure_run(con, "run-1", [Price()])
+    con.close()
+    assert quality.main(["--db", str(path)]) == 2  # not normalized yet
+    assert "run normalize first" in capsys.readouterr().err
+    assert normalize.main(["--db", str(path)], now=NOW) == 0
+    assert (
+        quality.main(["--db", str(path), "--as-of", "2026-10-13T00:00:00+00:00"]) == 0
+    )
+    out = capsys.readouterr().out
+    assert "synthetic-marketplace: no snapshot" in out and "not stale" in out
+    assert quality.main(["--db", str(path), "--as-of", "2026-10-13T00:00:00"]) == 2

@@ -27,15 +27,15 @@
 
 ## 4. Groups, history and quality
 
-- [ ] 4.1 Write `groups.py`:
+- [x] 4.1 Write `groups.py`:
   - snapshots: succeeded runs only;
   - region groups with `single list price`;
   - the cross-region summary (lowest per region, min, median and max, `thin` below 5, `crosses regions`);
   - marketplace groups (one price per machine, `machine_duplicate`, `thin` below 5 machines, `synthetic`).
 
   Add known-answer tests, including the even-count median and tie-breaks
-- [ ] 4.2 Write `history.py`: consecutive-snapshot changes (item key, or continuity key for the marketplace), `absent once (unconfirmed)`, `not listed` after two absences, reappearance, and re-keyed meters. Test on the synthetic snapshots and on multi-snapshot Azure fixtures
-- [ ] 4.3 Write `quality.py`: the counts-only report per source as of an injected time, with the stale flag, reasons, unmapped names, run-record counts, duplicates, missing fields, `os_ambiguous`, single-price and thin counts, history counts, and "no snapshot". Test fresh, stale, reconciling and no-snapshot cases
+- [x] 4.2 Write `history.py`: consecutive-snapshot changes (item key, or continuity key for the marketplace), `absent once (unconfirmed)`, `not listed` after two absences, reappearance, and re-keyed meters. Test on the synthetic snapshots and on multi-snapshot Azure fixtures
+- [x] 4.3 Write `quality.py`: the counts-only report per source as of an injected time, with the stale flag, reasons, unmapped names, run-record counts, duplicates, missing fields, `os_ambiguous`, single-price and thin counts, history counts, and "no snapshot". Test fresh, stale, reconciling and no-snapshot cases
 
 ## 5. Live normalize, review and documents
 
