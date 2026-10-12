@@ -1,7 +1,7 @@
 ## 1. Dependencies and paths
 
-- [ ] 1.1 Add `pytz` (runtime) and `types-pytz` (dev) to `pyproject.toml`, relock, and confirm `uv lock --check` passes
-- [ ] 1.2 Add `data/` to `.gitignore` and confirm a file under `data/` is ignored
+- [x] 1.1 Add `pytz` (runtime) and `types-pytz` (dev) to `pyproject.toml`, relock, and confirm `uv lock --check` passes
+- [x] 1.2 Add `data/` to `.gitignore` and confirm a file under `data/` is ignored
 
 ## 2. Schema and connection helper
 
