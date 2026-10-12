@@ -44,7 +44,9 @@ source. A skill recommendation does not justify adding its framework to the appl
 
 Distinguish technical checks, product decisions, and action authorization. Technical passes
 can be established from evidence; missing evidence stays missing. Reuse accepted decisions
-and existing implementation authorization. All PROJECT.md `⛔` gates remain operator-resolved:
+and existing implementation authorization. PROJECT.md §5–6 are the constitution and override
+the other project documents; only the owner amends them, in a separate commit
+(PROJECT.md § Amending the constitution). All PROJECT.md `⛔` gates remain operator-resolved:
 surface the relevant gate and stop its dependent action; never satisfy or waive it. Unresolved
 external access or budget gates do not block local development.
 Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
@@ -53,7 +55,7 @@ merges only after its review and the user's go-ahead.
 
 Before proposing a new phase or capability, grill on the phase's design tree with
 [grilling](../grilling/SKILL.md): goal and non-goals, acceptance evidence, PROJECT.md `TBD` items
-it depends on, affected `⛔` gates, and open feasibility. Resuming an authorized phase skips
+it depends on, the §5 rules and `⛔` gates it touches or would amend, and open feasibility. Resuming an authorized phase skips
 grilling unless a new material decision appears. Each round:
 
 1. Map the tree from the project documents and checkpoint, and fix the round's frontier

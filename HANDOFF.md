@@ -15,6 +15,11 @@ Phase 0 is Done and merged (PR #3, merge commit 0f06a80); its specs live in `ope
 From Phase 2 on, each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase).
 Everything the next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
+PROJECT.md §5–6 are the project's constitution. It overrides the other
+documents, only the owner amends it, and every design includes a non-negotiables check
+(`openspec/config.yaml` rules). AGENTS.md and `openspec/config.yaml` carry verbatim copies of
+§5, kept in step by `tests/repo/test_constitution.py`.
+
 **Data source changed in Phase 1 grilling (owner, 2026-10-11).** Vast.ai's terms (version
 2026-09-01) forbid automated collection, price-comparison use and redistribution without a
 written agreement. So does every GPU marketplace checked (SF Compute, RunPod, Lambda, TensorDock,

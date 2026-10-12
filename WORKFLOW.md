@@ -29,7 +29,7 @@ current as the PR changes, with the technical detail below it.
 2. Building: push task commits as they land. The PR stays draft while tasks remain open.
 3. Code review: when every task passes and the local gate is green, review the PR before
    marking it ready. Run `/code-review` on the PR for correctness and check the diff against
-   the change's requirements and tasks. Add compute-cost-risk-monitor-market-review when the PR
+   the change's requirements and tasks and the design's non-negotiables check. Add compute-cost-risk-monitor-market-review when the PR
    changes prices, costs, exposure or the brief. Fix findings in new commits or answer them
    on the PR, and record the outcome in the PR body.
 4. Ready: archive on the branch (`chore:`), rerun validation and the gate, push, mark ready.
@@ -84,7 +84,8 @@ the next phase needs may live only in the chat.
 
 Technical checks can be established by evidence. Product decisions reuse accepted scope.
 PROJECT's explicit `⛔` gates are operator-resolved: surface and stop the dependent action;
-never satisfy or waive them yourself. Unresolved live access/budget does not block local work.
+never satisfy or waive them yourself. PROJECT.md §5–6 are the constitution: they override the
+other project documents, and only the owner amends them (PROJECT.md § Amending the constitution). Unresolved live access/budget does not block local work.
 Skills grant no spending, outreach, deployment or real-data transfer authority.
 
 ## Verification by scope
