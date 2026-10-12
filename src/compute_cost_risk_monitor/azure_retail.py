@@ -86,6 +86,23 @@ def missing_params(link: str) -> list[str]:
 
 
 @dataclass(frozen=True)
+class Page:
+    items: list[object]
+    next_link: object  # validated by the caller: None, empty or a link to check
+
+
+def parse_page(body: bytes) -> Page | None:
+    """A page's items and next link, or None when the body is not a valid page."""
+    try:
+        document = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(document, dict) or not isinstance(document.get("Items"), list):
+        return None
+    return Page(document["Items"], document.get("NextPageLink"))
+
+
+@dataclass(frozen=True)
 class Row:
     """An in-scope, valid item, shaped for price_observation and azure_retail_price."""
 

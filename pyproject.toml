@@ -43,10 +43,13 @@ select = ["E", "W", "F", "I", "UP", "B", "SIM", "DTZ", "S"]
 [tool.mypy]
 strict = true
 files = ["src", "tests", "scripts"]
+# Test helpers in tests/support.py import as `support`.
+mypy_path = "tests"
 
 [tool.pytest]
 strict = true
 testpaths = ["tests"]
+pythonpath = ["tests"]
 # Tests never touch the network (pytest-socket); Unix socket pairs stay allowed.
 addopts = ["-ra", "--import-mode=importlib", "--disable-socket", "--allow-unix-socket"]
 

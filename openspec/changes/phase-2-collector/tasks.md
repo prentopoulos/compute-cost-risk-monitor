@@ -26,9 +26,9 @@
 
 ## 4. Raw retention and fetching
 
-- [ ] 4.1 Write `raw_store.py`: write-once body (gzip level 9, mtime 0), sidecar and manifests, plus read-back with SHA-256 and length checks. Test byte equality, reproducibility, no overwrite, empty failed bodies and the sidecar's left-out fields
-- [ ] 4.2 Write the urllib fetcher: GET only, no redirects, identity encoding, User-Agent, 30 s timeout and 64 MiB cap. Test it with a fake opener
-- [ ] 4.3 Write the paced fetch loop with an injected fetcher, clock and sleep: pacing, slower pacing after a 429, `Retry-After` (seconds and HTTP date, capped), the 60 s and exponential waits, 5 attempts, no retry on other 4xx, page and time caps, the empty-page refetch, invalid and repeated next links, and Ctrl-C writing the end manifest. Test each
+- [x] 4.1 Write `raw_store.py`: write-once body (gzip level 9, mtime 0), sidecar and manifests, plus read-back with SHA-256 and length checks. Test byte equality, reproducibility, no overwrite, empty failed bodies and the sidecar's left-out fields
+- [x] 4.2 Write the urllib fetcher: GET only, no redirects, identity encoding, User-Agent, 30 s timeout and 64 MiB cap. Test it with a fake opener
+- [x] 4.3 Write the paced fetch loop with an injected fetcher, clock and sleep: pacing, slower pacing after a 429, `Retry-After` (seconds and HTTP date, capped), the 60 s and exponential waits, 5 attempts, no retry on other 4xx, page and time caps, the empty-page refetch, invalid and repeated next links, and Ctrl-C writing the end manifest. Test each
 
 ## 5. Ingest and command
 
