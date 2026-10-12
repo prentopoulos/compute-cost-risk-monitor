@@ -19,10 +19,10 @@
 
 ## 4. Architecture diagrams
 
-- [ ] 4.1 Create the FigJam file on the owner's Pro seat with the C4 system context diagram
-- [ ] 4.2 Add the C4 container diagram (each box marked built or planned) to the same file
-- [ ] 4.3 Add the ERD of schema version 1 to the same file
-- [ ] 4.4 Export all three as SVG to `docs/architecture/` and record the Figma URL in PROJECT.md §4
+- [x] 4.1 Create the FigJam file on the owner's Pro seat with the C4 system context diagram
+- [x] 4.2 Add the C4 container diagram (each box marked built or planned) to the same file
+- [x] 4.3 Add the ERD of schema version 1 to the same file
+- [x] 4.4 Export all three as SVG to `docs/architecture/` and record the Figma URL in PROJECT.md §4
 
 ## 5. Review and documents
 

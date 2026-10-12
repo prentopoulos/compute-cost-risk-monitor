@@ -89,9 +89,11 @@ user before each later phase. Evidence that counts in every phase:
   adjusts for configuration and rental-condition differences. This project shows those
   problems are understood; it does not claim to be an index.
 - Optional: an LLM to draft the market brief from validated numbers. Provider TBD (⛔ spend).
-- Architecture diagrams: a new Figma draft on the owner's Pro seat, drawn to standard
-  conventions (proposed: C4 context and container views plus an ERD of the DuckDB schema; to
-  confirm in Phase 1). Exported into `docs/` so the repo shows them.
+- Architecture diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A)
+  on the owner's Pro seat (Projects team), confirmed in Phase 1 (owner): C4 system context, C4
+  container (built or planned) and an ERD of the DuckDB schema. The C4 views are flowcharts in
+  C4 notation because Figma's diagram tool has no C4 type. Exported as SVG to
+  `docs/architecture/`; update them when a phase changes components, data flow or schema.
 - Code review: every PR that changes code is reviewed before merge (WORKFLOW.md).
 
 Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and `npm ci --ignore-scripts`; CI runs it plus
