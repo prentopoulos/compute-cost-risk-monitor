@@ -1,13 +1,13 @@
 # Phase 6 tests review (traceability, coverage, live regression, build safety, market review)
 
-- **Scope:** OpenSpec change `phase-6-tests` at commit 76230c9 on branch `phase-6-tests`. It
-  covers tests for units, calculations, missing data and stale offers; the coverage threshold;
+- **Scope:** OpenSpec change `phase-6-tests` on branch `phase-6-tests`, at commit 76230c9 plus
+  the code-review fixes (§ Code review). It covers tests for units, calculations, missing data and stale offers; the coverage threshold;
   Hypothesis; and four fixes found on the way.
 - **Reviewer:** the main agent (Claude). This is a read-through and evidence record, not the
   code review: `/code-review` runs on PR #11.
 - **Evidence:**
   - **Gate:** green with both coverage steps (all nine checks pass).
-  - **Tests:** 708, at 100.0% branch coverage overall.
+  - **Tests:** 718, at 100.0% branch coverage overall.
   - **Dependency audit:** `uv audit --locked --preview-features audit-command` found "no known
     vulnerabilities and no adverse project statuses in 69 packages".
   - **Live regression:** a scratch script on a read-only connection, counts and pass/fail only.
@@ -22,13 +22,14 @@
 | | Tests | Statements (missed) | Branches (partial) | Total |
 |---|---|---|---|---|
 | Before, main at a79f0e0 | 649 | 2,830 (37) | 764 (21) | 98.4% |
-| After, 76230c9 | 708 | 2,848 (0) | 760 (0) | 100.0% |
+| After the code-review fixes | 718 | 2,857 (0) | 762 (0) | 100.0% |
 
 - **Total minimum:** pytest fails below 99.0% (`fail_under`, precision 1). The only exclusion is
   `if __name__ == "__main__":`. No `# pragma: no cover` exists.
 - **Core coverage:** the gate step holds `azure_retail`, `normalize`, `checks`, `gpu_map`,
   `rules`, `groups`, `history`, `quality`, `calculator`, `scenarios` and `workload_check` at
-  100% (1,389 statements and 416 branches).
+  100% (1,392 statements and 416 branches). The gate deletes old coverage data before the tests
+  step, and the step fails, naming the module, if a core module is renamed or missing.
 - **Both steps fail when they should:** a run of `tests/unit/test_calculator.py` alone fails
   the minimum ("Required test coverage of 99.0% not reached. Total coverage: 10.95%"). The core
   step then exits 2 on an unrun module (`history.py` 0.0%).
@@ -101,19 +102,21 @@ Tests are in `tests/unit/` unless named otherwise. **New** marks a Phase 6 test.
 4. **Hours and budget bounds (D23, found by Hypothesis):** the validators accepted hours and
    budgets down to 5e-324.
    - **What happened:** the headroom overflowed or underflowed, and the independent check
-     withheld every figure for a valid input. It failed safe, and the page's two-decimal inputs
-     could not produce these values.
+     withheld every figure for a valid input. It failed safe. The page displays two decimals,
+     but whether it keeps more digits a user types is not verified.
    - **Fix:** both must now be at least 0.01. Commit 050db8e.
    - **Evidence:** with those bounds, 10,000 random examples passed, as did two `explore` runs
      of 2,000 examples per property and the fixed `gate` profile.
 
-No frozen version or methodology definition needed a change.
+Five more fixes came from the code review (§ Code review). No frozen version or methodology
+definition needed a change.
 
 ## Property tests (design D4, D11)
 
 - **The five properties:** `tests/unit/test_properties.py`, under the `gate` profile
   (derandomized, no example database, no deadline, 200 examples). `tests/repo/test_dependencies.py`
-  checks that the profile is the same with and without `CI`.
+  loads `tests/conftest.py` in a fresh interpreter with and without `CI`, and gets `gate`
+  each time. An unregistered `HYPOTHESIS_PROFILE` stops the run with one message.
 - **One tolerance fix, in the test:** a storage amount adds rounding at its own scale to the
   difference of two costs. The product's check already allows for it (`_slack`), and the
   property now does too.
@@ -161,14 +164,39 @@ remain untested.
 
 ## Market-review read-through
 
-- **No figure changed** for any input the page accepts. The calculator's formulas, the scenarios,
+- **No figure changed** for any hours or budget of 0.01 or more. The calculator's formulas, the scenarios,
   rules and map are untouched. The live regression reproduces Phase 5 exactly: 2,476 of 2,476,
   and 11,520 exact.
-- **Fix 4** only refuses hours or budgets below 0.01, which the page's inputs could not enter.
-  Refused inputs give a message naming the input, never a figure.
+- **Fix 4** only refuses hours or budgets below 0.01, a range where the headroom could not be
+  computed. A refused input gives a message naming it, never a figure.
 - **Fix 3** labels missing run records as unknown, keeping "missing observations stay missing".
 - **Labels unchanged:** "published Azure list prices", "synthetic", "Scenario calculation, not
   a forecast". Every exclusion and caption line is unchanged.
+
+## Code review
+
+`/code-review` (high) on PR #11 found 14 issues; design D24 records each. Fixed with tests:
+1. **Missing run summary:** the rejected total and a `shared_meter_key` count with no tally
+   row read unknown, not 0. Tally rows that exist are still shown. Commit 1b9ab70.
+2. **Synthetic command** (commit 4c26890):
+   - two files in one command with the same source and observation time, including the same
+     file twice, are refused before anything is written;
+   - an `observed_at` that cannot convert to UTC, a `--db` whose folder cannot be made and a
+     file-system error while storing are refused, not raised;
+   - the raw response takes the ID its rows were built with.
+3. **Gate:** the core coverage step cannot read stale data, and a missing core module fails it
+   by name. Commit 9ab4c83.
+4. **Hypothesis profile:** the `CI` case is tested in a subprocess, and a mistyped profile
+   name gives one clear message. Commit 66cadc4.
+5. **Pointers:** PROJECT.md and HANDOFF.md now cite design D1–D24.
+
+Answered without a code change:
+- **Widget minimums:** they stay at 0 while the validators start at 0.01, so the validator's
+  message explains each refusal, as Phase 5 chose. D23's wording is corrected.
+- **Double parsing:** each synthetic file is parsed twice, which is negligible for files of a
+  few kilobytes.
+- **Schema-only file:** a database error mid-write can still leave a schema-only new file. That
+  is a write failure, not a refused file, and the comment says so.
 
 ## Not covered
 

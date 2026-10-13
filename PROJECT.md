@@ -106,7 +106,7 @@ user before each later phase. Evidence that counts in every phase:
   `openspec/changes/archive/2026-10-13-phase-5-calculator/design.md` D1–D29. Phase 6
   grilling decisions (gap tests in the four areas, an end-to-end known-answer test, Hypothesis,
   the coverage threshold, no mutation testing, two small fixes; owner answered every owner call
-  on 2026-10-13) are cited in `openspec/changes/phase-6-tests/design.md` D1–D22. Vast.ai
+  on 2026-10-13) are cited in `openspec/changes/phase-6-tests/design.md` D1–D24. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
