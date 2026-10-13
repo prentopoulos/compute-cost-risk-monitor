@@ -145,8 +145,9 @@ when present.
 - **THEN** the higher offer is marked `machine_duplicate` and the machine count counts M-01 once
 
 ### Requirement: Group browser
-The dashboard SHALL list the latest snapshot's region groups for the chosen source, filtered by
-the choices made so far, with each group's key, member count and labels (`single list price`,
+The dashboard SHALL list every region group of the latest snapshot for the chosen source, with
+a toggle that narrows the list to the chosen GPU variant, showing each group's key, member count
+and labels (`single list price`,
 `thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, SHALL sort
 groups by key, and SHALL be captioned with the snapshot's start time in UTC, run ID and data
 label.
@@ -154,6 +155,10 @@ label.
 #### Scenario: No prices in the browser
 - **WHEN** the group browser is shown for a snapshot
 - **THEN** it holds group keys, member counts and labels, and no column holds a price or statistic
+
+#### Scenario: Narrowed to the chosen variant
+- **WHEN** the toggle is on and "A100 PCIe 80GB" is the chosen variant
+- **THEN** the browser lists only that variant's groups
 
 ### Requirement: Figure captions and framing line
 Every table and chart that shows a price or statistic SHALL carry a caption with:
