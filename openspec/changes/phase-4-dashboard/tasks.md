@@ -20,8 +20,8 @@
 
 ## 4. Streamlit app
 
-- [ ] 4.1 Write `app.py`: `main(paths, as_of)`, sidebar dataset, source and filters, title and framing line, the three tabs (D28), a read-only connection per page run closed in `finally`, and no caching
-- [ ] 4.2 Write AppTest flows (marked `allow_hosts(["127.0.0.1"])`) on synthetic file databases with a fixed as-of time: dataset choice and default, filter cascade, region-group view and Source records, cross-region view, marketplace view with a duplicate, group browser, quality panel, every database state, mixed-label warning, stale framing, and a writer opening the file after a run. Add one `AppTest.from_file` run of `app.py`
+- [x] 4.1 Write `app.py`: `main(paths, as_of)`, sidebar dataset, source and filters, title and framing line, the three tabs (D28), a read-only connection per page run closed in `finally`, and no caching
+- [x] 4.2 Write AppTest flows (marked `allow_hosts(["127.0.0.1"])`) on synthetic file databases with a fixed as-of time: dataset choice and default, filter cascade, region-group view and Source records, cross-region view, marketplace view with a duplicate, group browser, quality panel, every database state, mixed-label warning, stale framing, and a writer opening the file after a run. Add one `AppTest.from_file` run of `app.py`
 
 ## 5. Verification, review and documents
 
