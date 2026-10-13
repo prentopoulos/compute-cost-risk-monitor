@@ -4,6 +4,12 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
+**Phase 6 (tests for units, calculations, missing data and stale offers) is in progress** on
+branch `phase-6-tests`, OpenSpec change `openspec/changes/phase-6-tests`. Grilling finished on
+2026-10-13: the owner accepted every recommendation in one round ("All recommended"). Design
+D1–D10 are owner decisions and D11–D22 are settled with their basis. The next step is the first
+open task in `tasks.md`. The sections below describe Phase 5 and stay true.
+
 Phase 5 (workload cost calculator and labelled budget-exposure scenarios) is Done. It was
 delivered through PR #10 from branch `phase-5-calculator` and archived as
 `openspec/changes/archive/2026-10-13-phase-5-calculator`. New spec in `openspec/specs/`:
