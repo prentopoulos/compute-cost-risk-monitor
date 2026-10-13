@@ -226,7 +226,11 @@ def test_filters_offer_only_existing_groups(
     assert dashboard.gpu_counts(found, "A100 PCIe 80GB") == [1]
     assert dashboard.rental_types(found, "A100 PCIe 80GB", 1) == ["on_demand"]
     assert dashboard.rental_types(found, H100, 8) == ["on_demand", "spot"]
-    assert dashboard.regions(found, H100, 8, "spot") == ["eastus", "westeurope"]
+    assert dashboard.regions(found, H100, 8, "spot") == [
+        "eastus",
+        "uksouth",
+        "westeurope",
+    ]
     assert dashboard.regions(found, H100, 8, "on_demand") == [
         "eastus",
         "southcentralus",
@@ -472,8 +476,8 @@ def test_chart_plots_only_listed_regions(
     assert spot is not None
     (points_kind, points), (rules_kind, marks) = _layers(dashboard.summary_chart(spot))
     assert (points_kind, rules_kind) == ("point", "rule")
-    assert [p["Region"] for p in points] == ["eastus", "westeurope"]
-    assert [m[dashboard.USD] for m in marks] == [5.0, 8.5, 12.0]
+    assert [p["Region"] for p in points] == ["eastus", "uksouth", "westeurope"]
+    assert [m[dashboard.USD] for m in marks] == [5.0, 6.0, 12.0]
     assert [m["Statistic"] for m in marks] == ["minimum", dashboard.MEDIAN, "maximum"]
     assert "line" not in str(dashboard.summary_chart(spot).to_dict()["layer"])
 
@@ -497,7 +501,7 @@ def test_panel_matches_the_report(views: dict[str, dashboard.SourceView]) -> Non
         "location 0, product_name 0, effective_start_date 0"
     )
     secondary = dict(shown.secondary.values.tolist())
-    assert secondary["Observations"] == "13"
+    assert secondary["Observations"] == "14"
     assert secondary["Rows: windows"] == "1"
     assert secondary["Changes since the previous snapshot"] == "no previous snapshot"
     assert "data label: synthetic" in shown.caption

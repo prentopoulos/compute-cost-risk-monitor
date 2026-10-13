@@ -11,8 +11,10 @@ committed to this repository (Phase 1 design D4).
   `observed_at` time) for the dashboard demo, AppTest flows and PR screenshots. Size names are
   real Azure names so the packaged GPU map applies; every price and ID is invented. Ingested
   with `uv run python -m compute_cost_risk_monitor.synthetic`, it holds:
-  - H100 ×8 pay-as-you-go in 5 regions (a summary that is not thin) and Spot in 2 (thin);
+  - H100 ×8 pay-as-you-go in 5 regions (a summary that is not thin) and Spot in 3 (thin);
   - a US East Spot price equal to its pay-as-you-go price;
+  - a UK South Spot size with no pay-as-you-go listing in its region, so the calculator's
+    Spot to pay-as-you-go fallback shows "not computed" (Phase 5 design D12);
   - two T4 sizes in one US East group, and single-price T4 and A100 groups;
   - an unmapped size (MI300X `ND96is`) and a Windows row.
 - `azure_items.json`: one invented Azure-shaped item plus labelled cases (normal, edge,

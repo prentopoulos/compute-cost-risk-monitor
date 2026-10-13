@@ -17,6 +17,7 @@ The committed file `tests/fixtures/synthetic/azure_demo.json` SHALL cover at lea
 - a region group with several sizes and one with a single list price;
 - a thin cross-region summary and one with at least 5 regions;
 - a Spot price equal to the pay-as-you-go price of the same size;
+- a Spot size with no pay-as-you-go listing in its region;
 - an unmapped size and a Windows row.
 
 #### Scenario: Unlabelled file refused
@@ -29,7 +30,7 @@ The committed file `tests/fixtures/synthetic/azure_demo.json` SHALL cover at lea
 
 #### Scenario: Demo file covers the dashboard cases
 - **WHEN** `azure_demo.json` is ingested and normalized into an empty database
-- **THEN** its snapshot has a multi-size region group, a single-price group, a thin and a non-thin summary, a Spot row equal to its pay-as-you-go price, a row excluded as `unmapped_sku` and a row excluded as `windows`
+- **THEN** its snapshot has a multi-size region group, a single-price group, a thin and a non-thin summary, a Spot row equal to its pay-as-you-go price, a Spot row whose size has no pay-as-you-go listing in its region, a row excluded as `unmapped_sku` and a row excluded as `windows`
 
 ### Requirement: Synthetic Azure runs
 Each synthetic Azure snapshot file SHALL be ingested, in one transaction, as one `azure-retail`

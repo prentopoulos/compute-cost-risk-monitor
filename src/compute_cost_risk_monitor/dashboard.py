@@ -1,10 +1,11 @@
 """View model for the local Streamlit dashboard (Phase 4 design D3, D9, D10, D13, D17,
-D23-D26, D31).
+D23-D26, D31; phase-5-calculator D8, D10, D16, D18, D19, D21, D27).
 
 Plain Python and pandas with no Streamlit import, so every rule here is tested directly.
 It only arranges what Phase 3 code computes (region groups, cross-region summaries,
-marketplace groups and the quality report) and formats values for display. Nothing is
-computed from a rounded value, and nothing is written.
+marketplace groups and the quality report) and what `calculator` computes from them, and
+formats values for display. Workload figures pass `workload_check` before they are
+shown. Nothing is computed from a rounded value, and nothing is written.
 """
 
 from __future__ import annotations
@@ -20,12 +21,16 @@ import pandas as pd
 
 from compute_cost_risk_monitor import (
     azure_retail,
+    calculator,
     db,
     groups,
     quality,
     rules,
+    scenarios,
     synthetic,
+    workload_check,
 )
+from compute_cost_risk_monitor.calculator import Custom, Result, Row, Start, Workload
 from compute_cost_risk_monitor.collect import DEFAULT_DB as MONITOR_DB
 from compute_cost_risk_monitor.groups import (
     CrossRegionSummary,
@@ -104,7 +109,14 @@ RULE_COLOURS = ["#9e9e9e", "#f58518", "#9e9e9e"]  # minimum, median, maximum
 USD = "USD/GPU-hour"
 PUBLISHED = "Published price"
 OFFER = "Offer price"
-# Display formats (D9): Streamlit NumberColumn formats, by column name.
+AMOUNT = "Amount (USD)"
+CHANGE_USD = "Change (USD/GPU-hour)"
+CHANGE_PCT = "Change (% of starting price)"
+SCENARIO_USD = "Scenario USD/GPU-hour"
+SCENARIO_COST = "Scenario cost (USD)"
+EXPOSURE = "Exposure (USD)"
+# Display formats (D9; phase-5-calculator D21): Streamlit NumberColumn formats, by
+# column name. USD amounts carry thousands separators.
 FORMATS = {
     USD: "%.4f",
     PUBLISHED: "plain",  # the full stored number, as published
@@ -112,6 +124,12 @@ FORMATS = {
     "Minimum": "%.4f",
     "Median": "%.4f",
     "Maximum": "%.4f",
+    AMOUNT: "%,.2f",
+    CHANGE_USD: "%.4f",
+    CHANGE_PCT: "%.1f",
+    SCENARIO_USD: "%.4f",
+    SCENARIO_COST: "%,.2f",
+    EXPOSURE: "%,.2f",
 }
 
 
@@ -598,3 +616,372 @@ def panel(view: SourceView, as_of: datetime) -> Panel:
         list(report.unmapped_sizes),
         _table(secondary_rows),
     )
+
+
+# --- workload cost (phase-5-calculator D3, D8, D10, D16, D18, D19, D21, D27) ---
+
+WORKLOAD_INTRO = (
+    "How the cost of one workload would change under labelled price changes. These are"
+    " scenario calculations from published list prices, not forecasts, market prices or"
+    " what a customer would pay."
+)
+MARKETPLACE_NOTE = (
+    "The workload calculator uses Azure list-price groups: choose the Azure retail list"
+    " prices source. The synthetic marketplace data exercises the data-quality rules."
+)
+WITHHELD_WORKLOAD = (
+    "The workload figures are withheld until this snapshot is normalized."
+)
+HOURS_HELP = "720 h = 30 days; Microsoft's pricing calculator uses 730 h for a month."
+HOURS_NOTE = "Costs are for the hours entered, never converted to a month."
+STORAGE_ENTERED = (
+    "Storage: USD {amount} entered by you for this period, not an Azure list price and"
+    " not checked against Azure disk prices. The total adds it; every other exclusion"
+    " still applies."
+)
+STORAGE_NONE = "Storage not included."
+BILLING = (
+    "Assumes each VM is allocated for exactly the hours entered. Azure bills full"
+    " minutes while a VM is allocated, including Stopped (allocated); only Stopped"
+    " (deallocated) ends compute billing. Every VM has an OS disk, billed as storage"
+    " and not in the GPU price; add it under storage."
+)
+SPOT_LINE = (
+    "Spot: Azure can evict these VMs at any time with 30 seconds' notice and gives no"
+    " SLA, and the Spot price is variable. This figure assumes every hour entered runs"
+    " at this listed Spot price; evicted hours may not be delivered, and an evicted VM"
+    " that is deallocated still bills for its disks."
+)
+ABOVE_PAYG = (
+    "Above this size's pay-as-you-go list price (USD {price}/GPU-hour). With max price"
+    " −1 Azure charges at most the pay-as-you-go price; with a lower max price the VM"
+    " is evicted. This row shows the scenario's arithmetic, not what Azure would bill."
+    " See 'Spot to pay-as-you-go fallback'."
+)
+CROSSES_RENTAL = "crosses rental types (Spot → pay-as-you-go)"
+CHECK_FAILED = "The independent check failed: {checks}. No figures are shown."
+BUDGET_HINT = (
+    "Enter a budget to see the price rise per GPU-hour that would use it up (a reverse"
+    " scenario calculation)."
+)
+LOWEST_MEMBER = "lowest listed in this group"
+STARTING = "Starting price (listed)"
+BASELINE = "baseline"
+CUSTOM_KINDS = {
+    "% of starting price": scenarios.PERCENT,
+    "USD per GPU-hour": scenarios.USD,
+}
+
+
+def money(value: float) -> str:
+    return f"USD {value:,.2f}"
+
+
+def per_gpu_hour(value: float) -> str:
+    return f"USD {value:.4f}/GPU-hour"
+
+
+def plain(value: float, places: int) -> str:
+    """Up to `places` decimals without trailing zeros, or 3 significant digits when that
+    would show a non-zero value as zero."""
+    text = f"{value:,.{places}f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    if text in ("0", "-0") and value != 0:
+        return f"{value:.3g}"
+    return text
+
+
+def fixed(value: float, places: int) -> str:
+    """Exactly `places` decimals, or 3 significant digits when that would show a
+    non-zero value as zero."""
+    text = f"{value:,.{places}f}"
+    if float(text.replace(",", "")) == 0 and value != 0:
+        return f"{value:.3g}"
+    return text
+
+
+def hours_text(hours: float) -> str:
+    return plain(hours, 4) + " h"
+
+
+def size_key(key: GroupKey) -> str:
+    """The size choice's widget key: one per group, so each keeps its pick (D27)."""
+    return "|".join(
+        ["size", key.variant, str(key.gpu_count), key.region, key.rental_type]
+    )
+
+
+def sizes(group: RegionGroup) -> list[str]:
+    """Member sizes, lowest listed first, so the first is the default."""
+    return [m.name for m in sorted(group.members, key=groups.price_order)]
+
+
+def default_gpus(gpus_per_vm: int) -> int:
+    """32 when it makes whole VMs (1, 2, 4 or 8 GPUs per VM), else one VM (D26)."""
+    preferred = calculator.DEFAULT_GPUS
+    if gpus_per_vm <= preferred and preferred % gpus_per_vm == 0:
+        return preferred
+    return gpus_per_vm
+
+
+def start_text(begin: Start) -> str:
+    member = begin.member
+    lowest = f" ({LOWEST_MEMBER})" if begin.lowest else ""
+    return (
+        f"Starting price: {per_gpu_hour(begin.usd_per_gpu_hour)} for {member.name}"
+        f"{lowest}, from its published price {member.currency} {member.price} per VM"
+        f" per {member.price_unit} ({gpus(begin.gpus_per_vm)} per VM) · item key"
+        f" {member.item_key} · run {member.run_id}"
+    )
+
+
+def vm_count(vms: int) -> str:
+    return f"{vms:,} {'VM' if vms == 1 else 'VMs'}"
+
+
+def vms_text(result: Result) -> str:
+    """The checked VM count beside the GPUs entered."""
+    return (
+        f"{result.workload.gpus:,} GPUs = {vm_count(result.cost.vms)}"
+        f" of {gpus(result.start.gpus_per_vm)}"
+    )
+
+
+def storage_line(work: Workload) -> str:
+    if work.storage is None:
+        return STORAGE_NONE
+    return STORAGE_ENTERED.format(amount=f"{work.storage:,.2f}")
+
+
+def workload_caption(result: Result) -> str:
+    """Every workload figure: key, snapshot, label, exclusions and assumptions (D10)."""
+    begin = result.start
+    parts = [
+        group_caption(begin.group),
+        storage_line(result.workload),
+        BILLING,
+        HOURS_NOTE,
+    ]
+    if begin.spot:
+        parts.append(SPOT_LINE)
+    return " · ".join(parts)
+
+
+def scenario_caption(result: Result) -> str:
+    """The workload caption plus the scenario set, its label and any crossing."""
+    parts = [
+        workload_caption(result),
+        result.version,
+        scenarios.NOT_A_FORECAST,
+        scenarios.JUDGEMENT,
+    ]
+    if result.payg_key is not None:
+        if result.payg is None:
+            where = " (not listed in this snapshot)"
+        else:
+            where = f" ({result.payg.name}, item key {result.payg.item_key})"
+        parts.append(
+            f"Fallback row {CROSSES_RENTAL}: {key_text(result.start.key)}"
+            f" → {key_text(result.payg_key)}{where}"
+        )
+    return " · ".join(parts)
+
+
+def cost_frame(result: Result) -> pd.DataFrame:
+    """Compute, storage and total for the hours entered."""
+    begin, work, cost = result.start, result.workload, result.cost
+    entered = work.storage is not None
+    compute = (
+        f"{work.gpus:,} GPUs ({vm_count(cost.vms)}) × {hours_text(work.hours)}"
+        f" × {per_gpu_hour(begin.usd_per_gpu_hour)}"
+    )
+    storage = "entered by you, not an Azure list price" if entered else "not included"
+    total = "compute plus storage entered" if entered else "compute only"
+    return pd.DataFrame(
+        [
+            {"Item": "Compute", "Basis": compute, AMOUNT: cost.compute},
+            {"Item": "Storage", "Basis": storage, AMOUNT: cost.storage},
+            {"Item": "Total", "Basis": total, AMOUNT: cost.total},
+        ],
+        columns=["Item", "Basis", AMOUNT],
+    )
+
+
+def note(row: Row) -> str:
+    if row.id == calculator.FALLBACK:
+        return CROSSES_RENTAL
+    if row.above_payg is not None:
+        return ABOVE_PAYG.format(price=f"{row.above_payg:.4f}")
+    return ""
+
+
+# The outcome first and the long narrative last, so a wide table never hides the
+# effect or a note off-screen (manual check, task 4.1).
+SCENARIO_COLUMNS = [
+    "Scenario",
+    "Effect",
+    EXPOSURE,
+    SCENARIO_COST,
+    SCENARIO_USD,
+    CHANGE_USD,
+    CHANGE_PCT,
+    "Note",
+    "Narrative",
+]
+
+
+def scenario_frame(result: Result) -> pd.DataFrame:
+    """The starting price first, then each scenario; a refused row shows no figure."""
+    begin = result.start
+    rows: list[dict[str, object]] = [
+        {
+            "Scenario": STARTING,
+            "Narrative": f"The listed price of {begin.member.name}.",
+            CHANGE_USD: None,
+            CHANGE_PCT: None,
+            SCENARIO_USD: begin.usd_per_gpu_hour,
+            SCENARIO_COST: result.cost.total,
+            EXPOSURE: None,
+            "Effect": BASELINE,
+            "Note": "",
+        }
+    ]
+    rows += [
+        {
+            "Scenario": row.name,
+            "Narrative": row.narrative,
+            CHANGE_USD: row.change,
+            CHANGE_PCT: row.change_pct,
+            SCENARIO_USD: row.price,
+            SCENARIO_COST: row.cost,
+            EXPOSURE: row.exposure,
+            "Effect": row.effect,
+            "Note": note(row),
+        }
+        for row in result.rows
+    ]
+    return pd.DataFrame(rows, columns=SCENARIO_COLUMNS)
+
+
+def headroom_text(result: Result) -> str | None:
+    """The reverse calculation in words (D9), or None without a budget."""
+    room = result.headroom
+    if room is None:
+        return None
+    work = result.workload
+    text = (
+        f"A rise of USD {fixed(room.rise, 4)} per GPU-hour ({fixed(room.rise_pct, 1)}%"
+        f" of starting price) would use up {money(room.budget)} over {work.gpus:,} GPUs"
+        f" × {hours_text(work.hours)}. Storage unchanged. {scenarios.NOT_A_FORECAST}."
+    )
+    if room.above_payg is not None:
+        text += " " + ABOVE_PAYG.format(price=f"{room.above_payg:.4f}")
+    return text
+
+
+def exposure_chart(result: Result) -> alt.LayerChart:
+    """One bar per computed scenario row, with a rule at zero (D8)."""
+    computed = [row for row in result.rows if row.computed]
+    bars = pd.DataFrame(
+        {
+            "Scenario": [row.name for row in computed],
+            EXPOSURE: [row.exposure for row in computed],
+            "Effect": [row.effect for row in computed],
+        }
+    )
+    drawn = (
+        alt.Chart(bars)
+        .mark_bar(color=POINT_COLOUR)
+        .encode(
+            x=alt.X(
+                f"{EXPOSURE}:Q",
+                title="Exposure in USD (scenario calculation, not a forecast)",
+                axis=alt.Axis(format=",.0f"),
+            ),
+            y=alt.Y("Scenario:N", sort=None, title=None, axis=alt.Axis(labelLimit=0)),
+            tooltip=[
+                "Scenario:N",
+                alt.Tooltip(f"{EXPOSURE}:Q", format=",.2f"),
+                "Effect:N",
+            ],
+        )
+    )
+    zero = (
+        alt.Chart(pd.DataFrame({EXPOSURE: [0.0]}))
+        .mark_rule(color=RULE_COLOURS[0], strokeWidth=2)
+        .encode(x=f"{EXPOSURE}:Q")
+    )
+    return alt.LayerChart(layer=[drawn, zero])
+
+
+def _listed_payg(begin: Start, found: Sequence[RegionGroup]) -> float | None:
+    """A Spot start's size on pay-as-you-go: its VM-hour price, looked up apart from
+    the calculator so the check does not inherit its lookup."""
+    key = begin.key
+    if key.rental_type != calculator.SPOT:
+        return None
+    wanted = GroupKey(key.variant, key.gpu_count, key.region, calculator.ON_DEMAND)
+    for group in found:
+        if group.key == wanted and group.snapshot.run_id == begin.snapshot.run_id:
+            for member in group.members:
+                if member.name == begin.member.name:
+                    return member.price
+    return None
+
+
+def check(
+    begin: Start,
+    result: Result,
+    work: Workload,
+    change: Custom | None,
+    limit: float | None,
+    found: Sequence[RegionGroup],
+) -> list[str]:
+    """Run the independent check on what the page would show (D19).
+
+    The inputs come from the page: the member it picked (`begin`), the user's validated
+    entries and the stored members. Only the figures come from `result`, so a result
+    priced from another member, or one that drops a row or headroom, is caught.
+    """
+    member = begin.member
+    if member.price is None:
+        return ["published price missing"]
+    inputs = workload_check.Inputs(
+        gpus=work.gpus,
+        hours=work.hours,
+        storage=work.storage,
+        item_key=member.item_key,
+        vm_price=member.price,
+        gpus_per_vm=begin.key.gpu_count,
+        spot=begin.key.rental_type == calculator.SPOT,
+        payg_vm_price=_listed_payg(begin, found),
+        custom=None if change is None else (change.kind, change.magnitude),
+        budget=limit,
+    )
+    room = result.headroom
+    figures = workload_check.Figures(
+        item_key=result.start.member.item_key,
+        start=result.start.usd_per_gpu_hour,
+        vms=result.cost.vms,
+        compute=result.cost.compute,
+        storage=result.cost.storage,
+        total=result.cost.total,
+        rows=tuple(
+            workload_check.RowFigures(
+                row.id,
+                row.price,
+                row.change,
+                row.change_pct,
+                row.cost,
+                row.exposure,
+                row.above_payg,
+                row.effect,
+            )
+            for row in result.rows
+        ),
+        headroom=None if room is None else room.rise,
+        headroom_pct=None if room is None else room.rise_pct,
+        headroom_above_payg=None if room is None else room.above_payg,
+    )
+    return workload_check.check(inputs, figures)
