@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import statistics
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 
 import duckdb
@@ -50,6 +50,14 @@ class Member:
     retrieved_at: datetime
     machine_id: str | None = None
     flags: tuple[str, ...] = ()
+    # The published price it came from, and the record it traces to (Phase 4 D10).
+    price: float | None = None  # the source's price for its unit, e.g. one VM-hour
+    currency: str | None = None
+    price_unit: str | None = None
+    run_id: str | None = None
+    file_path: str | None = None  # the raw response, relative to the raw store
+    seq: int | None = None
+    sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -111,7 +119,8 @@ def _lowest(members: list[Member]) -> Member:
 _ROWS = """
 SELECT n.gpu_model, n.gpu_count, n.region, n.rental_type, n.usd_per_gpu_hour,
        n.item_key, n.retrieved_at, n.exclusions, a.arm_sku_name, m.offer_id,
-       m.machine_id
+       m.machine_id, p.price, p.currency, p.price_unit, rr.run_id, rr.file_path,
+       rr.seq, rr.sha256
 FROM normalized_price n
 JOIN price_observation p ON p.source = n.source AND p.item_key = n.item_key
     AND p.retrieved_at = n.retrieved_at
@@ -136,9 +145,25 @@ def region_groups(
     exclusions: dict[GroupKey, str] = {}
     rows = connection.execute(_ROWS, [snapshot.run_id, rule_version]).fetchall()
     for row in rows:
-        model, count, region, rental, per_gpu, key, at, text, size, offer, machine = row
+        model, count, region, rental, per_gpu, key, at, text, size, offer = row[:10]
+        machine, price, currency, unit, run, path, seq, sha = row[10:]
         group = GroupKey(model, int(count), region, rental)
-        found[group].append(Member(size or offer, per_gpu, key, at, machine))
+        found[group].append(
+            Member(
+                size or offer,
+                per_gpu,
+                key,
+                at,
+                machine,
+                price=price,
+                currency=currency,
+                price_unit=unit,
+                run_id=run,
+                file_path=path,
+                seq=seq,
+                sha256=sha,
+            )
+        )
         exclusions[group] = text
     marketplace = snapshot.source == "synthetic-marketplace"
     groups = []
@@ -162,16 +187,7 @@ def _by_machine(group: RegionGroup, thin_below: int) -> None:
         machines[member.machine_id or member.name].append(member)
     kept = {_lowest(offers).item_key for offers in machines.values()}
     group.members = [
-        m
-        if m.item_key in kept
-        else Member(
-            m.name,
-            m.usd_per_gpu_hour,
-            m.item_key,
-            m.retrieved_at,
-            m.machine_id,
-            (*m.flags, DUPLICATE),
-        )
+        m if m.item_key in kept else replace(m, flags=(*m.flags, DUPLICATE))
         for m in group.members
     ]
     prices = [m.usd_per_gpu_hour for m in group.members if m.item_key in kept]

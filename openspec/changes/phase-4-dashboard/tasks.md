@@ -1,7 +1,7 @@
 ## 1. Foundations
 
 - [x] 1.1 Add `read_only` to `db.connect` (UTC kept, no folder created when read-only). Test that a read-only connection cannot write, that a missing file is refused and not created, and that closing it lets a writer open the file
-- [ ] 1.2 Extend `groups.py`: `Member` gains published price, currency, price unit, run ID, raw-response file path, sequence number and SHA-256 from the existing `_ROWS` join. Add the MODIFIED "Region groups" known-answer test (7.0 USD per "1 Hour", 2 GPUs → 3.5, with its response's provenance)
+- [x] 1.2 Extend `groups.py`: `Member` gains published price, currency, price unit, run ID, raw-response file path, sequence number and SHA-256 from the existing `_ROWS` join. Add the MODIFIED "Region groups" known-answer test (7.0 USD per "1 Hour", 2 GPUs → 3.5, with its response's provenance)
 - [ ] 1.3 Commit `.streamlit/config.toml` (`gatherUsageStats = false`, `address = "127.0.0.1"`, `toolbarMode = "viewer"`) with a test that parses it. Declare `altair>=6.3,<7` as a direct dependency and relock without changing installed versions. Reword the `__init__.py` docstring (D27)
 
 ## 2. Synthetic Azure demo data
