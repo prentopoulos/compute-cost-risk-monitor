@@ -28,7 +28,7 @@
 ## 4. End-to-end known-answer test
 
 - [x] 4.1 Write `tests/fixtures/synthetic/azure_history/snapshot-1.json` to `snapshot-3.json`, labelled synthetic with invented prices, one week apart. Work every expected answer by hand in the fixtures README (D17): counts by reason, USD/GPU-hour, the change, absent once, not listed, the return at a new price, the non-hourly unit, a 32-GPU × 720 h cost with every `scenarios-v1` exposure, and the stale flag at +2 days, exactly +7 days and +7 days + 1 s
-- [ ] 4.2 Write `tests/e2e/test_known_answers.py`: ingest with `synthetic.ingest_file`, normalize, `checks.run`, `quality.build`, `groups.region_groups`, `history`, `calculator.calculate` and `workload_check.check`, asserting the README's answers
+- [x] 4.2 Write `tests/e2e/test_known_answers.py`: ingest with `synthetic.ingest_file`, normalize, `checks.run`, `quality.build`, `groups.region_groups`, `history`, `calculator.calculate` and `workload_check.check`, asserting the README's answers
 
 ## 5. Coverage threshold
 
