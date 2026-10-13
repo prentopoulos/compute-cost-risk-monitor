@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 import duckdb
 
-from compute_cost_risk_monitor import groups, history, normalize, synthetic
+from compute_cost_risk_monitor import groups, history, normalize, quality, synthetic
 from seed import DAY, Price, azure_run, database
 from support import FIXTURES
 
@@ -105,3 +105,34 @@ def test_reappearance_clears_and_os_is_part_of_the_listing() -> None:
     (gone,) = history.absences(con, "azure-retail")
     assert gone.listing[3] == "windows" and gone.status == history.NOT_LISTED
     assert gone.since.run_id == "d4" and gone.last_seen.run_id == "d3"
+
+
+def test_still_not_listed_after_three_absences() -> None:
+    con = database()
+    stays = Price(meter="s")
+    goes = Price("Standard_NC4as_T4_v3", meter="g", price=1.0)
+    azure_run(con, "d1", [stays, goes], started=DAY)
+    for day in (2, 3, 4):
+        azure_run(con, f"d{day}", [stays], started=DAY + timedelta(days=day - 1))
+    normalize.normalize_pending(con, NOW)
+    (gone,) = history.absences(con, "azure-retail")
+    assert gone.status == history.NOT_LISTED
+    assert (gone.since.run_id, gone.last_seen.run_id) == ("d2", "d1")
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=4))
+    assert (report.absent_once, report.not_listed) == (0, 1)
+
+
+def test_return_at_a_new_price_is_not_a_change() -> None:
+    con = database()
+    stays = Price(meter="s")
+    back = Price("Standard_NC4as_T4_v3", meter="b", price=1.0)
+    azure_run(con, "d1", [stays, back], started=DAY)
+    azure_run(con, "d2", [stays], started=DAY + timedelta(days=1))
+    back_dearer = Price("Standard_NC4as_T4_v3", meter="b", price=1.2)
+    azure_run(con, "d3", [stays, back_dearer], started=DAY + timedelta(days=2))
+    normalize.normalize_pending(con, NOW)
+    _, s2, s3 = groups.snapshots(con, "azure-retail")
+    assert history.changes(con, s2, s3) == []
+    assert history.absences(con, "azure-retail") == []
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=3))
+    assert (report.changes, report.absent_once, report.not_listed) == (0, 0, 0)

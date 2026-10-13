@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "commitizen>=4.19",
     "detect-secrets>=1.5",
+    "hypothesis>=6.169",
     "mypy>=2.4",
     "pandas-stubs==3.0.*",
     "pytest>=9.1",
@@ -57,6 +58,13 @@ addopts = ["-ra", "--import-mode=importlib", "--disable-socket", "--allow-unix-s
 [tool.coverage.run]
 branch = true
 source = ["compute_cost_risk_monitor"]
+
+# Phase 6 design D3: total branch coverage at least 99.0%; scripts/gate.py also holds
+# the core calculation and data modules at 100%.
+[tool.coverage.report]
+fail_under = 99.0
+precision = 1
+exclude_also = ['if __name__ == .__main__.:']
 
 [tool.commitizen]
 name = "cz_conventional_commits"

@@ -17,7 +17,7 @@ in `pyproject.toml`. Project commands SHALL run Python through uv, never through
 The project SHALL commit a uv lockfile that pins every runtime and dev dependency, including
 transitive ones, with hashes for every platform uv supports. Runtime dependencies SHALL be
 pandas, DuckDB, Streamlit, pytz and Altair. Dev dependencies SHALL be pytest, pytest-cov,
-pytest-socket, Ruff, mypy, pandas-stubs, types-pytz, commitizen and detect-secrets.
+pytest-socket, Hypothesis, Ruff, mypy, pandas-stubs, types-pytz, commitizen and detect-secrets.
 
 #### Scenario: Fresh environment from the lockfile
 - **WHEN** a developer runs `uv sync --locked` in a fresh clone
@@ -30,6 +30,10 @@ pytest-socket, Ruff, mypy, pandas-stubs, types-pytz, commitizen and detect-secre
 #### Scenario: Declared dependencies match the requirement
 - **WHEN** `pyproject.toml` is read
 - **THEN** its runtime dependencies are exactly pandas, DuckDB, Streamlit, pytz and Altair, and its dev group is exactly the dev dependencies listed above
+
+#### Scenario: Property tests run the same everywhere
+- **WHEN** the gate runs locally and in CI, where the `CI` environment variable is set
+- **THEN** Hypothesis uses the same fixed profile in both, with derandomized examples and no example database, so it writes no tracked file
 
 ### Requirement: Locked OpenSpec CLI
 The project SHALL pin the OpenSpec CLI (`@fission-ai/openspec`) at exactly 1.6.0 in

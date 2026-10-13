@@ -26,7 +26,9 @@ injected time. It SHALL hold counts only, never prices:
   snapshot.
 
 A source with no succeeded run SHALL be reported as having no snapshot, never as having zero
-prices.
+prices. When the latest snapshot's run has no summary row, its out-of-scope, repeat and
+rejected totals, and any tallied count with no tally row, SHALL be reported as unknown, never
+as zero; tally rows that exist are still reported.
 
 #### Scenario: Fresh snapshot
 - **WHEN** the latest snapshot started 2 days before the as-of time
@@ -56,10 +58,27 @@ prices.
 - **WHEN** a compared marketplace offer has no country code
 - **THEN** the marketplace report counts one missing `country_code`, and names no Azure field
 
+#### Scenario: Exactly seven days is not stale
+- **WHEN** the latest snapshot started exactly 7 days before the as-of time
+- **THEN** the report is not stale, and one second later it is
+
+#### Scenario: Staleness comes from the latest succeeded run
+- **WHEN** a source's newest run is partial or failed and its latest succeeded run started 8 days before the as-of time
+- **THEN** the report describes the succeeded run and is marked `stale`
+
+#### Scenario: Snapshot dated after the as-of time
+- **WHEN** the latest snapshot started after the as-of time
+- **THEN** the report is not stale and carries no other flag for it
+
+#### Scenario: Run without a summary
+- **WHEN** the latest snapshot's run has no `collection_run_summary` row
+- **THEN** the report and the dashboard panel give its out-of-scope, repeat and rejected totals and its `shared_meter_key` count as `unknown (no run summary)`, not 0, while a tally row that exists, such as `rejected missing_field: 2`, is still shown
+
 ### Requirement: Quality command
 `uv run python -m compute_cost_risk_monitor.quality [--db PATH] [--as-of TIME]` SHALL print the
 report for each source, counts only. It SHALL refuse, with exit code 2, a missing database, an
-`--as-of` time without a time zone, or a database whose rule set is not stored yet.
+`--as-of` time without a time zone, or a database whose rule set is not stored yet. It SHALL
+convert an `--as-of` time with any offset to UTC before building and printing the report.
 
 #### Scenario: Before normalizing
 - **WHEN** the command runs on a database that holds a run but no rule set
@@ -68,4 +87,8 @@ report for each source, counts only. It SHALL refuse, with exit code 2, a missin
 #### Scenario: Report printed
 - **WHEN** the command runs after normalize, with `--as-of` one day after the snapshot
 - **THEN** it prints one report per source, the Azure one `not stale`, and a source without runs as having no snapshot
+
+#### Scenario: As-of time printed in UTC
+- **WHEN** the command runs with `--as-of 2026-10-13T10:00:00-04:00`
+- **THEN** the report gives the as-of time as 2026-10-13T14:00:00+00:00 and judges staleness at that instant
 

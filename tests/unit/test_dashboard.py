@@ -508,6 +508,25 @@ def test_panel_matches_the_report(views: dict[str, dashboard.SourceView]) -> Non
     assert "as of 2026-10-12 12:00 UTC" in shown.caption
 
 
+def test_panel_shows_unknown_counts_without_a_run_summary(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    con.execute(
+        "DELETE FROM collection_run_summary WHERE run_id IN"
+        " (SELECT run_id FROM collection_run WHERE source = 'azure-retail')"
+    )
+    shown = dashboard.panel(
+        azure(dashboard.load_all(con, Path("s.duckdb"), AS_OF)), AS_OF
+    )
+    checks = dict(shown.checks.values.tolist())
+    assert checks["Duplicates"] == (
+        "repeats unknown (no run summary), shared_meter_key unknown (no run summary)"
+    )
+    secondary = dict(shown.secondary.values.tolist())
+    assert secondary["Out of scope"] == "unknown (no run summary)"
+    assert secondary["Rejected by the collector"] == "unknown (no run summary)"
+
+
 def test_marketplace_panel_counts_machine_duplicates(
     views: dict[str, dashboard.SourceView],
 ) -> None:
@@ -517,3 +536,21 @@ def test_marketplace_panel_counts_machine_duplicates(
     assert checks["Duplicates"] == f"{groups.DUPLICATE} {duplicates}"
     assert checks["Stale"].startswith("yes ")  # snapshot-3 is 2026-10-03
     assert "Thin groups" in checks
+
+
+def test_plain_without_decimals() -> None:
+    assert dashboard.plain(1234.0, 0) == "1,234"
+
+
+def test_database_error_on_open_named(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "synthetic.duckdb"
+    path.touch()
+
+    def broken(*_: object, **__: object) -> None:
+        raise duckdb.InvalidInputException("simulated bad option")
+
+    monkeypatch.setattr(db, "connect", broken)
+    with pytest.raises(dashboard.Problem, match="Cannot open .*simulated bad option"):
+        dashboard.open_read_only(path)

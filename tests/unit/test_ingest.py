@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 from collections.abc import Iterator, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -353,3 +354,11 @@ def test_run_status_rules() -> None:
 
 def test_item_fixture_is_the_shared_base() -> None:
     assert az.classify(A).outcome == "stored"
+
+
+def test_stored_row_with_a_non_hourly_unit_is_flagged() -> None:
+    found = ingest.Items()
+    received = datetime(2026, 10, 12, 9, 0, tzinfo=UTC)
+    found.add_page([item(unitOfMeasure="1/Day")], "r-0000", received)
+    assert found.summary.observations_stored == 1  # kept, never dropped
+    assert found.tallies[("flagged", "unit_not_hourly")] == 1

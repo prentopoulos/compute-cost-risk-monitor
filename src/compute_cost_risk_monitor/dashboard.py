@@ -563,7 +563,9 @@ def panel(view: SourceView, as_of: datetime) -> Panel:
             ("Observations not normalized", report.not_normalized),
             (
                 "Duplicates",
-                ", ".join(f"{k} {v}" for k, v in report.duplicates.items()),
+                ", ".join(
+                    f"{k} {quality.shown(v)}" for k, v in report.duplicates.items()
+                ),
             ),
             (
                 "Stale",
@@ -588,9 +590,9 @@ def panel(view: SourceView, as_of: datetime) -> Panel:
     secondary_rows: list[tuple[str, object]] = [("Observations", report.observations)]
     secondary_rows += [(f"Rows: {k}", v) for k, v in report.by_status.items()]
     secondary_rows += [
-        ("Rejected by the collector", sum(report.rejected.values())),
+        ("Rejected by the collector", quality.shown(report.rejected_total)),
         *((f"Rejected: {k}", v) for k, v in report.rejected.items()),
-        ("Out of scope", report.out_of_scope),
+        ("Out of scope", quality.shown(report.out_of_scope)),
         ("Region groups", report.region_groups),
     ]
     if azure:

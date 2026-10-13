@@ -27,12 +27,18 @@ The gate SHALL run these checks, in order:
 2. `ruff format --check`
 3. `ruff check`
 4. `mypy` in strict mode over `src`, `tests` and `scripts`
-5. `pytest` with a branch-coverage report of `src` and no coverage minimum
-6. `openspec validate --all --strict --no-interactive` through the repo-local CLI, with its
+5. `pytest` with a branch-coverage report of `src` that fails when total branch coverage,
+   rounded to one decimal, is below 99.0%. Only `if __name__ == "__main__":` blocks are
+   excluded from measurement.
+6. a coverage report over the same data, limited to the core calculation and data modules, that
+   fails unless they are at 100%. The core modules are `azure_retail`, `normalize`, `checks`,
+   `gpu_map`, `rules`, `groups`, `history`, `quality`, `calculator`, `scenarios` and
+   `workload_check`.
+7. `openspec validate --all --strict --no-interactive` through the repo-local CLI, with its
    telemetry turned off
-7. a detect-secrets scan of the tracked files, and of new files Git does not ignore, against
+8. a detect-secrets scan of the tracked files, and of new files Git does not ignore, against
    the committed `.secrets.baseline`, with network verification turned off
-8. a Conventional Commits check of the commits on the branch
+9. a Conventional Commits check of the commits on the branch
 
 The gate makes no network calls.
 
@@ -47,6 +53,14 @@ The gate makes no network calls.
 #### Scenario: Planted secret fails the gate
 - **WHEN** a tracked or new unignored file gains a string that detect-secrets reports and the baseline does not list
 - **THEN** the secret scan fails and the gate exits non-zero
+
+#### Scenario: Total coverage below the minimum fails the gate
+- **WHEN** the test run's total branch coverage rounds to less than 99.0%
+- **THEN** the tests check fails, the remaining checks still run, and the gate exits non-zero
+
+#### Scenario: Core module below 100% fails the gate
+- **WHEN** a line or branch in one of the core modules is not run by the tests
+- **THEN** the core-module coverage check fails and names the module, and the gate exits non-zero
 
 ### Requirement: Commit message check
 The gate SHALL check commits in `origin/main..HEAD` against Conventional Commits, accepting
@@ -86,9 +100,9 @@ pandas minor version.
 
 ### Requirement: Tests run without network access
 pytest SHALL run with sockets disabled through pytest-socket, so a test that opens a network
-socket fails. The only exception SHALL be the Streamlit headless smoke test. It is marked to allow
-connections to 127.0.0.1 only, because asyncio on Windows opens a loopback socket pair for its own
-use.
+socket fails. The only exceptions SHALL be the Streamlit headless smoke test and the dashboard
+AppTest module (`tests/unit/test_app.py`). Each is marked to allow connections to 127.0.0.1 only,
+because asyncio on Windows opens a loopback socket pair for its own use.
 
 #### Scenario: Network call in a test fails
 - **WHEN** a test without the marker tries to open a network connection
@@ -97,4 +111,8 @@ use.
 #### Scenario: Streamlit smoke test still runs on Windows
 - **WHEN** the gate runs on Windows
 - **THEN** the Streamlit headless smoke test passes
+
+#### Scenario: Dashboard tests reach loopback only
+- **WHEN** the dashboard AppTest module runs
+- **THEN** its tests may connect to 127.0.0.1 and no other host
 

@@ -71,7 +71,8 @@ An Azure observation SHALL be excluded with the first matching reason in this or
 - `rental_type_not_compared`: rental type other than `on_demand` or `spot`;
 - `government_cloud`: region starts with `usgov` or `usdod`;
 - `windows`: the product name's last word is `Windows` or `Win`;
-- `unit_not_hourly`: price unit other than `1 Hour`;
+- `unit_not_hourly`: price unit other than exactly `1 Hour`, compared as stored, with no change
+  of case or plural;
 - `unmapped_sku`: size not in the map;
 - `fractional_gpu`: mapped GPU count not a whole number;
 - `retired_size`: Learn retirement date on or before the snapshot's UTC start date, using a
@@ -121,6 +122,14 @@ the size is mapped. Values SHALL never be filled in to make a row pass.
 #### Scenario: Idempotent
 - **WHEN** normalize runs twice on the same database
 - **THEN** the second run writes no rows and reports zero new rows
+
+#### Scenario: Unit must be exactly 1 Hour
+- **WHEN** Linux `on_demand` observations of a mapped size in a commercial region have price units `1 Hour`, `1 hour`, `1 Hours` and `100 Hours`
+- **THEN** the first is normalized and the other three are excluded as `unit_not_hourly`, with no USD/GPU-hour
+
+#### Scenario: First matching reason wins past the first
+- **WHEN** an `on_demand` observation of a mapped size in a commercial region has a product name ending `Windows` and price unit `1/Day`
+- **THEN** its single row has reason `windows`, not `unit_not_hourly`
 
 ### Requirement: Independent checks
 A checks module that does not import normalization code SHALL validate the stored rows, reading

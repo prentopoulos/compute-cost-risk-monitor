@@ -264,3 +264,17 @@ def test_run_manifests_can_be_limited_to_days(tmp_path: Path) -> None:
     ] == [run.run_id]
     other_day = [datetime(2026, 10, 10, tzinfo=UTC).date()]
     assert list(raw_store.run_manifests(tmp_path, "azure-retail", other_day)) == []
+
+
+@pytest.mark.parametrize("seq", [None, "0", True])
+def test_sidecar_without_a_sequence_number_refused(tmp_path: Path, seq: object) -> None:
+    run = info(tmp_path)
+    raw_store.write_run_manifest(run, {}, {})
+    raw_store.keep_exchange(tmp_path, run, 0, 0, 1, exchange(), "ua/1")
+    path = run.folder / f"{run.run_id}-0000.meta.json"
+    sidecar = json.loads(path.read_text(encoding="ascii"))
+    sidecar["seq"] = seq
+    path.unlink()
+    path.write_text(json.dumps(sidecar), encoding="ascii")
+    with pytest.raises(raw_store.IntegrityError, match="has no sequence number"):
+        raw_store.read_run(tmp_path, "azure-retail", run.run_id)

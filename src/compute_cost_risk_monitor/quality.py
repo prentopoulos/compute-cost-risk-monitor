@@ -30,6 +30,8 @@ AZURE_OPTIONAL = ("location", "product_name", "effective_start_date")
 # An offer without VRAM is never compared (unmapped_gpu_name), so VRAM is not counted.
 MARKETPLACE_OPTIONAL = ("country_code",)
 _WIN = re.compile(r"\bWin")
+# A count the run records lack (no summary row): unknown, never zero.
+UNKNOWN = "unknown (no run summary)"
 
 
 @dataclass
@@ -42,9 +44,10 @@ class QualityReport:
     by_status: dict[str, int] = field(default_factory=dict)
     unmapped_sizes: list[str] = field(default_factory=list)
     rejected: dict[str, int] = field(default_factory=dict)
-    out_of_scope: int = 0
-    repeats: int = 0
-    duplicates: dict[str, int] = field(default_factory=dict)
+    rejected_total: int | None = 0  # None when the run has no summary row
+    out_of_scope: int | None = 0  # None when the run has no summary row
+    repeats: int | None = 0
+    duplicates: dict[str, int | None] = field(default_factory=dict)
     missing_fields: dict[str, int] = field(default_factory=dict)
     os_ambiguous: int = 0
     region_groups: int = 0
@@ -55,6 +58,11 @@ class QualityReport:
     not_normalized: int = 0  # observations with no row under the rule version
     absent_once: int = 0
     not_listed: int = 0
+
+
+def shown(count: int | None) -> int | str:
+    """A count for display: one the run records lack reads as unknown."""
+    return UNKNOWN if count is None else count
 
 
 def _one(connection: duckdb.DuckDBPyConnection, sql: str, *params: object) -> int:
@@ -170,8 +178,13 @@ def build(
         "SELECT out_of_scope, repeats FROM collection_run_summary WHERE run_id = ?",
         [run],
     ).fetchone()
+    # Tallies exist only for counts above zero; the summary row is the only record of a
+    # zero. Without it, a count with no tally row is unknown, never 0.
     if summary:
         report.out_of_scope, report.repeats = summary
+        report.rejected_total = sum(report.rejected.values())
+    else:
+        report.out_of_scope = report.repeats = report.rejected_total = None
     if region_groups is None:
         region_groups = groups.region_groups(connection, latest, rule_version)
     report.region_groups = len(region_groups)
@@ -183,15 +196,16 @@ def build(
         }
         report.thin = sum(groups.THIN in g.labels for g in region_groups)
     else:
+        shared = _one(
+            connection,
+            "SELECT coalesce(sum(occurrences), 0) FROM collection_run_tally"
+            " WHERE run_id = ? AND kind = 'flagged'"
+            " AND reason = 'shared_meter_key'",
+            run,
+        )
         report.duplicates = {
             "repeats": report.repeats,
-            "shared_meter_key": _one(
-                connection,
-                "SELECT coalesce(sum(occurrences), 0) FROM collection_run_tally"
-                " WHERE run_id = ? AND kind = 'flagged'"
-                " AND reason = 'shared_meter_key'",
-                run,
-            ),
+            "shared_meter_key": shared if shared or summary else None,
         }
         report.os_ambiguous = _os_ambiguous(connection, run)
         report.single_price_groups = sum(
@@ -233,12 +247,13 @@ def render(report: QualityReport) -> str:
         + (f" ({', '.join(report.unmapped_sizes)})" if report.unmapped_sizes else "")
     )
     lines.append(
-        f"  run records: out of scope {report.out_of_scope}, repeats {report.repeats},"
-        f" rejected {sum(report.rejected.values())}"
+        f"  run records: out of scope {shown(report.out_of_scope)},"
+        f" repeats {shown(report.repeats)}, rejected {shown(report.rejected_total)}"
     )
     lines += [f"    rejected {reason}: {n}" for reason, n in report.rejected.items()]
     lines.append(
-        "  duplicates: " + ", ".join(f"{k} {v}" for k, v in report.duplicates.items())
+        "  duplicates: "
+        + ", ".join(f"{k} {shown(v)}" for k, v in report.duplicates.items())
     )
     lines.append(
         "  missing among compared rows: "
@@ -273,6 +288,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if as_of.tzinfo is None:
         print("refused: --as-of needs a time zone", file=sys.stderr)
         return 2
+    as_of = as_of.astimezone(UTC)  # shown in UTC, like every other time
     if not args.db.is_file():
         print(f"refused: no database at {args.db}", file=sys.stderr)
         return 2

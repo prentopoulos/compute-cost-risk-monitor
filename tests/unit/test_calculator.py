@@ -95,13 +95,16 @@ def test_gpus_must_be_a_whole_number(gpus: object) -> None:
         calc.workload(gpus, 720, None, 8)  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize("hours", [None, 0, -1, math.nan, math.inf, 8_784.5])
+@pytest.mark.parametrize(
+    "hours", [None, 0, -1, math.nan, math.inf, 8_784.5, 0.009, 5e-324]
+)
 def test_impossible_hours_refused(hours: float | None) -> None:
-    with pytest.raises(Refused, match="Hours must be above 0 and at most 8,784"):
+    # Below 0.01 h a budget's headroom can overflow (found by Hypothesis, Phase 6).
+    with pytest.raises(Refused, match="Hours must be at least 0.01 and at most 8,784"):
         calc.workload(8, hours, None, 8)
 
 
-@pytest.mark.parametrize("hours", [0.5, 8_784])
+@pytest.mark.parametrize("hours", [0.01, 0.5, 8_784])
 def test_fractional_and_maximum_hours_accepted(hours: float) -> None:
     assert calc.workload(8, hours, None, 8).hours == hours
 
@@ -169,6 +172,10 @@ def test_budget_inputs() -> None:
         calc.budget(-5)
     with pytest.raises(Refused, match="must be a number"):
         calc.budget(math.nan)
+    # Below a cent the headroom can underflow to zero (found by Hypothesis, Phase 6).
+    with pytest.raises(Refused, match=r"at least USD 0\.01"):
+        calc.budget(5e-324)
+    assert calc.budget(0.01) == 0.01
     with pytest.raises(Refused, match="at most USD 10,000,000,000"):
         calc.budget(10_000_000_001)
 
