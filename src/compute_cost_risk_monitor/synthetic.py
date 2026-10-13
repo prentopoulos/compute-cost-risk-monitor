@@ -88,7 +88,7 @@ def _labelled(body: bytes) -> tuple[dict[str, Any], datetime]:
     except (UnicodeDecodeError, ValueError) as error:
         raise SyntheticError(f"not JSON: {error}") from None
     if not isinstance(document, dict) or document.get("_label") != LABEL:
-        raise SyntheticError('refused: the file is not labelled "_label": "synthetic"')
+        raise SyntheticError('the file is not labelled "_label": "synthetic"')
     try:
         observed = datetime.fromisoformat(str(document.get("observed_at")))
     except ValueError:
@@ -171,17 +171,11 @@ def _new_run(
     return run_id, digest, version[0] if version else None
 
 
-def ingest_azure_snapshot(
-    connection: duckdb.DuckDBPyConnection,
-    path: Path,
-    repo: Path = REPO,
-    body: bytes | None = None,
-) -> str:
-    """Store one Azure-shaped snapshot as a synthetic run; return its run ID.
+def _azure_rows(body: bytes) -> tuple[datetime, int, ingest.Items]:
+    """An Azure-shaped snapshot's time, item count and rows passing the live row rules.
 
-    `body` is the file's bytes when the caller has already read them.
+    SyntheticError unless the file is valid and at least one item passes.
     """
-    body = path.read_bytes() if body is None else body
     observed, items = parse_azure_snapshot(body)
     response = f"{_run_id(observed, body)[0]}-0000"
     found = ingest.Items()
@@ -194,7 +188,23 @@ def ingest_azure_snapshot(
             f"no item passed the row rules ({summary.out_of_scope} out of scope,"
             f" {summary.rejected} rejected): nothing to store"
         )
+    return observed, len(items), found
+
+
+def ingest_azure_snapshot(
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
+) -> str:
+    """Store one Azure-shaped snapshot as a synthetic run; return its run ID.
+
+    `body` is the file's bytes when the caller has already read them.
+    """
+    body = path.read_bytes() if body is None else body
+    observed, item_count, found = _azure_rows(body)
     run_id, digest, version = _new_run(connection, AZURE_SOURCE, observed, body)
+    response = f"{run_id}-0000"  # the ID the rows were built with in _azure_rows
     shown = _display_path(path, repo)
     connection.begin()
     try:
@@ -229,7 +239,7 @@ def ingest_azure_snapshot(
                     "http_status": None,
                     "requested_at": observed,
                     "received_at": observed,
-                    "item_count": len(items),
+                    "item_count": item_count,
                     "parse_status": "parsed",
                     "error": None,
                 }
@@ -336,14 +346,32 @@ def ingest_snapshot(
     return run_id
 
 
+def check(body: bytes) -> str:
+    """The source a file feeds, after every check that needs no database.
+
+    SyntheticError when the file is refused: its label, time, shape, offers, or (for an
+    Azure-shaped page) no item passing the live row rules.
+    """
+    source = kind(body)
+    if source == AZURE_SOURCE:
+        _azure_rows(body)
+    else:
+        parse_snapshot(body)
+    return source
+
+
 def ingest_file(
-    connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
 ) -> tuple[str, str]:
     """Store a marketplace or Azure-shaped snapshot; return (source, run ID).
 
-    The file is read once, so its kind, digest and rows all come from the same bytes.
+    The file is read once, so its kind, digest and rows all come from the same bytes;
+    `body` is those bytes when the caller has already read them.
     """
-    body = path.read_bytes()
+    body = path.read_bytes() if body is None else body
     source = kind(body)
     if source == AZURE_SOURCE:
         return source, ingest_azure_snapshot(connection, path, repo, body)
@@ -363,16 +391,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.db.resolve() == MONITOR_DB.resolve():
         print(f"refused: synthetic runs never go to {MONITOR_DB}", file=sys.stderr)
         return 2
+    # Every file is checked before the database is opened, so a refused file never
+    # leaves an empty database behind.
+    checked: list[tuple[Path, bytes]] = []
+    for path in args.files:
+        try:
+            body = path.read_bytes()
+            check(body)
+        except (OSError, SyntheticError) as error:
+            print(f"refused: {path.name}: {error}", file=sys.stderr)
+            return 2
+        checked.append((path, body))
     try:
         connection = db.connect(args.db)
     except duckdb.Error as error:
         print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
         return 2
     try:
-        for path in args.files:
+        for path, body in checked:
             try:
-                source, run_id = ingest_file(connection, path)
-            except (OSError, SyntheticError, duckdb.Error) as error:
+                source, run_id = ingest_file(connection, path, body=body)
+            except (SyntheticError, duckdb.Error) as error:
                 print(f"refused: {path.name}: {error}", file=sys.stderr)
                 return 2
             print(f"stored {run_id} (synthetic) for {source} from {path.name}")

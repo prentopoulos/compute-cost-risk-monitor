@@ -15,7 +15,7 @@ from typing import Any
 import duckdb
 import pytest
 
-from compute_cost_risk_monitor import checks, normalize, synthetic
+from compute_cost_risk_monitor import checks, db, normalize, synthetic
 from seed import database
 from support import FIXTURES
 
@@ -233,3 +233,62 @@ def test_command_turns_database_errors_into_refusals(
     target = tmp_path / "synthetic.duckdb"
     assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(target)]) == 2
     assert "refused: snapshot-1.json: duplicate key" in capsys.readouterr().err
+
+
+def test_refused_file_creates_no_database(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    doc = document(SNAPSHOTS[1])
+    del doc["_label"]
+    unlabelled = write(tmp_path, doc, "unlabelled.json")
+    target = tmp_path / "new.duckdb"
+    assert (
+        synthetic.main([str(SNAPSHOTS[0]), str(unlabelled), "--db", str(target)]) == 2
+    )
+    captured = capsys.readouterr()
+    assert "unlabelled.json" in captured.err
+    assert captured.out == ""  # the valid file before it was not stored either
+    assert not target.exists()
+
+
+def test_refusal_said_once(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    doc = document()
+    del doc["_label"]
+    path = write(tmp_path, doc, "s.json")
+    assert synthetic.main([str(path), "--db", str(tmp_path / "x.duckdb")]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith('refused: s.json: the file is not labelled "_label"')
+    assert err.count("refused") == 1
+
+
+def test_unreadable_file_refused_before_the_database(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "new.duckdb"
+    missing = tmp_path / "missing.json"
+    assert synthetic.main([str(missing), "--db", str(target)]) == 2
+    assert "refused: missing.json:" in capsys.readouterr().err
+    assert not target.exists()
+
+
+def test_database_that_cannot_open_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "not-a-database.duckdb"
+    target.write_text("plain text, not DuckDB", encoding="utf-8")
+    assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(target)]) == 2
+    assert "refused: cannot open" in capsys.readouterr().err
+    assert target.read_text(encoding="utf-8") == "plain text, not DuckDB"
+
+
+def test_failed_write_rolls_back_the_whole_run(
+    con: duckdb.DuckDBPyConnection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def failing(*_: object) -> None:
+        raise duckdb.ConstraintException("simulated failure mid-run")
+
+    monkeypatch.setattr(db, "insert_frame", failing)
+    with pytest.raises(duckdb.ConstraintException, match="mid-run"):
+        synthetic.ingest_snapshot(con, SNAPSHOTS[0])
+    for table in ("collection_run", "raw_response", "price_observation"):
+        assert one(con, f"SELECT count(*) FROM {table}") == 0  # noqa: S608

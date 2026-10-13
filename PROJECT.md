@@ -183,7 +183,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 | 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Done |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Done |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
-| 6 | Tests for units, calculations, missing data and stale offers | Planned |
+| 6 | Tests for units, calculations, missing data and stale offers | In progress |
 | 7 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
 ### ⛔ Before reading live data from any source

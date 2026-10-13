@@ -15,7 +15,7 @@ from typing import Any
 import duckdb
 import pytest
 
-from compute_cost_risk_monitor import checks, groups, normalize, synthetic
+from compute_cost_risk_monitor import checks, groups, ingest, normalize, synthetic
 from seed import database
 from support import BASE_ITEM, FIXTURES
 
@@ -218,3 +218,32 @@ def test_command_refuses_the_live_database_for_azure_files(
     path = write(tmp_path, page(TWO))
     assert synthetic.main([str(path), "--db", str(synthetic.MONITOR_DB)]) == 2
     assert "never go to" in capsys.readouterr().err
+
+
+def test_refused_file_leaves_an_existing_database_unchanged(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "synthetic.duckdb"
+    assert synthetic.main([str(write(tmp_path, page(TWO))), "--db", str(target)]) == 0
+    before = target.read_bytes()
+    nothing = write(tmp_path, page([item(isPrimaryMeterRegion=False)]), "none.json")
+    assert synthetic.main([str(nothing), "--db", str(target)]) == 2
+    assert "refused: none.json: no item passed the row rules" in capsys.readouterr().err
+    assert target.read_bytes() == before  # never opened, so not even rewritten
+    connection = duckdb.connect(str(target), read_only=True)
+    try:
+        assert one(connection, "SELECT count(*) FROM collection_run") == 1
+    finally:
+        connection.close()
+
+
+def test_failed_write_rolls_back_the_whole_azure_run(
+    tmp_path: Path, con: duckdb.DuckDBPyConnection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def failing(*_: object) -> None:
+        raise duckdb.ConstraintException("simulated failure mid-run")
+
+    monkeypatch.setattr(ingest, "write_records", failing)
+    with pytest.raises(duckdb.ConstraintException, match="mid-run"):
+        synthetic.ingest_azure_snapshot(con, write(tmp_path, page(TWO)), repo=tmp_path)
+    assert one(con, "SELECT count(*) FROM collection_run") == 0
