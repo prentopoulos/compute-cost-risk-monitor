@@ -36,14 +36,14 @@
 
 ## 6. Verification, review and documents
 
-- [ ] 6.1 Run the live regression as a scratch script on a read-only connection (D12): `checks.run`, the quality report counts, every live member through the calculator and `workload_check`, and the properties over live starting prices. Record counts and pass/fail only
-- [ ] 6.2 Write `docs/reviews/<date>-phase-6-tests.md` (D2, D21). It holds:
+- [x] 6.1 Run the live regression as a scratch script on a read-only connection (D12): `checks.run`, the quality report counts, every live member through the calculator and `workload_check`, and the properties over live starting prices. Record counts and pass/fail only
+- [x] 6.2 Write `docs/reviews/<date>-phase-6-tests.md` (D2, D21). It holds:
   - the traceability table (area → requirement or scenario → tests);
   - the gaps closed;
   - coverage before and after;
   - the live regression;
   - the build-safety read-through for the new dependency;
   - a market-review read-through if any figure changed
-- [ ] 6.3 Run the gate green with both coverage steps and `uv audit`, then record the output
+- [x] 6.3 Run the gate green with both coverage steps and `uv audit`, then record the output
 - [ ] 6.4 Update PROJECT.md (§6 Phase 6 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
 - [ ] 6.5 Run `/code-review` on the PR and resolve its findings with tests
