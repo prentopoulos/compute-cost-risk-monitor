@@ -6,7 +6,7 @@
 
 ## 2. Synthetic Azure demo data
 
-- [ ] 2.1 Share the Azure page classification (scope, rejection, repeats, flags, tallies) and row writing from `ingest.py` so a second caller can use them, with existing ingest tests unchanged and passing
+- [x] 2.1 Share the Azure page classification (scope, rejection, repeats, flags, tallies) and row writing from `ingest.py` so a second caller can use them, with existing ingest tests unchanged and passing
 - [ ] 2.2 Add the synthetic Azure snapshot loader to `synthetic.py`: refuse unlabelled files, a missing or zone-less `observed_at` and empty `Items`; store one `azure-retail` run labelled `synthetic` in one transaction with the file's SHA-256 and a `file:` request URL; tell file kinds apart by shape in the existing command; keep refusing `data/monitor.duckdb`. Test the refusals, the stored run, a non-primary item rejected, and a re-ingest refused
 - [ ] 2.3 Write `tests/fixtures/synthetic/azure_demo.json` (invented round prices, real size names) and update the fixtures README. Test that, ingested and normalized, it has a multi-size group, a single-price group, a thin and a non-thin summary, a Spot row equal to pay-as-you-go, an `unmapped_sku` row and a `windows` row
 
