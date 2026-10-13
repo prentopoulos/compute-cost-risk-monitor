@@ -11,7 +11,7 @@
 
 ## 3. View model and page
 
-- [ ] 3.1 Extend `dashboard.py` (D10, D16, D18, D21): the starting-price text, cost breakdown and scenario frames, workload captions (storage, billing assumptions, Spot, crossing rental types, `scenarios-v1`, "Scenario calculation, not a forecast", judgement note), USD and % display formats, the headroom text and the exposure chart spec (D8). Unit-test captions on every frame, formats, and the chart's bars, zero rule and absent refused rows
+- [x] 3.1 Extend `dashboard.py` (D10, D16, D18, D21): the starting-price text, cost breakdown and scenario frames, workload captions (storage, billing assumptions, Spot, crossing rental types, `scenarios-v1`, "Scenario calculation, not a forecast", judgement note), USD and % display formats, the headroom text and the exposure chart spec (D8). Unit-test captions on every frame, formats, and the chart's bars, zero rule and absent refused rows
 - [ ] 3.2 Add the "Workload cost" tab to `app.py` (D17, D24–D27): size choice per group, inputs with `persist_state="page"`, custom scenario and budget inputs, the marketplace note, the database states, validator messages, and the independent check run before drawing, with its failure message. AppTest flows on synthetic file databases with a fixed as-of time: the known workload, inputs kept across tabs, a group change with a non-multiple GPU count, the size choice, the custom scenario, headroom, the uksouth fallback "not computed", the marketplace note, NOT NORMALIZED and a failed check
 
 ## 4. Verification, review and documents
