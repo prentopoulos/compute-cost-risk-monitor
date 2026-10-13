@@ -32,7 +32,7 @@
 
 ## 5. Coverage threshold
 
-- [ ] 5.1 Add `[tool.coverage.report]` with `fail_under = 99.0`, `precision = 1` and `exclude_also` for the `__main__` guard. Add the core-module step to `scripts/gate.py`, `coverage report --include=<core modules> --fail-under=100` (D3; MODIFIED "Checks the gate runs"). Show that the step fails when a core-module line is not run. If the total is below 99.0, set 98.0 and record that here and in the review
+- [x] 5.1 Add `[tool.coverage.report]` with `fail_under = 99.0`, `precision = 1` and `exclude_also` for the `__main__` guard. Add the core-module step to `scripts/gate.py`, `coverage report --include=<core modules> --fail-under=100` (D3; MODIFIED "Checks the gate runs"). Show that the step fails when a core-module line is not run. If the total is below 99.0, set 98.0 and record that here and in the review
 
 ## 6. Verification, review and documents
 

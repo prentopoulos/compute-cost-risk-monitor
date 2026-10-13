@@ -22,6 +22,21 @@ OPENSPEC_CLI = (
 COMMIT_RANGE = "origin/main..HEAD"
 SECRETS_BASELINE = ".secrets.baseline"
 SECRETS_BATCH = 100
+# Held at 100% coverage (Phase 6 design D3): every price, cost, exposure, quality and
+# history figure, and the rules and checks behind them.
+CORE_MODULES = (
+    "azure_retail",
+    "normalize",
+    "checks",
+    "gpu_map",
+    "rules",
+    "groups",
+    "history",
+    "quality",
+    "calculator",
+    "scenarios",
+    "workload_check",
+)
 
 
 @dataclass
@@ -164,6 +179,18 @@ def main() -> int:
         check("lint", [*py, "ruff", "check"]),
         check("types", [*py, "mypy"]),
         check("tests", [*py, "pytest", "--cov", "--cov-report=term-missing"]),
+        check(
+            "core coverage",
+            [
+                *py,
+                "coverage",
+                "report",
+                "--show-missing",
+                "--fail-under=100",
+                "--include="
+                + ",".join(f"*/compute_cost_risk_monitor/{m}.py" for m in CORE_MODULES),
+            ],
+        ),
         check(
             "openspec",
             [
