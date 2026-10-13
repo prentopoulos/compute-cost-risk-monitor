@@ -19,6 +19,6 @@
 - [x] 4.1 Manual check: rebuild `data/synthetic.duckdb` and run the tab in Chrome on synthetic data; run an AppTest pass on `data/monitor.duckdb`, reported as counts, keys and pass or fail only. Take PR screenshots from synthetic data only
 - [x] 4.2 Update the FigJam container view (calculator built) and re-export `docs/architecture/c4-container.svg`
 - [x] 4.3 Run the market-review read-through (formulas, units, labels, exclusions, the crossing label, refusals, the BCBS checklist) and the build-safety check (read-only access, no network, inputs), and record them in `docs/reviews/`
-- [ ] 4.4 Run the gate green and `uv audit`, then record the output
+- [x] 4.4 Run the gate green and `uv audit`, then record the output
 - [x] 4.5 Update PROJECT.md (§6 Phase 5 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
 - [x] 4.6 Run `/code-review` on the PR and resolve its findings with tests

@@ -122,8 +122,8 @@ records the code review.
 
 ## Verification
 
-- **Gate:** green on the branch, with branch coverage at 98%. `uv audit` found no known
-  vulnerabilities in 67 packages. The exact test count is in the PR.
+- **Gate:** green on the branch; 649 tests pass, 98% branch coverage (`calculator.py` and
+  `scenarios.py` 100%). `uv audit` found no known vulnerabilities in 67 packages.
 - **CI:** hosted CI ran on the branch pushes.
 - **Review record:** `docs/reviews/2026-10-13-phase-5-calculator.md`.
   - Manual check in Chrome on synthetic data.
