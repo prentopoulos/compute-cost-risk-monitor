@@ -273,6 +273,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if as_of.tzinfo is None:
         print("refused: --as-of needs a time zone", file=sys.stderr)
         return 2
+    as_of = as_of.astimezone(UTC)  # shown in UTC, like every other time
     if not args.db.is_file():
         print(f"refused: no database at {args.db}", file=sys.stderr)
         return 2

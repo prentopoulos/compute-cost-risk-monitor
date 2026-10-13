@@ -144,6 +144,28 @@ def test_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert quality.main(["--db", str(path), "--as-of", "2026-10-13T00:00:00"]) == 2
 
 
+def test_command_prints_the_as_of_time_in_utc(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "monitor.duckdb"
+    con = db.connect(path)
+    db.create_schema(con)
+    azure_run(con, "run-1", [Price()])  # started 2026-10-12 09:00 UTC
+    con.close()
+    assert normalize.main(["--db", str(path)], now=NOW) == 0
+    capsys.readouterr()
+    # 05:00 at -04:00 is 09:00 UTC: exactly 7 days, so not stale; a second later, stale.
+    assert (
+        quality.main(["--db", str(path), "--as-of", "2026-10-19T05:00:00-04:00"]) == 0
+    )
+    out = capsys.readouterr().out
+    assert "not stale as of 2026-10-19T09:00:00+00:00" in out
+    assert (
+        quality.main(["--db", str(path), "--as-of", "2026-10-19T05:00:01-04:00"]) == 0
+    )
+    assert "STALE as of 2026-10-19T09:00:01+00:00" in capsys.readouterr().out
+
+
 def test_snapshot_not_yet_normalized_is_flagged() -> None:
     con = database()
     azure_run(con, "run-1", [Price()])
