@@ -95,6 +95,10 @@ def _labelled(body: bytes) -> tuple[dict[str, Any], datetime]:
         raise SyntheticError("observed_at must be an ISO time") from None
     if observed.tzinfo is None:
         raise SyntheticError("observed_at must carry a time zone")
+    try:
+        observed.astimezone(UTC)  # the run ID and the stored time are UTC
+    except OverflowError:
+        raise SyntheticError("observed_at is out of range in UTC") from None
     return document, observed
 
 
@@ -171,8 +175,9 @@ def _new_run(
     return run_id, digest, version[0] if version else None
 
 
-def _azure_rows(body: bytes) -> tuple[datetime, int, ingest.Items]:
-    """An Azure-shaped snapshot's time, item count and rows passing the live row rules.
+def _azure_rows(body: bytes) -> tuple[datetime, int, ingest.Items, str]:
+    """An Azure-shaped snapshot's time, item count, the rows passing the live row rules
+    and the raw-response ID they name.
 
     SyntheticError unless the file is valid and at least one item passes.
     """
@@ -188,7 +193,7 @@ def _azure_rows(body: bytes) -> tuple[datetime, int, ingest.Items]:
             f"no item passed the row rules ({summary.out_of_scope} out of scope,"
             f" {summary.rejected} rejected): nothing to store"
         )
-    return observed, len(items), found
+    return observed, len(items), found, response
 
 
 def ingest_azure_snapshot(
@@ -202,9 +207,9 @@ def ingest_azure_snapshot(
     `body` is the file's bytes when the caller has already read them.
     """
     body = path.read_bytes() if body is None else body
-    observed, item_count, found = _azure_rows(body)
+    # The raw response takes the ID the rows were built with, so they always match.
+    observed, item_count, found, response = _azure_rows(body)
     run_id, digest, version = _new_run(connection, AZURE_SOURCE, observed, body)
-    response = f"{run_id}-0000"  # the ID the rows were built with in _azure_rows
     shown = _display_path(path, repo)
     connection.begin()
     try:
@@ -346,18 +351,16 @@ def ingest_snapshot(
     return run_id
 
 
-def check(body: bytes) -> str:
-    """The source a file feeds, after every check that needs no database.
+def check(body: bytes) -> tuple[str, datetime]:
+    """The source a file feeds and its time, after every check that needs no database.
 
     SyntheticError when the file is refused: its label, time, shape, offers, or (for an
     Azure-shaped page) no item passing the live row rules.
     """
     source = kind(body)
     if source == AZURE_SOURCE:
-        _azure_rows(body)
-    else:
-        parse_snapshot(body)
-    return source
+        return source, _azure_rows(body)[0]
+    return source, parse_snapshot(body)[0]
 
 
 def ingest_file(
@@ -391,27 +394,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.db.resolve() == MONITOR_DB.resolve():
         print(f"refused: synthetic runs never go to {MONITOR_DB}", file=sys.stderr)
         return 2
-    # Every file is checked before the database is opened, so a refused file never
-    # leaves an empty database behind.
+    # Every file is checked before the database is opened, so a file refused by these
+    # checks writes nothing and leaves no new database behind. (A database error while
+    # writing can still leave a new file holding only the schema.)
     checked: list[tuple[Path, bytes]] = []
+    seen: dict[tuple[str, datetime], str] = {}
     for path in args.files:
         try:
             body = path.read_bytes()
-            check(body)
+            source, observed = check(body)
+            if (source, observed) in seen:  # the same snapshot, or one at its time
+                raise SyntheticError(
+                    f"observed at the same time as {seen[source, observed]}"
+                )
+            seen[source, observed] = path.name
         except (OSError, SyntheticError) as error:
             print(f"refused: {path.name}: {error}", file=sys.stderr)
             return 2
         checked.append((path, body))
     try:
         connection = db.connect(args.db)
-    except duckdb.Error as error:
+    except (duckdb.Error, OSError) as error:  # OSError: its folder cannot be made
         print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
         return 2
     try:
         for path, body in checked:
             try:
                 source, run_id = ingest_file(connection, path, body=body)
-            except (SyntheticError, duckdb.Error) as error:
+            except (OSError, SyntheticError, duckdb.Error) as error:
                 print(f"refused: {path.name}: {error}", file=sys.stderr)
                 return 2
             print(f"stored {run_id} (synthetic) for {source} from {path.name}")

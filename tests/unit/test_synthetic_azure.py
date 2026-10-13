@@ -247,3 +247,10 @@ def test_failed_write_rolls_back_the_whole_azure_run(
     with pytest.raises(duckdb.ConstraintException, match="mid-run"):
         synthetic.ingest_azure_snapshot(con, write(tmp_path, page(TWO)), repo=tmp_path)
     assert one(con, "SELECT count(*) FROM collection_run") == 0
+
+
+def test_time_out_of_range_in_utc_refused_by_the_check(tmp_path: Path) -> None:
+    doc = page(TWO, observed_at="0001-01-01T00:00:00+01:00")
+    body = write(tmp_path, doc).read_bytes()
+    with pytest.raises(synthetic.SyntheticError, match="out of range in UTC"):
+        synthetic.check(body)

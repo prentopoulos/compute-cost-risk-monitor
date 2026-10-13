@@ -292,3 +292,62 @@ def test_failed_write_rolls_back_the_whole_run(
         synthetic.ingest_snapshot(con, SNAPSHOTS[0])
     for table in ("collection_run", "raw_response", "price_observation"):
         assert one(con, f"SELECT count(*) FROM {table}") == 0  # noqa: S608
+
+
+def test_same_snapshot_twice_in_one_command_writes_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "new.duckdb"
+    files = [str(SNAPSHOTS[0]), str(SNAPSHOTS[0])]
+    assert synthetic.main([*files, "--db", str(target)]) == 2
+    captured = capsys.readouterr()
+    assert captured.err.startswith(
+        "refused: snapshot-1.json: observed at the same time as snapshot-1.json"
+    )
+    assert captured.out == "" and not target.exists()
+
+
+def test_two_files_observed_at_one_time_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    resaved = write(tmp_path, document(), "resaved.json")  # new bytes, same time
+    target = tmp_path / "new.duckdb"
+    assert synthetic.main([str(SNAPSHOTS[0]), str(resaved), "--db", str(target)]) == 2
+    assert "refused: resaved.json: observed at the same time" in capsys.readouterr().err
+    assert not target.exists()
+
+
+def test_time_out_of_range_in_utc_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    doc = document()
+    doc["observed_at"] = "0001-01-01T00:00:00+01:00"
+    target = tmp_path / "new.duckdb"
+    path = write(tmp_path, doc)
+    assert synthetic.main([str(path), "--db", str(target)]) == 2
+    assert "observed_at is out of range in UTC" in capsys.readouterr().err
+    assert not target.exists()
+
+
+def test_database_folder_that_cannot_be_made_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    blocker = tmp_path / "a-file"
+    blocker.write_text("not a folder", encoding="utf-8")
+    target = blocker / "new.duckdb"
+    assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(target)]) == 2
+    assert "refused: cannot open" in capsys.readouterr().err
+
+
+def test_file_system_error_while_storing_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def failing(*_: object) -> str:
+        raise OSError("simulated resolve failure")
+
+    monkeypatch.setattr(synthetic, "_display_path", failing)
+    target = tmp_path / "new.duckdb"
+    assert synthetic.main([str(SNAPSHOTS[0]), "--db", str(target)]) == 2
+    assert "refused: snapshot-1.json: simulated resolve failure" in (
+        capsys.readouterr().err
+    )
