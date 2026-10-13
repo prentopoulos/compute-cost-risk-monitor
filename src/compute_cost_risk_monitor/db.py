@@ -21,11 +21,17 @@ TEXT = "string[python]"
 _MIGRATION = re.compile(r"(?P<version>\d{3})_(?P<name>[a-z0-9_]+)\.sql")
 
 
-def connect(path: str | Path = MEMORY) -> duckdb.DuckDBPyConnection:
-    """Open a DuckDB connection whose session time zone is UTC."""
-    if str(path) != MEMORY:
+def connect(
+    path: str | Path = MEMORY, read_only: bool = False
+) -> duckdb.DuckDBPyConnection:
+    """Open a DuckDB connection whose session time zone is UTC.
+
+    A read-only connection never creates a file or folder; a missing file is an error.
+    While it is open, other processes cannot write the file (Phase 4 design D13).
+    """
+    if str(path) != MEMORY and not read_only:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-    return duckdb.connect(str(path), config={"TimeZone": "UTC"})
+    return duckdb.connect(str(path), read_only=read_only, config={"TimeZone": "UTC"})
 
 
 def parse_migrations(files: Iterable[tuple[str, str]]) -> list[tuple[int, str, str]]:
