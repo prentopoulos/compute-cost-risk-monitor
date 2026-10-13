@@ -4,6 +4,12 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
+**Phase 5 (workload cost calculator and labelled budget-exposure scenarios) is in progress** on
+branch `phase-5-calculator`, OpenSpec change `openspec/changes/phase-5-calculator`. Grilling
+finished on 2026-10-13: the owner accepted every recommendation in two rounds (design D1–D12 are
+owner decisions, D13–D28 settled with their basis). The next step is the first open task in
+`tasks.md`. The sections below describe Phase 4 and stay true.
+
 Phase 4 (Streamlit dashboard with comparable-group filters and the data-quality panel) is Done.
 It was delivered through PR #9 from branch `phase-4-dashboard` and archived as
 `openspec/changes/archive/2026-10-13-phase-4-dashboard`. New specs in `openspec/specs/`:
