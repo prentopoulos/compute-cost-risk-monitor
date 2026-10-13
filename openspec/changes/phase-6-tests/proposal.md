@@ -50,6 +50,10 @@ The Phase 6 grilling ran one round on 2026-10-13, and the owner accepted every r
   - The synthetic command checks every file before it opens the database, so a refused file
     leaves no empty database behind, and its message says "refused" once.
   - The quality command prints its as-of time in UTC.
+  - Found during implementation (D7):
+    - a run without a summary row reports its counts as unknown, not 0;
+    - hours and budgets below 0.01 are refused, because their headroom could overflow or
+      underflow (D23).
 - **Traceability record.** The review record maps each area to its spec requirements and the
   tests that cover them, with the gaps closed and coverage before and after.
 - **Live regression, counts only.** A one-off scratch script runs over the local live snapshot.
@@ -96,6 +100,8 @@ None. Test traceability is evidence in the review record, not product behaviour.
 - `price-normalization`: MODIFIED "Every observation normalized or excluded": the unit must be
   exactly `1 Hour`, and the first reason wins when later reasons also match.
 - `synthetic-marketplace`: ADDED "Synthetic command checks every file first".
+- `workload-calculator`: MODIFIED "Workload inputs" and "Budget headroom". Hours and budget must
+  be at least 0.01, a fix found by the property tests (design D23).
 
 ## Impact
 

@@ -505,7 +505,7 @@ def test_impossible_hours_refused(demo: list[tuple[str, Path]]) -> None:
     at.number_input(key="hours").set_value(0.0)
     tab = workload_tab(at)
     assert [w.value for w in tab.warning] == [
-        "Hours must be above 0 and at most 8,784."
+        "Hours must be at least 0.01 and at most 8,784."
     ]
     assert not tab.dataframe
 

@@ -113,6 +113,7 @@ The Phase 6 grilling ran one round on 2026-10-13:
 | D20 | The live regression stays a scratch script, not `scripts/`. A committed script would become an interface to maintain, and the Phase 5 method was a scratch script too | default. Changes if Phase 7 needs repeatable live checks |
 | D21 | Evidence:<br>- the gate green with both coverage steps, and CI green on the branch;<br>- `uv audit` clean;<br>- the review record with the traceability table, coverage before and after, and the live regression's counts;<br>- the market-review read-through, if a figure changes (D7);<br>- `/code-review` findings resolved | recorded (Phase 1 acceptance row; WORKFLOW.md) |
 | D22 | The archive commit marks Phase 6 Done in PROJECT.md §6, and §4 points to these decisions | recorded (WORKFLOW.md § Phase loop step 6) |
+| D23 | Found by Hypothesis (task 3.1): the calculator's validators accepted any positive hours and budget, down to 5e-324. At those values the headroom overflowed to infinity or underflowed to zero, so the independent check withheld every figure for a valid input. It failed safe: no wrong figure was shown. The page's inputs show two decimals, so they could not produce it. Fix: hours must be at least 0.01 and a budget at least USD 0.01, matching the page's precision (MODIFIED `workload-calculator` "Workload inputs" and "Budget headroom"). With those bounds, 10,000 random examples and the fixed profile pass. No figure for any input the page could take changes | main agent, under D7 (a calculation bug inside the four areas). Basis: default; the two-way door changes Phase 5 D21's lower bounds only. Changes if the owner wants another minimum, such as one billed minute (1/60 h) |
 
 ### Figures shown
 
@@ -164,3 +165,4 @@ nothing is written to `data/monitor.duckdb`. To roll back, revert the merge comm
 ## Open Questions
 
 None. Every grilling question is owner-answered (D1–D10) or settled with its basis (D11–D22).
+D23 records a fix made during implementation under D7.

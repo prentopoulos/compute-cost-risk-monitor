@@ -24,8 +24,12 @@ from compute_cost_risk_monitor.scenarios import (
 )
 
 MAX_GPUS = 100_000
+# The page's inputs show two decimals. Smaller hours or budgets can overflow or
+# underflow a figure, which the check then withholds (Phase 6 design D23).
+MIN_HOURS = 0.01
 MAX_HOURS = 8_784.0  # 366 days x 24 hours
 MAX_STORAGE = 10_000_000.0
+MIN_BUDGET = 0.01  # one cent
 MAX_BUDGET = 10_000_000_000.0
 MIN_CUSTOM_PERCENT = -100.0  # exclusive: -100% would take any price to zero
 MAX_CUSTOM_PERCENT = 1_000.0
@@ -189,8 +193,10 @@ def workload(
             f"{gpus:,} GPUs is not a whole number of {gpus_per_vm}-GPU VMs:"
             f" use {options}."
         )
-    if hours is None or not _finite(hours) or not 0 < hours <= MAX_HOURS:
-        raise Refused(f"Hours must be above 0 and at most {MAX_HOURS:,.0f}.")
+    if hours is None or not _finite(hours) or not MIN_HOURS <= hours <= MAX_HOURS:
+        raise Refused(
+            f"Hours must be at least {MIN_HOURS} and at most {MAX_HOURS:,.0f}."
+        )
     if storage is not None and (
         not _finite(storage) or not 0 <= storage <= MAX_STORAGE
     ):
@@ -225,6 +231,8 @@ def budget(value: float | None) -> float | None:
         raise Refused("Budget must be a number.")
     if value <= 0:
         raise Refused("Budget: enter an amount above zero.")
+    if value < MIN_BUDGET:
+        raise Refused(f"Budget must be at least USD {MIN_BUDGET}.")
     if value > MAX_BUDGET:
         raise Refused(f"Budget must be at most USD {MAX_BUDGET:,.0f}.")
     return float(value)
