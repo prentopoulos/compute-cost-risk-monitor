@@ -1,6 +1,7 @@
 # Phase 4 dashboard review (manual check, market review and build safety)
 
-- **Scope:** OpenSpec change `phase-4-dashboard` at commit ba67bf6: the Streamlit dashboard
+- **Scope:** OpenSpec change `phase-4-dashboard` at commit ba67bf6, plus the code-review fixes
+  at 7890d65 (§ Code review): the Streamlit dashboard
   (`app.py`, `dashboard.py`), the local-only Streamlit config, group members with their source
   price and provenance, read-only connections, and the synthetic Azure demo snapshot and loader.
 - **Reviewer:** the main agent (Claude). This is a read-through plus the manual check, not the
@@ -88,15 +89,31 @@ Workflows read (2026-10-12), applied through the skill's project adaptation:
 
 | Threat or control | Disposition | Enforcement and test |
 |---|---|---|
-| Telemetry leaving the PC | Usage statistics off | `.streamlit/config.toml`; `test_usage_statistics_are_off` |
-| LAN exposure of live figures | The server binds 127.0.0.1 only; with the address set, the banner makes no IP lookups | Config; `test_server_listens_on_this_pc_only`; netstat in the manual check |
+| Telemetry leaving the PC | Usage statistics off | `src/compute_cost_risk_monitor/.streamlit/config.toml`, beside the app script, so it applies from any launch folder; `test_usage_statistics_are_off`, `test_streamlit_reads_it_from_any_folder` |
+| LAN exposure of live figures | The server binds 127.0.0.1 only; with the address set, the banner makes no IP lookups | Config; `test_server_listens_on_this_pc_only`; netstat in the manual check, launched from the repo root and from `tmp/` |
 | Data export | The CSV download stays on: a file on this PC is local storage, and sharing it would still be redistribution (owner, recorded in PROJECT.md §6) | Owner decision D8 |
 | Writes or locks on the live database | Read-only connection per page run, closed before drawing, never cached | `db.connect(read_only=True)`; `test_read_only_connection_is_utc_and_cannot_write`, `test_database_held_by_a_writer_is_in_use`, `test_connection_closed_after_the_run` |
 | Stale or unnormalized data shown as current | STALE flag with its as-of time; group views withheld while a snapshot is `NOT NORMALIZED` | `test_stale_framing_as_of_an_injected_time`, `test_not_normalized_banner_withholds_groups` |
 | Synthetic data mixed with live | Labels come from runs; mixed labels warned; synthetic loaders refuse `data/monitor.duckdb` | `test_mixed_labels_warned`, `test_command_refuses_the_live_database_for_azure_files` |
 | Deploy to a hosted service from the menu | Developer options hidden (`toolbarMode = "viewer"`); hosting stays behind the publishing gate | `test_developer_options_are_hidden` |
-| Secrets | None involved. `.streamlit/secrets.toml` is gitignored; detect-secrets stays in the gate | `test_streamlit_secrets_are_ignored` |
+| Secrets | None involved. `**/.streamlit/secrets.toml` is gitignored; detect-secrets stays in the gate | `test_streamlit_secrets_are_ignored` |
 | Supply chain | Altair declared directly at the version already locked (6.3.0); no new package. `uv audit` found no known vulnerabilities in 67 packages | `uv.lock`; `test_dependencies.py` |
 | Query injection | The page passes no user text into SQL; filters choose among values read from stored groups | Code review of `app.py` and `dashboard.py` |
 
 The scheduling, spend and publishing gates are untouched. Nothing here is hosted.
+
+## Code review (2026-10-13)
+
+`/code-review` on PR #9 found 15 issues; all were fixed with tests in 7890d65 (design D31). The
+ones that touched this review's checks:
+- the Streamlit config applied only when launched from the repo root, so a launch from another
+  folder would have bound every interface and sent usage statistics. It now sits beside the app
+  script; a real launch from `tmp/` listened on 127.0.0.1 only;
+- a database file without tables crashed the page, and a corrupt file read as "in use"; both now
+  show the right message;
+- the marketplace panel showed Azure-only missing fields; the quality report now counts the
+  marketplace's own (country code);
+- the browser counted marketplace offers beside a `thin` label that counts machines; it now shows
+  machines and offers.
+
+After the fixes the gate is green with 498 tests and 98% branch coverage.

@@ -4,23 +4,20 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-**Phase 4 (Streamlit dashboard) is in progress** on branch `phase-4-dashboard`, OpenSpec change
-`openspec/changes/phase-4-dashboard`. Grilling finished on 2026-10-12: the owner accepted every
-recommendation (design D1–D8 are owner decisions, D9–D30 settled with their basis). The next
-step is the first open task in `tasks.md`. The sections below describe Phase 3 and stay true.
+Phase 4 (Streamlit dashboard with comparable-group filters and the data-quality panel) is Done.
+It was delivered through PR #9 from branch `phase-4-dashboard` and archived as
+`openspec/changes/archive/2026-10-13-phase-4-dashboard`. New specs in `openspec/specs/`:
+`dashboard` and `synthetic-azure-snapshots`. Modified: `comparable-groups` (members carry their
+source price and provenance), `data-quality` (marketplace missing fields) and `dev-environment`
+(the declared dependencies). After the merge, no OpenSpec change is active.
 
-Phase 3 (normalization, comparable groups, history and quality checks) is Done. It was delivered
-through PR #8 from branch `phase-3-normalization` and archived as
-`openspec/changes/archive/2026-10-12-phase-3-normalization`. Its specs live in
-`openspec/specs/` as `price-normalization`, `comparable-groups`, `snapshot-history`,
-`data-quality` and `synthetic-marketplace`. After the merge, no OpenSpec change is active.
-
-Earlier phases are Done and merged: Phase 2 (PR #7), Phase 1 (PR #5) and Phase 0 (PR #3).
+Earlier phases are Done and merged: Phase 3 (PR #8), Phase 2 (PR #7), Phase 1 (PR #5) and
+Phase 0 (PR #3).
 
 Each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). Everything the
 next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
-PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 3). Copies in AGENTS.md
+PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 4). Copies in AGENTS.md
 and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`.
 
 **Live-data gate resolved for Azure (owner, 2026-10-12).** The scope, recorded in PROJECT.md §6:
@@ -29,6 +26,8 @@ and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`
 - at most 1 request/s, backing off on 429;
 - local storage and analysis only, with no redistribution.
 
+Owner's reading, 2026-10-12 (Phase 4 grilling): the dashboard's CSV download and copy controls
+stay on; a file saved on this PC is local storage, and sharing it would still be redistribution.
 The scheduling, spend and publishing gates are untouched.
 
 ## Commands
@@ -44,137 +43,132 @@ Every command prints counts, names and keys only, never prices.
 - **Normalize (Phase 3):** `uv run python -m compute_cost_risk_monitor.normalize [--db PATH]`.
   - Stores `groups-v1` and `gpu-map-v1` once, then writes one `normalized_price` row for every
     observation lacking one, in one transaction, and runs the independent checks.
-  - Exit codes: 0 when the checks pass, 1 when a check fails, 2 when refused (a changed frozen
-    row, a bad map file, or a database that cannot be opened); a refusal writes nothing.
-  - **Run it after every collect**; the quality report flags a snapshot that is not normalized
-    yet.
+  - Exit codes: 0 when the checks pass, 1 when a check fails, 2 when refused.
+  - **Run it after every collect**; the dashboard and the quality report flag a snapshot that is
+    not normalized yet.
 - **Quality (Phase 3):** `uv run python -m compute_cost_risk_monitor.quality [--db PATH]
   [--as-of TIME]` prints the counts-only report for each source's latest snapshot.
-- **Synthetic marketplace (Phase 3):** `uv run python -m compute_cost_risk_monitor.synthetic FILE
-  ... [--db PATH]` stores labelled synthetic snapshots as `synthetic` runs. It defaults to
-  `data/synthetic.duckdb` and refuses `data/monitor.duckdb`. Then run normalize and quality with
-  `--db data/synthetic.duckdb`.
+- **Synthetic data (Phases 3–4):** `uv run python -m compute_cost_risk_monitor.synthetic FILE ...
+  [--db PATH]` stores labelled synthetic snapshots as `synthetic` runs. It tells marketplace
+  files (`offers`) from Azure-shaped ones (`Items`), defaults to `data/synthetic.duckdb` and
+  refuses `data/monitor.duckdb`. The demo database:
+  `... synthetic tests/fixtures/synthetic/azure_demo.json tests/fixtures/synthetic/marketplace/snapshot-1.json
+  ...snapshot-2.json ...snapshot-3.json`, then `normalize --db data/synthetic.duckdb`.
+- **Dashboard (Phase 4):** `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
+  - The config beside the script applies from any folder: 127.0.0.1 only, no usage statistics,
+    no Deploy button.
+  - It offers the databases that exist, live first. Labels come from each run.
+  - Each page run holds a read-only lock while it reads (under a second on the live data). A
+    collect or normalize started in that moment fails rather than waits: rerun it.
 
-## Implemented behavior (Phase 3)
+## Implemented behavior (Phase 4)
 
-Owner decisions are D1–D11 in the archived design; D12–D25 are settled with their basis. D24
-(regional retirement extensions) was flagged for review on PR #8, which the owner approved for
-merge on 2026-10-12 without comment on it.
+Owner decisions are D1–D8 in the archived design. D9–D31 are settled with their basis. D31 records
+the code review.
 
-- **GPU map `gpu-map-v1`:** `src/compute_cost_risk_monitor/reference/gpu_sku_map_v1.csv`.
-  - 51 sizes (35 whole-GPU, 16 fractional), hand-built from Microsoft Learn size pages, with a
-    URL and retrieval date on every row and the CC BY 4.0 credit.
-  - A size is mapped only if Learn names it exactly (D9). Labels follow Learn's wording, e.g.
-    "H100 NVLink 80GB" or "H100 NVL 94GB confidential" (D3).
-- **Rule set `groups-v1`** (`rules.py`), stored once and refused if changed:
-  - compared rental types: on_demand and spot;
-  - exclusion order: rental type, government cloud (`usgov`/`usdod`), Windows (last
-    product-name word `Windows`/`Win`), unit not hourly, unmapped, fractional, retired;
-  - retirements are by snapshot date, with Learn's regional extensions: NCv3 in Jio India West
-    until 2027-06-30 and NVv3 in UAE North until 2027-01-31 (D24);
-  - thresholds: stale after 7 days, thin below 5 regions or 5 machines, "not listed" after 2
-    absences;
-  - the exclusions text and the synthetic marketplace GPU names.
-- **Normalization:** USD/GPU-hour = price ÷ mapped GPU count. Excluded rows keep their reason and
-  their map reference when mapped.
-- **Independent checks (`checks.py`, imports no normalization code):**
-  - multiply-back and one row per observation;
-  - reasons are valid per source, and each one is re-derived from the stored rules;
-  - GPU fields match the map row for the observation's own size;
-  - compared rows follow the rules, and totals match the run records.
-- **Groups (`groups.py`):**
-  - region groups (variant, count, region, rental type), labelled `single list price` when they
-    hold one price;
-  - cross-region summaries from each region's lowest listed member: region count, min, median and
-    max, labelled `thin` below 5 regions;
-  - marketplace groups take one price per machine and flag the others `machine_duplicate`.
-- **History (`history.py`):**
-  - changes between consecutive succeeded snapshots, keyed by item for Azure and by machine
-    continuity for the marketplace;
-  - "absent once (unconfirmed)", then "not listed" after two absences.
-- **Quality (`quality.py`):**
-  - the stale flag, a `NOT NORMALIZED` flag, and rows by reason;
-  - unmapped size names, run-record counts, duplicates and missing fields;
-  - `os_ambiguous`, single-price and thin counts, changes and absences.
-- **Diagrams:** the FigJam container view marks normalization as built and adds the synthetic
-  database; `docs/architecture/c4-container.svg` is re-exported. The ERD is unchanged (no schema
-  change, D10).
+- **Page (`app.py`):**
+  - a sidebar choice of database and source, with cascading filters that offer only existing
+    groups (variant → GPU count → rental type → region);
+  - a framing line, "Published Azure retail list prices … local analysis only" or "Synthetic
+    data: invented prices …", plus STALE, mixed-label and `NOT NORMALIZED` notices;
+  - three lazy tabs, of which only the open one is drawn:
+    - **Comparable groups:** the region group, its Source records and the cross-region summary
+      with its chart;
+    - **Group browser:** keys, counts and labels, with no prices;
+    - **Data quality:** one panel per source.
+- **View model (`dashboard.py`):**
+  - no Streamlit import, and it only arranges Phase 3 outputs;
+  - every table and chart showing a price carries the group key (or "crosses regions"),
+    snapshot time and run, data label and exclusions;
+  - USD/GPU-hour is shown at 4 decimals and the published price in full;
+  - states: no database, no tables, no rule set, no snapshot, not normalized, in use, and other
+    open errors shown as themselves.
+- **Groups:** each member now carries its published price, currency, unit, run ID, raw file,
+  sequence number and SHA-256.
+- **Synthetic Azure demo:** `tests/fixtures/synthetic/azure_demo.json` holds invented prices for
+  real size names. It is loaded through the live row rules, and a file with no stored item is
+  refused.
+- **Read-only connections:** `db.connect(path, read_only=True)`.
+- **Diagrams:** the FigJam container view marks the dashboard built and the calculator planned
+  (Phase 5), and `docs/architecture/c4-container.svg` is re-exported. The ERD is unchanged.
 
 ## Data collected so far
 
-- **One live snapshot:** `20261012T151909Z-5473f1` (owner, 2026-10-12), succeeded.
-  - 14,347 stored rows, covering 100 GPU sizes in 60 regions.
-  - By rental type: on_demand 3,285, spot 3,048, dev_test 3,803, reservation 2,387 and other
-    (Low Priority) 1,824.
-  - 7,878 stored rows are Windows, including all 3,803 Dev/Test rows.
-- **Normalized under `groups-v1` (2026-10-12):**
-  - 1,238 compared: 629 pay-as-you-go and 609 Spot, covering 34 sizes, 17 variants and 54
-    regions.
-  - Excluded:
-
-    | Reason | Rows |
-    |---|---|
-    | rental type not compared | 8,014 |
-    | Windows | 3,009 |
-    | unmapped | 775 |
-    | fractional | 666 |
-    | retired | 334 |
-    | government cloud | 311 |
-
+- **One live snapshot:** `20261012T151909Z-5473f1` (owner, 2026-10-12), succeeded. It has 14,347
+  stored rows covering 100 GPU sizes in 60 regions.
+- **Normalized under `groups-v1`:** 1,238 compared rows.
+  - 929 region groups, 684 of them single list price.
+  - 51 cross-region summaries, 11 of them thin.
   - 49 sizes are not in the map.
-  - 929 region groups, of which 684 hold a single list price. 51 cross-region summaries, of which
-    11 are thin.
-- The data is local in `data/` (gitignored). `data/monitor.pre-phase3.duckdb` is a copy taken
-  before the first normalize; the owner may delete it. Only counts appear anywhere in Git.
+
+  The dashboard's panel matches these counts.
+- **`data/synthetic.duckdb`:** the synthetic demo database, built 2026-10-12. It is disposable and
+  can be rebuilt with the commands above.
+- All data is local in `data/` (gitignored). `data/monitor.pre-phase3.duckdb` is a pre-Phase 3
+  copy the owner may delete. Only counts appear anywhere in Git.
 
 ## Verification
 
-- **Gate:** green in Git Bash and Windows PowerShell; 422 tests pass, about 98% branch coverage.
-  `uv audit` found no known vulnerabilities in 67 packages.
+- **Gate:** green on the branch; 498 tests pass, 98% branch coverage. `uv audit` found no known
+  vulnerabilities in 67 packages.
 - **CI:** hosted CI passed on the branch pushes.
-- **Live normalize:**
-  - all seven independent checks pass on the 14,347 rows;
-  - a script sharing no package code recounted every exclusion reason and matched;
-  - an SQL recompute of multiply-back found 0 mismatches.
-- **Code review:** `/code-review` on PR #8 found 15 issues. 12 were fixed with tests, and 3 were
-  answered without code change (design D25).
-- **Read-through:** the market-review and build-safety read-through is in
-  `docs/reviews/2026-10-12-phase-3-normalization.md`.
+- **Manual check:** recorded in `docs/reviews/2026-10-12-phase-4-dashboard.md`.
+  - Chrome against the synthetic database.
+  - The real app launched headless from the repo root and from another folder: it listens on
+    127.0.0.1 only and makes no IP lookups.
+  - The live database through AppTest, with counts-only output:
+    - all 17 variants render with captions;
+    - the browser lists 929 groups;
+    - the panel matches the Phase 3 counts.
+- **Code review:** `/code-review` on PR #9 found 15 issues, and all were fixed with tests (D31).
+- **Read-through:** the market-review and build-safety read-through, plus three synthetic-data
+  screenshots, are in `docs/reviews/`.
 
 ## Findings for later phases
 
-- **Phase 4 (dashboard):**
-  - Show every member of a multi-size region group with its size name. In 64 of 245 multi-size
-    groups the highest member is over 1.5× the lowest, because of vCPU, RAM and disk differences.
-  - Say that "lowest listed per region" picks the cheapest configuration.
-  - 48 Spot rows equal their pay-as-you-go price; they are published that way, so show them as
-    listed, not as errors.
-  - Show the `NOT NORMALIZED`, stale, thin and single-price labels.
-  - Set Streamlit `gatherUsageStats = false`.
+- **Phase 5 (calculator and exposure):**
+  - The container view already has a planned calculator box. A Streamlit page beside the
+    dashboard can reuse `dashboard.py`'s captions, labels and read-only loading.
+  - A Spot versus pay-as-you-go comparison was deferred from Phase 4 (D4). It crosses rental
+    types, so it needs an owner decision if wanted.
+  - Use 730 h/month only where stated (Phase 1 D17). The 32 × 720 × $0.50 = $11,520 example
+    must pass.
+- **Phase 7 (demo):**
+  - Custom theme and branding were deferred (D6).
+  - `azure_demo.json` is the likely public demo dataset, subject to the publishing gate.
+  - The screenshots show the Streamlit default theme.
 - **Map v2:** add the H100 `noIB`/`flex`/`isrf` sizes, MI300X `ND96is` and 20 RTX PRO 6000 sizes
   only when Learn names them exactly. A new version, never an edit.
-- **History:** only one live snapshot exists. Changes and "not listed" need owner-started runs, at
-  most one a day.
-- **DuckDB 1.5.6 limits:** a referenced row (for example a run, rule set or map row) cannot be
-  updated, and migrations cannot add CHECKs or constrained columns. Changing a version-1 CHECK
-  list means rebuilding into a new database file.
+- **History:** only one live snapshot exists. Changes and "not listed" need owner-started runs,
+  at most one a day.
+- **DuckDB 1.5.6 limits:**
+  - A referenced row cannot be updated.
+  - Migrations cannot add CHECKs or constrained columns.
+  - A writer and a reader in different processes exclude each other.
+- **Streamlit 1.65 quirks:**
+  - A table drawn in a hidden tab opens with collapsed columns, hence lazy tabs.
+  - AppTest keeps no tab state between runs, so tests set `session_state["view"]`.
+  - AppTest needs a loopback socket on Windows, so its tests are marked `allow_hosts(["127.0.0.1"])`.
 - **Local quirks:**
-  - pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter` ("access denied"). Gate runs used
-    `PYTEST_ADDOPTS=--basetemp=tmp/pytest` (`tmp/` is gitignored and must exist).
-  - npm's Windows `.cmd` shims break on the `&` in the folder name; run Node CLIs as
+  - Gate runs use `PYTEST_ADDOPTS=--basetemp=tmp/pytest`; `tmp/` is gitignored and must exist.
+  - npm's `.cmd` shims break on the `&` in the folder name; run Node CLIs as
     `node node_modules/<pkg>/<bin>.js`.
-  - Figma's `use_figma` returns at most 20 KB, so a large SVG export needs chunking. Phase 3 sent
-    it LZW-compressed in 17 chunks, rebuilt it from the session transcript, and verified it
-    against Figma's length and checksum.
+  - Commands shown to the owner must quote paths.
+  - The Chrome extension's screenshots time out intermittently on the Streamlit page; reading the
+    page text works.
+  - Figma's `download_assets` exports a node as SVG straight to a URL, so no chunking is needed.
+    Strip its full-page background `<rect>` to match earlier exports.
 - **Carried over:**
   - Phase 7 stays synthetic unless the publishing gate approves derived live figures.
   - Recheck CME futures before Phase 7.
   - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
   - detect-secrets scans files only: scan Git history before the repo goes public.
+  - A refused synthetic command can leave an empty `data/synthetic.duckdb`. The dashboard now
+    explains it, but the command could check its files before creating the database.
 
 ## Next action
 
-Start Phase 4 (Streamlit dashboard with comparable-group filters and the data-quality panel) in
-a fresh session: the owner clears the context and runs `/next-phase`. Then grill Phase 4 using
-the Phase 1 acceptance row and the findings above. Collecting more live data is the owner's
-choice: one manual run a day at most, followed by normalize.
+Start Phase 5 (workload cost calculator and labelled budget-exposure scenarios) in a fresh
+session: the owner clears the context and runs `/next-phase`. Then grill Phase 5 using the
+Phase 1 acceptance row and the findings above. Collecting more live data is the owner's choice:
+one manual run a day at most, followed by normalize.
