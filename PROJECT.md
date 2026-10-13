@@ -99,7 +99,7 @@ user before each later phase. Evidence that counts in every phase:
   `openspec/changes/archive/2026-10-12-phase-3-normalization/design.md` D1–D25. Phase 4
   grilling decisions (dashboard scope, datasets, views, chart, wording, synthetic Azure demo
   data, CSV download; owner answered every owner call on 2026-10-12) are cited in
-  `openspec/changes/phase-4-dashboard/design.md` D1–D29. Vast.ai
+  `openspec/changes/phase-4-dashboard/design.md` D1–D30. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)

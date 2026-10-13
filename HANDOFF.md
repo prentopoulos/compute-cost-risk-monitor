@@ -6,7 +6,7 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 **Phase 4 (Streamlit dashboard) is in progress** on branch `phase-4-dashboard`, OpenSpec change
 `openspec/changes/phase-4-dashboard`. Grilling finished on 2026-10-12: the owner accepted every
-recommendation (design D1–D8 are owner decisions, D9–D29 settled with their basis). The next
+recommendation (design D1–D8 are owner decisions, D9–D30 settled with their basis). The next
 step is the first open task in `tasks.md`. The sections below describe Phase 3 and stay true.
 
 Phase 3 (normalization, comparable groups, history and quality checks) is Done. It was delivered

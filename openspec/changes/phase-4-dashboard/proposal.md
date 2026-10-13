@@ -79,6 +79,9 @@ with their basis.
 - `comparable-groups`: "Region groups" members also report the observation's published price,
   currency and unit, and the run ID, raw-response file path, sequence number and SHA-256 they
   trace to.
+- `dev-environment`: "Locked Python dependencies" lists the dependencies actually declared:
+  pytz (Phase 1 D6), pytest-socket, detect-secrets and types-pytz (Phase 2) were added without
+  updating it, and Altair joins in this phase (D5, D30).
 
 ## Impact
 
