@@ -45,5 +45,5 @@
   - the build-safety read-through for the new dependency;
   - a market-review read-through if any figure changed
 - [x] 6.3 Run the gate green with both coverage steps and `uv audit`, then record the output
-- [ ] 6.4 Update PROJECT.md (§6 Phase 6 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
+- [x] 6.4 Update PROJECT.md (§6 Phase 6 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
 - [x] 6.5 Run `/code-review` on the PR and resolve its findings with tests
