@@ -567,3 +567,22 @@ def test_failed_check_shows_no_figures(
     ]
     assert not tab.dataframe
     assert not tab.get("vega_lite_chart")
+
+
+def test_workload_without_an_azure_snapshot(tmp_path: Path) -> None:
+    path = build(tmp_path / "synthetic.duckdb", SNAPSHOTS[:1])
+    tab = workload_tab(page([(dashboard.SYNTHETIC_DATASET, path)]))
+    assert [i.value for i in tab.info] == [dashboard.NO_SNAPSHOT]
+    assert not tab.dataframe
+
+
+def test_workload_without_comparable_groups(tmp_path: Path) -> None:
+    path = build(tmp_path / "synthetic.duckdb", SNAPSHOTS[:1])
+    connection = db.connect(path)
+    unmapped = Price("Standard_ND96is_noIB_H100_v5", meter="unmapped")
+    azure_run(connection, "unmapped-only", [unmapped])
+    normalize.normalize_pending(connection, AS_OF)
+    connection.close()
+    tab = workload_tab(page([(dashboard.SYNTHETIC_DATASET, path)]))
+    assert [i.value for i in tab.info] == ["This snapshot holds no comparable groups."]
+    assert not tab.dataframe
