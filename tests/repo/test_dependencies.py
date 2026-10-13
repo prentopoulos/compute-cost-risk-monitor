@@ -6,10 +6,12 @@ pyproject.toml change together.
 
 import os
 import re
+import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
-from hypothesis import settings
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = {"altair", "duckdb", "pandas", "pytz", "streamlit"}
@@ -48,13 +50,37 @@ def test_dev_dependencies_match_the_spec() -> None:
     assert _names(groups["dev"]) == DEV
 
 
-def test_one_hypothesis_profile_locally_and_in_ci() -> None:
-    # tests/conftest.py loads `gate` whether or not CI is set (Phase 6 design D11).
-    current = settings()
-    assert settings.get_current_profile_name() == os.environ.get(
-        "HYPOTHESIS_PROFILE", "gate"
+def _profile_under(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    """Load tests/conftest.py in a fresh interpreter, as pytest would, with `env`."""
+    script = (
+        "import runpy; runpy.run_path('tests/conftest.py');"
+        " from hypothesis import settings; s = settings();"
+        " print(settings.get_current_profile_name(), s.derandomize, s.database,"
+        " s.deadline)"
     )
-    if settings.get_current_profile_name() == "gate":
-        assert current.derandomize is True
-        assert current.database is None
-        assert current.deadline is None
+    base = {
+        k: v for k, v in os.environ.items() if k not in ("CI", "HYPOTHESIS_PROFILE")
+    }
+    return subprocess.run(  # noqa: S603 (fixed arguments, no shell)
+        [sys.executable, "-c", script],
+        cwd=ROOT,
+        env={**base, **env},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("env", [{}, {"CI": "true"}, {"HYPOTHESIS_PROFILE": ""}])
+def test_one_hypothesis_profile_locally_and_in_ci(env: dict[str, str]) -> None:
+    # Hypothesis loads its own `ci` profile when CI is set; conftest overrides it, so
+    # local and CI runs generate the same examples (Phase 6 design D11).
+    done = _profile_under(env)
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.split() == ["gate", "True", "None", "None"]
+
+
+def test_unknown_hypothesis_profile_stops_with_one_message() -> None:
+    done = _profile_under({"HYPOTHESIS_PROFILE": "explor"})
+    assert done.returncode != 0
+    assert "HYPOTHESIS_PROFILE='explor' is not a profile here" in done.stderr
