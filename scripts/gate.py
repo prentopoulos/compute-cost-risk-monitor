@@ -22,6 +22,7 @@ OPENSPEC_CLI = (
 COMMIT_RANGE = "origin/main..HEAD"
 SECRETS_BASELINE = ".secrets.baseline"
 SECRETS_BATCH = 100
+COVERAGE_DATA = ROOT / ".coverage"
 # Held at 100% coverage (Phase 6 design D3): every price, cost, exposure, quality and
 # history figure, and the rules and checks behind them.
 CORE_MODULES = (
@@ -165,10 +166,36 @@ def secrets_check() -> Result:
     return Result(name, "fail" if failed else "pass", time.monotonic() - start, note)
 
 
+def core_coverage_check() -> Result:
+    name = "core coverage"
+    print(f"\n=== {name} ===", flush=True)
+    # A renamed or deleted core module would match no file and drop out unnoticed.
+    package = ROOT / "src" / "compute_cost_risk_monitor"
+    missing = [m for m in CORE_MODULES if not (package / f"{m}.py").is_file()]
+    if missing:
+        return execute(name, None, "core module not found: " + ", ".join(missing))
+    return execute(
+        name,
+        [
+            sys.executable,
+            "-m",
+            "coverage",
+            "report",
+            "--show-missing",
+            "--fail-under=100",
+            "--include="
+            + ",".join(f"*/compute_cost_risk_monitor/{m}.py" for m in CORE_MODULES),
+        ],
+    )
+
+
 def main() -> int:
     uv = tool("uv")
     node = tool("node")
     py = [sys.executable, "-m"]
+    # The core coverage step reads the data the tests step writes; without this, a test
+    # run that aborts before saving would leave an older run's data to be read.
+    COVERAGE_DATA.unlink(missing_ok=True)
     results = [
         check(
             "lockfile",
@@ -179,18 +206,7 @@ def main() -> int:
         check("lint", [*py, "ruff", "check"]),
         check("types", [*py, "mypy"]),
         check("tests", [*py, "pytest", "--cov", "--cov-report=term-missing"]),
-        check(
-            "core coverage",
-            [
-                *py,
-                "coverage",
-                "report",
-                "--show-missing",
-                "--fail-under=100",
-                "--include="
-                + ",".join(f"*/compute_cost_risk_monitor/{m}.py" for m in CORE_MODULES),
-            ],
-        ),
+        core_coverage_check(),
         check(
             "openspec",
             [
