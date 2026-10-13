@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "commitizen>=4.19",
     "detect-secrets>=1.5",
+    "hypothesis>=6.169",
     "mypy>=2.4",
     "pandas-stubs==3.0.*",
     "pytest>=9.1",

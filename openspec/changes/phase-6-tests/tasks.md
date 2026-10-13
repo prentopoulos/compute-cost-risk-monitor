@@ -2,7 +2,7 @@
 
 - [x] 1.1 Make the synthetic command read and check every file (label, time, shape, offers or Azure row rules) before it opens the database, and say "refused" once (D9, D15; ADDED `synthetic-marketplace` requirement). Tests: a refused file with a new database path leaves no file and stores no earlier valid file; a refused file leaves an existing database's runs unchanged; the message wording; the rollback paths and the open refusal in `synthetic.py`
 - [x] 1.2 Convert the quality command's `--as-of` to UTC before building and printing (D15; MODIFIED "Quality command"). Test with a `-04:00` offset: the printed time and the stale judgement
-- [ ] 1.3 Add Hypothesis as a dev dependency (D11, D19): `pyproject.toml`, `uv.lock`, the `DEV` set in `tests/repo/test_dependencies.py`, `tests/conftest.py` with the `gate` and `explore` profiles, and `.hypothesis/` in `.gitignore`. Test that the `gate` profile is loaded when `CI` is set
+- [x] 1.3 Add Hypothesis as a dev dependency (D11, D19): `pyproject.toml`, `uv.lock`, the `DEV` set in `tests/repo/test_dependencies.py`, `tests/conftest.py` with the `gate` and `explore` profiles, and `.hypothesis/` in `.gitignore`. Test that the `gate` profile is loaded when `CI` is set
 
 ## 2. Gap tests in the four areas
 

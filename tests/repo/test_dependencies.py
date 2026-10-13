@@ -4,15 +4,19 @@ A new dependency is a decision recorded in a design; this test makes the spec an
 pyproject.toml change together.
 """
 
+import os
 import re
 import tomllib
 from pathlib import Path
+
+from hypothesis import settings
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = {"altair", "duckdb", "pandas", "pytz", "streamlit"}
 DEV = {
     "commitizen",
     "detect-secrets",
+    "hypothesis",
     "mypy",
     "pandas-stubs",
     "pytest",
@@ -42,3 +46,15 @@ def test_dev_dependencies_match_the_spec() -> None:
     groups = _project()["dependency-groups"]
     assert isinstance(groups, dict)
     assert _names(groups["dev"]) == DEV
+
+
+def test_one_hypothesis_profile_locally_and_in_ci() -> None:
+    # tests/conftest.py loads `gate` whether or not CI is set (Phase 6 design D11).
+    current = settings()
+    assert settings.get_current_profile_name() == os.environ.get(
+        "HYPOTHESIS_PROFILE", "gate"
+    )
+    if settings.get_current_profile_name() == "gate":
+        assert current.derandomize is True
+        assert current.database is None
+        assert current.deadline is None
