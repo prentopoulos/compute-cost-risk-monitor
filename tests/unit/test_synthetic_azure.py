@@ -8,17 +8,19 @@ import copy
 import hashlib
 import json
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import duckdb
 import pytest
 
-from compute_cost_risk_monitor import synthetic
+from compute_cost_risk_monitor import checks, groups, normalize, synthetic
 from seed import database
 from support import BASE_ITEM, FIXTURES
 
 OBSERVED = "2026-10-12T09:00:00+00:00"
+NOW = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -143,6 +145,38 @@ def test_kind_follows_the_shape(tmp_path: Path) -> None:
     neither = json.dumps({"_label": "synthetic", "observed_at": OBSERVED}).encode()
     with pytest.raises(synthetic.SyntheticError, match="neither"):
         synthetic.kind(neither)
+
+
+def test_demo_file_covers_the_dashboard_cases(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    synthetic.ingest_azure_snapshot(con, FIXTURES / "azure_demo.json")
+    normalize.normalize_pending(con, NOW)
+    assert all(v.passed for v in checks.run(con, "groups-v1"))
+    (snap,) = groups.snapshots(con, "azure-retail")
+    assert snap.data_label == "synthetic"
+    found = {
+        (g.key.variant, g.key.gpu_count, g.key.region, g.key.rental_type): g
+        for g in groups.region_groups(con, snap)
+    }
+    assert len(found[("T4 16GB", 1, "eastus", "on_demand")].members) == 2
+    assert groups.SINGLE in found[("T4 16GB", 1, "westeurope", "on_demand")].labels
+    thin = {
+        (s.variant, s.rental_type): groups.THIN in s.labels
+        for s in groups.summaries(con, snap)
+    }
+    assert thin[("H100 NVLink 80GB", "on_demand")] is False
+    assert thin[("H100 NVLink 80GB", "spot")] is True
+    spot = found[("H100 NVLink 80GB", 8, "eastus", "spot")].members[0]
+    listed = found[("H100 NVLink 80GB", 8, "eastus", "on_demand")].members[0]
+    assert spot.price == listed.price
+    reasons = dict(
+        con.execute(
+            "SELECT excluded_reason, count(*) FROM normalized_price"
+            " WHERE excluded_reason IS NOT NULL GROUP BY 1"
+        ).fetchall()
+    )
+    assert reasons == {"unmapped_sku": 1, "windows": 1}
 
 
 def test_command_stores_both_kinds(

@@ -7,6 +7,14 @@ committed to this repository (Phase 1 design D4).
 - `azure_retail_page.json`: shaped like one page of the Azure Retail Prices API response
   (`Items`, `NextPageLink`, `Count`). It follows the field names in Microsoft's documentation.
   IDs are zero-filled placeholders and prices are round invented numbers.
+- `azure_demo.json`: a synthetic Azure-shaped snapshot (one page, labelled synthetic, with an
+  `observed_at` time) for the dashboard demo, AppTest flows and PR screenshots. Size names are
+  real Azure names so the packaged GPU map applies; every price and ID is invented. Ingested
+  with `uv run python -m compute_cost_risk_monitor.synthetic`, it holds:
+  - H100 ×8 pay-as-you-go in 5 regions (a summary that is not thin) and Spot in 2 (thin);
+  - a US East Spot price equal to its pay-as-you-go price;
+  - two T4 sizes in one US East group, and single-price T4 and A100 groups;
+  - an unmapped size (MI300X `ND96is`) and a Windows row.
 - `azure_items.json`: one invented Azure-shaped item plus labelled cases (normal, edge,
   deliberately failing), each with its known answer for the collector's row rules.
 - `marketplace_offers.json`: marketplace-style offers for the hybrid plan's marketplace-only
