@@ -147,15 +147,16 @@ when present.
 ### Requirement: Group browser
 The dashboard SHALL list the latest snapshot's region groups for the chosen source, filtered by
 the choices made so far, with each group's key, member count and labels (`single list price`,
-`thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, and SHALL sort
-groups by key.
+`thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, SHALL sort
+groups by key, and SHALL be captioned with the snapshot's start time in UTC, run ID and data
+label.
 
 #### Scenario: No prices in the browser
 - **WHEN** the group browser is shown for a snapshot
 - **THEN** it holds group keys, member counts and labels, and no column holds a price or statistic
 
 ### Requirement: Figure captions and framing line
-Every table and chart SHALL carry a caption with:
+Every table and chart that shows a price or statistic SHALL carry a caption with:
 - its group key, or "crosses regions" with the variant, GPU count and rental type;
 - the snapshot's start time in UTC and run ID;
 - the data label;
@@ -195,7 +196,8 @@ the quality report as of the injected time, holding counts only:
 
 It SHALL also show, as secondary counts, rows by reason, rejected, out-of-scope rows,
 `os_ambiguous` rows, single-price groups, changes, `absent once (unconfirmed)` and `not listed`.
-A source with no succeeded run SHALL show "no snapshot".
+Each panel SHALL be captioned with its snapshot's start time in UTC, run ID, data label and the
+as-of time. A source with no succeeded run SHALL show "no snapshot".
 
 #### Scenario: Panel counts match the report
 - **WHEN** the panel is shown for a normalized synthetic Azure snapshot with one unmapped size
