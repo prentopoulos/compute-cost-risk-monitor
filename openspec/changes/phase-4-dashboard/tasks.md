@@ -12,11 +12,11 @@
 
 ## 3. View model
 
-- [ ] 3.1 Write `dashboard.py` dataset resolution and states: existing databases only, live default, overridable paths; no database, no rule set, no snapshot, `NOT NORMALIZED`, database in use; mixed-label detection. Unit-test each state
-- [ ] 3.2 Add cascading filter options (variant → GPU count → rental type → region, existing groups only, natural order) and the group browser frame (keys, member counts, labels, no prices, sorted by key). Unit-test both
-- [ ] 3.3 Add the region-group, cross-region and marketplace frames, the caption helper, the framing line (live, recorded, synthetic, stale) and display formats (4 decimals, full published precision, UTC). Unit-test captions on every frame and the known-answer summary (1, 2, 3, 4, 10)
-- [ ] 3.4 Add the cross-region chart spec (Altair points plus min, median and max rules, no line). Test the point count, rule values, missing regions absent and no line mark
-- [ ] 3.5 Add the data-quality panel model from `quality.build` (D25 mapping, secondary counts, "no snapshot"). Test that it matches the report on the demo dataset
+- [x] 3.1 Write `dashboard.py` dataset resolution and states: existing databases only, live default, overridable paths; no database, no rule set, no snapshot, `NOT NORMALIZED`, database in use; mixed-label detection. Unit-test each state
+- [x] 3.2 Add cascading filter options (variant → GPU count → rental type → region, existing groups only, natural order) and the group browser frame (keys, member counts, labels, no prices, sorted by key). Unit-test both
+- [x] 3.3 Add the region-group, cross-region and marketplace frames, the caption helper, the framing line (live, recorded, synthetic, stale) and display formats (4 decimals, full published precision, UTC). Unit-test captions on every frame and the known-answer summary (1, 2, 3, 4, 10)
+- [x] 3.4 Add the cross-region chart spec (Altair points plus min, median and max rules, no line). Test the point count, rule values, missing regions absent and no line mark
+- [x] 3.5 Add the data-quality panel model from `quality.build` (D25 mapping, secondary counts, "no snapshot"). Test that it matches the report on the demo dataset
 
 ## 4. Streamlit app
 
