@@ -196,3 +196,18 @@ def test_command_refuses_a_database_it_cannot_open(
     monkeypatch.setattr(db, "connect", locked)
     assert quality.main(["--db", str(path)]) == 2
     assert "cannot open" in capsys.readouterr().err
+
+
+def test_run_without_a_summary_counts_are_unknown() -> None:
+    con = database()
+    azure_run(con, "run-1", [Price()])
+    con.execute("DELETE FROM collection_run_summary WHERE run_id = 'run-1'")
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=1))
+    assert (report.out_of_scope, report.repeats) == (None, None)
+    text = quality.render(report)
+    assert (
+        "run records: out of scope unknown (no run summary),"
+        " repeats unknown (no run summary), rejected 0"
+    ) in text
+    assert "duplicates: repeats unknown (no run summary), shared_meter_key 0" in text

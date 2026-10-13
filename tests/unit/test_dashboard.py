@@ -508,6 +508,25 @@ def test_panel_matches_the_report(views: dict[str, dashboard.SourceView]) -> Non
     assert "as of 2026-10-12 12:00 UTC" in shown.caption
 
 
+def test_panel_shows_unknown_counts_without_a_run_summary(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    con.execute(
+        "DELETE FROM collection_run_summary WHERE run_id IN"
+        " (SELECT run_id FROM collection_run WHERE source = 'azure-retail')"
+    )
+    shown = dashboard.panel(
+        azure(dashboard.load_all(con, Path("s.duckdb"), AS_OF)), AS_OF
+    )
+    checks = dict(shown.checks.values.tolist())
+    assert checks["Duplicates"] == (
+        "repeats unknown (no run summary), shared_meter_key 0"
+    )
+    assert dict(shown.secondary.values.tolist())["Out of scope"] == (
+        "unknown (no run summary)"
+    )
+
+
 def test_marketplace_panel_counts_machine_duplicates(
     views: dict[str, dashboard.SourceView],
 ) -> None:

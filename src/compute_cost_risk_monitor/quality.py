@@ -30,6 +30,8 @@ AZURE_OPTIONAL = ("location", "product_name", "effective_start_date")
 # An offer without VRAM is never compared (unmapped_gpu_name), so VRAM is not counted.
 MARKETPLACE_OPTIONAL = ("country_code",)
 _WIN = re.compile(r"\bWin")
+# A count the run records lack (no summary row): unknown, never zero.
+UNKNOWN = "unknown (no run summary)"
 
 
 @dataclass
@@ -42,9 +44,9 @@ class QualityReport:
     by_status: dict[str, int] = field(default_factory=dict)
     unmapped_sizes: list[str] = field(default_factory=list)
     rejected: dict[str, int] = field(default_factory=dict)
-    out_of_scope: int = 0
-    repeats: int = 0
-    duplicates: dict[str, int] = field(default_factory=dict)
+    out_of_scope: int | None = 0  # None when the run has no summary row
+    repeats: int | None = 0
+    duplicates: dict[str, int | None] = field(default_factory=dict)
     missing_fields: dict[str, int] = field(default_factory=dict)
     os_ambiguous: int = 0
     region_groups: int = 0
@@ -55,6 +57,11 @@ class QualityReport:
     not_normalized: int = 0  # observations with no row under the rule version
     absent_once: int = 0
     not_listed: int = 0
+
+
+def shown(count: int | None) -> int | str:
+    """A count for display: one the run records lack reads as unknown."""
+    return UNKNOWN if count is None else count
 
 
 def _one(connection: duckdb.DuckDBPyConnection, sql: str, *params: object) -> int:
@@ -172,6 +179,8 @@ def build(
     ).fetchone()
     if summary:
         report.out_of_scope, report.repeats = summary
+    else:
+        report.out_of_scope = report.repeats = None
     if region_groups is None:
         region_groups = groups.region_groups(connection, latest, rule_version)
     report.region_groups = len(region_groups)
@@ -233,12 +242,13 @@ def render(report: QualityReport) -> str:
         + (f" ({', '.join(report.unmapped_sizes)})" if report.unmapped_sizes else "")
     )
     lines.append(
-        f"  run records: out of scope {report.out_of_scope}, repeats {report.repeats},"
-        f" rejected {sum(report.rejected.values())}"
+        f"  run records: out of scope {shown(report.out_of_scope)},"
+        f" repeats {shown(report.repeats)}, rejected {sum(report.rejected.values())}"
     )
     lines += [f"    rejected {reason}: {n}" for reason, n in report.rejected.items()]
     lines.append(
-        "  duplicates: " + ", ".join(f"{k} {v}" for k, v in report.duplicates.items())
+        "  duplicates: "
+        + ", ".join(f"{k} {shown(v)}" for k, v in report.duplicates.items())
     )
     lines.append(
         "  missing among compared rows: "
