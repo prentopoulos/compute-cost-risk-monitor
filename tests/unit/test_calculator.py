@@ -64,7 +64,11 @@ def test_whole_vms_accepted() -> None:
     [
         (30, 8, "30 GPUs is not a whole number of 8-GPU VMs: use 24 or 32."),
         (3, 2, "3 GPUs is not a whole number of 2-GPU VMs: use 2 or 4."),
-        (99_999, 8, "use 99,992 or 100,000."),
+        (
+            99_999,
+            8,
+            "99,999 GPUs is not a whole number of 8-GPU VMs: use 99,992 or 100,000.",
+        ),
         (4, 8, "GPUs must be at least one VM (8 GPUs)."),
         (0, 1, "GPUs must be at least one VM (1 GPU)."),
         (-8, 8, "at least one VM"),
@@ -287,6 +291,23 @@ def test_custom_percent_name() -> None:
     assert calc.custom_name(Custom(PERCENT, 10.0)) == (
         "Custom: +10% (entered by you, not part of scenarios-v1)"
     )
+
+
+@pytest.mark.parametrize(
+    ("change", "shown"),
+    [
+        (Custom(PERCENT, 0.00001), "Custom: +1e-05%"),
+        (Custom(USD, -0.00004), "Custom: −4e-05 USD/GPU-hour"),
+        (Custom(USD, 1_000.0), "Custom: +1,000 USD/GPU-hour"),
+    ],
+)
+def test_a_small_custom_change_is_never_named_zero(change: Custom, shown: str) -> None:
+    assert calc.custom_name(change).startswith(shown + " (")
+
+
+def test_percentage_and_usd_scenarios_use_one_formula_each() -> None:
+    assert calc.priced(2.5, PERCENT, -25.0) == (2.5 * 0.75, 2.5 * 0.75 - 2.5)
+    assert calc.priced(0.1, USD, 0.5) == (0.1 + 0.5, 0.5)  # the change stays exact
 
 
 def test_calculate_refuses_a_workload_that_is_not_whole_vms() -> None:

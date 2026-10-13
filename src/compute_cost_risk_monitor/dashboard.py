@@ -681,8 +681,28 @@ def per_gpu_hour(value: float) -> str:
     return f"USD {value:.4f}/GPU-hour"
 
 
+def plain(value: float, places: int) -> str:
+    """Up to `places` decimals without trailing zeros, or 3 significant digits when that
+    would show a non-zero value as zero."""
+    text = f"{value:,.{places}f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    if text in ("0", "-0") and value != 0:
+        return f"{value:.3g}"
+    return text
+
+
+def fixed(value: float, places: int) -> str:
+    """Exactly `places` decimals, or 3 significant digits when that would show a
+    non-zero value as zero."""
+    text = f"{value:,.{places}f}"
+    if float(text.replace(",", "")) == 0 and value != 0:
+        return f"{value:.3g}"
+    return text
+
+
 def hours_text(hours: float) -> str:
-    return f"{hours:,.2f}".rstrip("0").rstrip(".") + " h"
+    return plain(hours, 4) + " h"
 
 
 def size_key(key: GroupKey) -> str:
@@ -694,8 +714,7 @@ def size_key(key: GroupKey) -> str:
 
 def sizes(group: RegionGroup) -> list[str]:
     """Member sizes, lowest listed first, so the first is the default."""
-    ordered = sorted(group.members, key=lambda m: (m.usd_per_gpu_hour, m.name))
-    return [m.name for m in ordered]
+    return [m.name for m in sorted(group.members, key=groups.price_order)]
 
 
 def default_gpus(gpus_per_vm: int) -> int:
@@ -717,11 +736,15 @@ def start_text(begin: Start) -> str:
     )
 
 
-def vms_text(work: Workload, begin: Start) -> str:
-    vms = work.gpus // begin.gpus_per_vm
+def vm_count(vms: int) -> str:
+    return f"{vms:,} {'VM' if vms == 1 else 'VMs'}"
+
+
+def vms_text(result: Result) -> str:
+    """The checked VM count beside the GPUs entered."""
     return (
-        f"{work.gpus:,} GPUs = {vms:,} {'VM' if vms == 1 else 'VMs'}"
-        f" of {gpus(begin.gpus_per_vm)}"
+        f"{result.workload.gpus:,} GPUs = {vm_count(result.cost.vms)}"
+        f" of {gpus(result.start.gpus_per_vm)}"
     )
 
 
@@ -735,9 +758,7 @@ def workload_caption(result: Result) -> str:
     """Every workload figure: key, snapshot, label, exclusions and assumptions (D10)."""
     begin = result.start
     parts = [
-        f"Group: {key_text(begin.key)}",
-        snapshot_text(begin.snapshot),
-        begin.group.exclusions,
+        group_caption(begin.group),
         storage_line(result.workload),
         BILLING,
         HOURS_NOTE,
@@ -756,10 +777,13 @@ def scenario_caption(result: Result) -> str:
         scenarios.JUDGEMENT,
     ]
     if result.payg_key is not None:
-        missing = " (not listed in this snapshot)" if result.payg is None else ""
+        if result.payg is None:
+            where = " (not listed in this snapshot)"
+        else:
+            where = f" ({result.payg.name}, item key {result.payg.item_key})"
         parts.append(
             f"Fallback row {CROSSES_RENTAL}: {key_text(result.start.key)}"
-            f" → {key_text(result.payg_key)}{missing}"
+            f" → {key_text(result.payg_key)}{where}"
         )
     return " · ".join(parts)
 
@@ -769,7 +793,7 @@ def cost_frame(result: Result) -> pd.DataFrame:
     begin, work, cost = result.start, result.workload, result.cost
     entered = work.storage is not None
     compute = (
-        f"{work.gpus:,} GPUs ({cost.vms:,} VMs) × {hours_text(work.hours)}"
+        f"{work.gpus:,} GPUs ({vm_count(cost.vms)}) × {hours_text(work.hours)}"
         f" × {per_gpu_hour(begin.usd_per_gpu_hour)}"
     )
     storage = "entered by you, not an Azure list price" if entered else "not included"
@@ -847,9 +871,9 @@ def headroom_text(result: Result) -> str | None:
         return None
     work = result.workload
     text = (
-        f"A rise of USD {room.rise:.4f} per GPU-hour ({room.rise_pct:.1f}% of starting"
-        f" price) would use up {money(room.budget)} over {work.gpus:,} GPUs ×"
-        f" {hours_text(work.hours)}. Storage unchanged. {scenarios.NOT_A_FORECAST}."
+        f"A rise of USD {fixed(room.rise, 4)} per GPU-hour ({fixed(room.rise_pct, 1)}%"
+        f" of starting price) would use up {money(room.budget)} over {work.gpus:,} GPUs"
+        f" × {hours_text(work.hours)}. Storage unchanged. {scenarios.NOT_A_FORECAST}."
     )
     if room.above_payg is not None:
         text += " " + ABOVE_PAYG.format(price=f"{room.above_payg:.4f}")
@@ -907,6 +931,7 @@ def _listed_payg(begin: Start, found: Sequence[RegionGroup]) -> float | None:
 
 
 def check(
+    begin: Start,
     result: Result,
     work: Workload,
     change: Custom | None,
@@ -915,17 +940,19 @@ def check(
 ) -> list[str]:
     """Run the independent check on what the page would show (D19).
 
-    The inputs come from the user's validated entries and the stored members, not from
-    the result, so a dropped row or headroom is caught too.
+    The inputs come from the page: the member it picked (`begin`), the user's validated
+    entries and the stored members. Only the figures come from `result`, so a result
+    priced from another member, or one that drops a row or headroom, is caught.
     """
-    begin = result.start
-    if begin.member.price is None:
+    member = begin.member
+    if member.price is None:
         return ["published price missing"]
     inputs = workload_check.Inputs(
         gpus=work.gpus,
         hours=work.hours,
         storage=work.storage,
-        vm_price=begin.member.price,
+        item_key=member.item_key,
+        vm_price=member.price,
         gpus_per_vm=begin.key.gpu_count,
         spot=begin.key.rental_type == calculator.SPOT,
         payg_vm_price=_listed_payg(begin, found),
@@ -934,9 +961,11 @@ def check(
     )
     room = result.headroom
     figures = workload_check.Figures(
-        start=begin.usd_per_gpu_hour,
+        item_key=result.start.member.item_key,
+        start=result.start.usd_per_gpu_hour,
         vms=result.cost.vms,
         compute=result.cost.compute,
+        storage=result.cost.storage,
         total=result.cost.total,
         rows=tuple(
             workload_check.RowFigures(
@@ -947,6 +976,7 @@ def check(
                 row.cost,
                 row.exposure,
                 row.above_payg,
+                row.effect,
             )
             for row in result.rows
         ),

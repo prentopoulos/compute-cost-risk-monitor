@@ -13,6 +13,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from compute_cost_risk_monitor import groups
 from compute_cost_risk_monitor.groups import GroupKey, Member, RegionGroup, Snapshot
 from compute_cost_risk_monitor.scenarios import (
     PERCENT,
@@ -158,7 +159,9 @@ def _finite(value: float) -> bool:
 
 
 def _amount(value: float) -> str:
-    return f"{value:,.4f}".rstrip("0").rstrip(".")
+    """Up to 4 decimals, or 3 significant digits when that would read as zero."""
+    text = f"{value:,.4f}".rstrip("0").rstrip(".")
+    return f"{value:.3g}" if text == "0" and value != 0 else text
 
 
 def nearest(gpus: int, gpus_per_vm: int) -> list[int]:
@@ -183,7 +186,7 @@ def workload(
     if gpus % gpus_per_vm:
         options = " or ".join(f"{n:,}" for n in nearest(gpus, gpus_per_vm))
         raise Refused(
-            f"{gpus} GPUs is not a whole number of {gpus_per_vm}-GPU VMs:"
+            f"{gpus:,} GPUs is not a whole number of {gpus_per_vm}-GPU VMs:"
             f" use {options}."
         )
     if hours is None or not _finite(hours) or not 0 < hours <= MAX_HOURS:
@@ -230,16 +233,11 @@ def budget(value: float | None) -> float | None:
 # --- starting price and cost (D3, D13) ---
 
 
-def lowest(group: RegionGroup) -> Member:
-    """The group's lowest listed member; ties go to the lexically first size."""
-    return min(group.members, key=lambda m: (m.usd_per_gpu_hour, m.name))
-
-
 def start(group: RegionGroup, size: str | None = None) -> Start:
     """The picked size of a group, or its lowest listed member when none is picked."""
     if not group.members:
         raise ValueError("a region group has at least one member")
-    low = lowest(group)
+    low = groups.lowest(group.members)
     if size is None:
         return Start(group, low, True)
     member = next((m for m in group.members if m.name == size), None)
@@ -265,24 +263,46 @@ def _effect(exposure: float) -> str:
     return NO_CHANGE
 
 
+def priced(start: float, kind: str, magnitude: float) -> tuple[float, float]:
+    """A scenario's price and change in USD/GPU-hour.
+
+    A percentage multiplies the starting price, and its change is the difference; a USD
+    scenario's change is its magnitude exactly, so the PROJECT example stays exact.
+    `workload_check` re-derives with the same two formulas.
+    """
+    if kind == PERCENT:
+        price = start * (1 + magnitude / 100)
+        return price, price - start
+    return start + magnitude, magnitude
+
+
 def _row(
     begin: Start,
     work: Workload,
-    head: tuple[str, str, str, str, float | None],
+    *,
+    ident: str,
+    name: str,
+    narrative: str,
+    kind: str,
+    magnitude: float | None,
+    price: float,
     change: float,
     payg: float | None,
 ) -> Row:
-    """Price one scenario from its USD/GPU-hour change; refuse a price at or below 0."""
-    price = begin.usd_per_gpu_hour + change
+    """One scenario's figures, or a refusal when its price is at or below zero."""
     if not price > 0:
-        return Row(*head, effect=ZERO_OR_BELOW)
+        return Row(ident, name, narrative, kind, magnitude, effect=ZERO_OR_BELOW)
     exposure = work.gpus * work.hours * change
     scenario = work.gpus * work.hours * price
     if work.storage is not None:
         scenario += work.storage
     above = payg if begin.spot and payg is not None and price > payg else None
     return Row(
-        *head,
+        ident,
+        name,
+        narrative,
+        kind,
+        magnitude,
         price=price,
         change=change,
         change_pct=change / begin.usd_per_gpu_hour * 100,
@@ -291,12 +311,6 @@ def _row(
         effect=_effect(exposure),
         above_payg=above,
     )
-
-
-def _change(begin: Start, kind: str, magnitude: float) -> float:
-    if kind == PERCENT:
-        return begin.usd_per_gpu_hour * magnitude / 100
-    return magnitude
 
 
 def custom_name(change: Custom) -> str:
@@ -343,38 +357,65 @@ def calculate(
     if begin.spot:
         payg_key, payg = pay_as_you_go(begin, found)
     payg_price = None if payg is None else payg.usd_per_gpu_hour
-    rows = [
-        _row(
-            begin,
-            work,
-            (s.id, s.name, s.narrative, s.kind, s.magnitude),
-            _change(begin, s.kind, s.magnitude),
-            payg_price,
-        )
-        for s in SCENARIOS_V1
-    ]
-    if begin.spot:
-        head = (FALLBACK, FALLBACK_NAME, FALLBACK_NARRATIVE, FALLBACK, None)
-        if payg_price is None:
-            rows.append(Row(*head, effect=NO_PAYG))
-        else:
-            rows.append(
-                _row(begin, work, head, payg_price - begin.usd_per_gpu_hour, None)
-            )
-    if change is not None:
+    start_price = begin.usd_per_gpu_hour
+    rows = []
+    for s in SCENARIOS_V1:
+        price, delta = priced(start_price, s.kind, s.magnitude)
         rows.append(
             _row(
                 begin,
                 work,
-                (
-                    CUSTOM,
-                    custom_name(change),
-                    CUSTOM_NARRATIVE,
-                    change.kind,
-                    change.magnitude,
-                ),
-                _change(begin, change.kind, change.magnitude),
-                payg_price,
+                ident=s.id,
+                name=s.name,
+                narrative=s.narrative,
+                kind=s.kind,
+                magnitude=s.magnitude,
+                price=price,
+                change=delta,
+                payg=payg_price,
+            )
+        )
+    if begin.spot:
+        if payg_price is None:
+            rows.append(
+                Row(
+                    FALLBACK,
+                    FALLBACK_NAME,
+                    FALLBACK_NARRATIVE,
+                    FALLBACK,
+                    None,
+                    effect=NO_PAYG,
+                )
+            )
+        else:
+            rows.append(
+                _row(
+                    begin,
+                    work,
+                    ident=FALLBACK,
+                    name=FALLBACK_NAME,
+                    narrative=FALLBACK_NARRATIVE,
+                    kind=FALLBACK,
+                    magnitude=None,
+                    price=payg_price,
+                    change=payg_price - start_price,
+                    payg=None,
+                )
+            )
+    if change is not None:
+        price, delta = priced(start_price, change.kind, change.magnitude)
+        rows.append(
+            _row(
+                begin,
+                work,
+                ident=CUSTOM,
+                name=custom_name(change),
+                narrative=CUSTOM_NARRATIVE,
+                kind=change.kind,
+                magnitude=change.magnitude,
+                price=price,
+                change=delta,
+                payg=payg_price,
             )
         )
     room = None

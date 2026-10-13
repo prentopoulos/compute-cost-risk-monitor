@@ -503,6 +503,7 @@ def test_custom_scenario_and_headroom(demo: list[tuple[str, Path]]) -> None:
     at.number_input(key="budget").set_value(0.0)
     tab = workload_tab(at)
     assert [w.value for w in tab.warning] == ["Budget: enter an amount above zero."]
+    assert not [t for t in texts(tab) if "USD" in t]  # no price, not even the start
     assert not tab.dataframe
 
 
@@ -565,6 +566,7 @@ def test_failed_check_shows_no_figures(
     assert [e.value for e in tab.error] == [
         "The independent check failed: total. No figures are shown."
     ]
+    assert not [t for t in texts(tab) if t.startswith("Starting price")]
     assert not tab.dataframe
     assert not tab.get("vega_lite_chart")
 

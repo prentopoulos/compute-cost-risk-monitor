@@ -230,7 +230,6 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
             persist_state="session",
         )
     begin = calculator.start(group, size)
-    st.markdown(dashboard.start_text(begin))
     gpus, hours, storage, kind, entered, budget = _workload_inputs(count)
     try:
         work = calculator.workload(gpus, hours, storage, count)
@@ -240,12 +239,15 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
         st.warning(str(refused))
         return
     result = calculator.calculate(begin, work, view.region_groups, change, limit)
-    failed = dashboard.check(result, work, change, limit, view.region_groups)
+    failed = dashboard.check(begin, result, work, change, limit, view.region_groups)
     if failed:
         st.error(dashboard.CHECK_FAILED.format(checks=", ".join(failed)))
         return
+    # Every price, the starting one included, appears only after the check passes,
+    # under the cost table's caption.
     caption = dashboard.workload_caption(result)
-    st.markdown(dashboard.vms_text(work, begin))
+    st.markdown(dashboard.start_text(result.start))
+    st.markdown(dashboard.vms_text(result))
     _table(dashboard.cost_frame(result))
     st.caption(caption)
     st.subheader("Scenarios")

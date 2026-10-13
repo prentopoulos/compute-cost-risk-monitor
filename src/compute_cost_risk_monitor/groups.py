@@ -111,9 +111,14 @@ def stats(values: list[float]) -> Stats:
     return Stats(len(values), min(values), statistics.median(values), max(values))
 
 
-def _lowest(members: list[Member]) -> Member:
-    # Ties go to the lexically first name, so output never depends on row order.
-    return min(members, key=lambda m: (m.usd_per_gpu_hour, m.name))
+def price_order(member: Member) -> tuple[float, str]:
+    """Members in listed-price order; ties go to the lexically first name, so output
+    never depends on row order. The one rule for "lowest listed" everywhere."""
+    return member.usd_per_gpu_hour, member.name
+
+
+def lowest(members: list[Member]) -> Member:
+    return min(members, key=price_order)
 
 
 _ROWS = """
@@ -170,7 +175,7 @@ def region_groups(
     for group in sorted(
         found, key=lambda g: (g.variant, g.gpu_count, g.region, g.rental_type)
     ):
-        members = sorted(found[group], key=lambda m: (m.usd_per_gpu_hour, m.name))
+        members = sorted(found[group], key=price_order)
         built = RegionGroup(group, snapshot, members, exclusions[group])
         if marketplace:
             _by_machine(built, params["thin_below_machines"])
@@ -185,7 +190,7 @@ def _by_machine(group: RegionGroup, thin_below: int) -> None:
     machines: dict[str, list[Member]] = defaultdict(list)
     for member in group.members:
         machines[member.machine_id or member.name].append(member)
-    kept = {_lowest(offers).item_key for offers in machines.values()}
+    kept = {lowest(offers).item_key for offers in machines.values()}
     group.members = [
         m if m.item_key in kept else replace(m, flags=(*m.flags, DUPLICATE))
         for m in group.members
@@ -208,7 +213,7 @@ def cross_region(
     summaries = []
     for (variant, count, rental), members in sorted(by_key.items()):
         contributions = [
-            Contribution(g.key.region, _lowest(g.members))
+            Contribution(g.key.region, lowest(g.members))
             for g in sorted(members, key=lambda g: g.key.region)
         ]
         values = [c.member.usd_per_gpu_hour for c in contributions]

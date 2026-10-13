@@ -16,7 +16,13 @@ import duckdb
 import pytest
 
 from compute_cost_risk_monitor import calculator as calc
-from compute_cost_risk_monitor import dashboard, groups, normalize, synthetic
+from compute_cost_risk_monitor import (
+    dashboard,
+    groups,
+    normalize,
+    synthetic,
+    workload_check,
+)
 from compute_cost_risk_monitor.calculator import Custom, Workload
 from compute_cost_risk_monitor.groups import GroupKey, RegionGroup
 from compute_cost_risk_monitor.scenarios import JUDGEMENT, NOT_A_FORECAST, PERCENT, USD
@@ -80,7 +86,37 @@ def test_calculator_output_passes_the_independent_check(
     limit: float | None,
 ) -> None:
     shown = result(found, region, rental, work, change, limit)
-    assert dashboard.check(shown, work, change, limit, found) == []
+    assert dashboard.check(shown.start, shown, work, change, limit, found) == []
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        Custom(PERCENT, -99.99999),
+        Custom(PERCENT, -99.99999999999999),
+        Custom(PERCENT, 999.99999),
+        Custom(USD, -11.9999999999),
+    ],
+)
+def test_extreme_custom_changes_pass_on_many_prices(
+    found: list[RegionGroup], change: Custom
+) -> None:
+    """Valid input never blanks the page: the check and the calculator price a scenario
+    with the same formulas, at tolerances scaled to each figure."""
+    group = pick(found, H100, 8, "eastus", "on_demand")
+    member = group.members[0]
+    failures = 0
+    for step in range(400):
+        per_gpu = 0.05 + step * 0.0317  # invented prices across two decades
+        priced = dataclasses.replace(
+            member, usd_per_gpu_hour=per_gpu, price=per_gpu * 8
+        )
+        trial = dataclasses.replace(group, members=[priced])
+        begin = calc.start(trial)
+        for work in (Workload(8, 0.5), Workload(100_000, 8_784.0, 1e7)):
+            shown = calc.calculate(begin, work, [trial], change, 1.0)
+            failures += bool(dashboard.check(begin, shown, work, change, 1.0, [trial]))
+    assert failures == 0
 
 
 def test_tampered_exposure_is_caught(found: list[RegionGroup]) -> None:
@@ -88,15 +124,40 @@ def test_tampered_exposure_is_caught(found: list[RegionGroup]) -> None:
     rows = list(shown.rows)
     rows[2] = dataclasses.replace(rows[2], exposure=11_520.01)
     tampered = dataclasses.replace(shown, rows=tuple(rows))
-    failed = dashboard.check(tampered, Workload(32, 720.0), None, None, found)
+    failed = dashboard.check(
+        shown.start, tampered, Workload(32, 720.0), None, None, found
+    )
     assert "example-050 exposure" in failed
+
+
+def test_unchecked_labels_and_storage_are_now_caught(found: list[RegionGroup]) -> None:
+    work = Workload(32, 720.0, 500.0)
+    shown = result(found, work=work)
+    rows = list(shown.rows)
+    rows[0] = dataclasses.replace(rows[0], effect=calc.ADDITIONAL, above_payg=99.0)
+    cost = dataclasses.replace(shown.cost, storage=9_999.0)
+    tampered = dataclasses.replace(shown, rows=tuple(rows), cost=cost)
+    failed = dashboard.check(shown.start, tampered, work, None, None, found)
+    assert {"decline-25 effect", "decline-25 note", "storage"} <= set(failed)
+
+
+def test_a_result_priced_from_another_member_is_caught(
+    found: list[RegionGroup],
+) -> None:
+    t4 = pick(found, "T4 16GB", 1, "eastus", "on_demand")
+    picked = calc.start(t4, "Standard_NC8as_T4_v3")
+    work = Workload(8, 10.0)
+    other = calc.calculate(calc.start(t4), work, found)  # priced from the lowest
+    failed = dashboard.check(picked, other, work, None, None, found)
+    assert "starting member" in failed
+    assert "starting price" in failed
 
 
 def test_dropped_headroom_and_custom_row_are_caught(found: list[RegionGroup]) -> None:
     work, change = Workload(32, 720.0), Custom(PERCENT, 10.0)
     shown = result(found, change=change, limit=11_520.0)
     dropped = dataclasses.replace(shown, rows=shown.rows[:-1], headroom=None)
-    failed = dashboard.check(dropped, work, change, 11_520.0, found)
+    failed = dashboard.check(shown.start, dropped, work, change, 11_520.0, found)
     assert "scenario rows" in failed
     assert "headroom" in failed
 
@@ -107,7 +168,8 @@ def test_a_missed_pay_as_you_go_listing_is_caught(found: list[RegionGroup]) -> N
     work = Workload(8, 10.0)
     blind = calc.calculate(calc.start(spot), work, [spot])
     assert blind.rows[-1].effect == calc.NO_PAYG
-    assert "fallback missing" in dashboard.check(blind, work, None, None, found)
+    failed = dashboard.check(blind.start, blind, work, None, None, found)
+    assert "fallback missing" in failed
 
 
 def test_missing_published_price_fails_the_check(found: list[RegionGroup]) -> None:
@@ -115,7 +177,7 @@ def test_missing_published_price_fails_the_check(found: list[RegionGroup]) -> No
     member = dataclasses.replace(shown.start.member, price=None)
     begin = dataclasses.replace(shown.start, member=member)
     broken = dataclasses.replace(shown, start=begin)
-    failed = dashboard.check(broken, Workload(32, 720.0), None, None, found)
+    failed = dashboard.check(begin, broken, Workload(32, 720.0), None, None, found)
     assert failed == ["published price missing"]
 
 
@@ -131,9 +193,10 @@ def test_known_workload_on_the_demo(found: list[RegionGroup]) -> None:
     assert math.isnan(cost[dashboard.AMOUNT][1])
     assert cost["Basis"][0] == ("32 GPUs (4 VMs) × 720 h × USD 12.0000/GPU-hour")
     assert cost["Basis"][1] == "not included"
-    assert (
-        dashboard.vms_text(shown.workload, shown.start) == "32 GPUs = 4 VMs of 8 GPUs"
-    )
+    assert dashboard.vms_text(shown) == "32 GPUs = 4 VMs of 8 GPUs"
+    one = result(found, work=Workload(8, 10.0))
+    assert dashboard.vms_text(one) == "8 GPUs = 1 VM of 8 GPUs"
+    assert dashboard.cost_frame(one)["Basis"][0].startswith("8 GPUs (1 VM) × 10 h")
     frame = dashboard.scenario_frame(shown)
     assert list(frame.columns) == dashboard.SCENARIO_COLUMNS
     assert list(frame.columns)[:3] == ["Scenario", "Effect", dashboard.EXPOSURE]
@@ -180,10 +243,12 @@ def test_spot_captions_add_the_spot_line_and_the_crossing(
     caption = dashboard.scenario_caption(shown)
     for text in ("scenarios-v1", NOT_A_FORECAST, JUDGEMENT, dashboard.CROSSES_RENTAL):
         assert text in caption
-    assert (
+    payg = pick(found, H100, 8, "westeurope", "on_demand").members[0]
+    assert caption.endswith(
         "H100 NVLink 80GB · 8 GPUs · westeurope · Spot →"
         " H100 NVLink 80GB · 8 GPUs · westeurope · pay-as-you-go"
-    ) in caption
+        f" (Standard_ND96isr_H100_v5, item key {payg.item_key})"
+    )
     assert "(not listed in this snapshot)" not in caption
     unlisted = dashboard.scenario_caption(result(found, "uksouth", "spot"))
     assert unlisted.endswith(
@@ -238,6 +303,10 @@ def test_headroom_text(found: list[RegionGroup]) -> None:
         " not a forecast."
     )
     assert dashboard.headroom_text(result(found)) is None
+    tiny = result(found, work=Workload(100_000, 8_784.0), limit=1.0)
+    text = dashboard.headroom_text(tiny)
+    assert text is not None
+    assert text.startswith("A rise of USD 1.14e-09 per GPU-hour (9.49e-09% of")
     spot = result(found, "eastus", "spot", limit=11_520.0)
     text = dashboard.headroom_text(spot)
     assert text is not None and dashboard.ABOVE_PAYG.format(price="12.0000") in text
@@ -302,11 +371,24 @@ def test_display_formats_and_text() -> None:
     assert dashboard.FORMATS[dashboard.CHANGE_USD] == "%.4f"
     assert dashboard.FORMATS[dashboard.SCENARIO_USD] == "%.4f"
     assert dashboard.money(11_520) == "USD 11,520.00"
-    assert [dashboard.hours_text(h) for h in (720.0, 0.5, 8_784.0)] == [
+    assert [dashboard.hours_text(h) for h in (720.0, 0.5, 8_784.0, 0.004)] == [
         "720 h",
         "0.5 h",
         "8,784 h",
+        "0.004 h",
     ]
+    assert dashboard.hours_text(0.00001) == "1e-05 h"  # never "0 h"
+    assert dashboard.fixed(0.0000000011, 4) == "1.1e-09"
+    assert dashboard.fixed(0.5, 4) == "0.5000"
+    assert dashboard.fixed(0.0, 1) == "0.0"
+
+
+def test_check_and_calculator_agree_on_effect_words() -> None:
+    assert workload_check.ADDITIONAL == calc.ADDITIONAL
+    assert workload_check.LOWER == calc.LOWER
+    assert workload_check.NO_CHANGE == calc.NO_CHANGE
+    assert calc.ZERO_OR_BELOW.startswith(workload_check.NOT_COMPUTED)
+    assert calc.NO_PAYG.startswith(workload_check.NOT_COMPUTED)
 
 
 def test_marketplace_note_points_to_azure() -> None:
