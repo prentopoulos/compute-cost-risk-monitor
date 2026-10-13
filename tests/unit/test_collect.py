@@ -222,3 +222,11 @@ def test_manifest_write_failure_is_reported(
     code, fetcher = run_command(tmp_path, [ok(page_bytes([item()]))])
     assert (code, fetcher.calls) == (1, [])
     assert "could not be recorded" in capsys.readouterr().err
+
+
+def test_code_version_outside_a_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # tmp_path may sit inside this repository, so point Git at a folder that is none.
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "not-a-repository"))
+    assert command.code_version(tmp_path) is None

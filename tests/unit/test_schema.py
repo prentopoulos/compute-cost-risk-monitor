@@ -799,3 +799,16 @@ def test_repeat_needs_its_response_and_observation(
     add_response(ready, response_id="resp-2", seq=1)
     with pytest.raises(duckdb.ConstraintException):
         add_repeat(ready, **overrides)
+
+
+def test_failed_migration_rolls_back(monkeypatch: pytest.MonkeyPatch) -> None:
+    connection = db.connect()
+    broken = [(1, "broken", "CREATE TABLE half_done (a INTEGER); NOT VALID SQL")]
+    monkeypatch.setattr(db, "migrations", lambda: broken)
+    with pytest.raises(duckdb.ParserException):
+        db.create_schema(connection)
+    tables = connection.execute(
+        "SELECT table_name FROM information_schema.tables"
+    ).fetchall()
+    assert ("half_done",) not in tables
+    connection.close()

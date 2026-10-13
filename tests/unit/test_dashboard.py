@@ -536,3 +536,21 @@ def test_marketplace_panel_counts_machine_duplicates(
     assert checks["Duplicates"] == f"{groups.DUPLICATE} {duplicates}"
     assert checks["Stale"].startswith("yes ")  # snapshot-3 is 2026-10-03
     assert "Thin groups" in checks
+
+
+def test_plain_without_decimals() -> None:
+    assert dashboard.plain(1234.0, 0) == "1,234"
+
+
+def test_database_error_on_open_named(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "synthetic.duckdb"
+    path.touch()
+
+    def broken(*_: object, **__: object) -> None:
+        raise duckdb.InvalidInputException("simulated bad option")
+
+    monkeypatch.setattr(db, "connect", broken)
+    with pytest.raises(dashboard.Problem, match="Cannot open .*simulated bad option"):
+        dashboard.open_read_only(path)

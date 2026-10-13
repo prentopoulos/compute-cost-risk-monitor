@@ -8,7 +8,7 @@
 
 - [x] 2.1 Units: unit `1 Hour` against `1 hour`, `1 Hours` and `100 Hours`; a Windows row with a non-hourly unit excluded as `windows` (MODIFIED "Every observation normalized or excluded")
 - [x] 2.2 Calculations: the untested failure branches of `checks.py` (a row with neither reason nor price, a normalized row without a GPU variant; both blocked by the schema's CHECKs, so tested on a copy without them) and `workload_check.py` (a missing expected figure, and the lines at 180 and 200), each by tampering with a correct result
-- [ ] 2.3 Missing data:
+- [x] 2.3 Missing data:
   - history: still `not listed` after three absences, dated at the first; a return at a new price is not a change, through `quality.build` (MODIFIED `snapshot-history`);
   - a run without a summary row;
   - the `app.py` states at 94, 221, 272–273, 287, 319–321 and 327–329;

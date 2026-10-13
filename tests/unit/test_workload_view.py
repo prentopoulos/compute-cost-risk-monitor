@@ -26,7 +26,7 @@ from compute_cost_risk_monitor import (
 from compute_cost_risk_monitor.calculator import Custom, Workload
 from compute_cost_risk_monitor.groups import GroupKey, RegionGroup
 from compute_cost_risk_monitor.scenarios import JUDGEMENT, NOT_A_FORECAST, PERCENT, USD
-from seed import database
+from seed import Price, azure_run, database
 from support import FIXTURES
 
 AS_OF = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
@@ -394,3 +394,28 @@ def test_check_and_calculator_agree_on_effect_words() -> None:
 def test_marketplace_note_points_to_azure() -> None:
     assert "Azure list-price groups" in dashboard.MARKETPLACE_NOTE
     assert "data-quality rules" in dashboard.MARKETPLACE_NOTE
+
+
+def test_spot_size_missing_from_its_pay_as_you_go_group_is_not_computed() -> None:
+    # eastus T4: Spot lists NC4as, pay-as-you-go lists only NC8as. The fallback
+    # needs the same size, so it is not computed, and the check agrees.
+    con = database()
+    azure_run(
+        con,
+        "r",
+        [
+            Price("Standard_NC4as_T4_v3", meter="s", region="eastus", rental="spot"),
+            Price("Standard_NC8as_T4_v3", meter="p", region="eastus", price=0.8),
+        ],
+    )
+    normalize.normalize_pending(con, AS_OF)
+    (snap,) = groups.snapshots(con, "azure-retail")
+    found = groups.region_groups(con, snap)
+    con.close()
+    begin = calc.start(pick(found, "T4 16GB", 1, "eastus", "spot"))
+    work = Workload(4, 10.0)
+    outcome = calc.calculate(begin, work, found, None, None)
+    (fallback,) = [row for row in outcome.rows if row.id == calc.FALLBACK]
+    assert not fallback.computed
+    assert fallback.effect.startswith("not computed")
+    assert dashboard.check(begin, outcome, work, None, None, found) == []
