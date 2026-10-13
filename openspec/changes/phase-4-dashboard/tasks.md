@@ -26,7 +26,7 @@
 ## 5. Verification, review and documents
 
 - [x] 5.1 Manual check: launch the dashboard locally on `data/synthetic.duckdb` (demo Azure data plus the marketplace snapshots) and on `data/monitor.duckdb`; confirm the flows, labels and local-only bind; record results as counts, keys and pass or fail only. Take PR screenshots from synthetic data only
-- [ ] 5.2 Update the FigJam container view (dashboard built, calculator planned) and re-export `docs/architecture/c4-container.svg`
+- [x] 5.2 Update the FigJam container view (dashboard built, calculator planned) and re-export `docs/architecture/c4-container.svg`
 - [x] 5.3 Run the market-review read-through of what the dashboard shows (keys, units, labels, exclusions, thin and single-price flags, no cross-group ranking) and the build-safety check (telemetry, network exposure, read-only access, CSV reading), and record them in `docs/reviews/`
 - [ ] 5.4 Run the gate green and `uv audit`, then record the output
 - [ ] 5.5 Update PROJECT.md (§4 decisions pointer, §6 Phase 4 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
