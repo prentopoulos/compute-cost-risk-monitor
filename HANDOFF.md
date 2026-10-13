@@ -52,7 +52,9 @@ Every command prints counts, names and keys only, never prices.
 
 ## Implemented behavior (Phase 3)
 
-Owner decisions D1–D11, plus D24, are in the change's design (refinements and settled items D12–D25).
+Owner decisions are D1–D11 in the archived design; D12–D25 are settled with their basis. D24
+(regional retirement extensions) was flagged for review on PR #8, which the owner approved for
+merge on 2026-10-12 without comment on it.
 
 - **GPU map `gpu-map-v1`:** `src/compute_cost_risk_monitor/reference/gpu_sku_map_v1.csv`.
   - 51 sizes (35 whole-GPU, 16 fractional), hand-built from Microsoft Learn size pages, with a
