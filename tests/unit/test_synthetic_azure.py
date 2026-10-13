@@ -183,6 +183,15 @@ def test_demo_file_covers_the_dashboard_cases(
     spot = found[("H100 NVLink 80GB", 8, "eastus", "spot")].members[0]
     listed = found[("H100 NVLink 80GB", 8, "eastus", "on_demand")].members[0]
     assert spot.price == listed.price
+    # A Spot size with no pay-as-you-go listing in its region (Phase 5 D12).
+    unlisted = found[("H100 NVLink 80GB", 8, "uksouth", "spot")].members[0]
+    assert unlisted.name == listed.name
+    assert ("H100 NVLink 80GB", 8, "uksouth", "on_demand") not in found
+    assert [
+        len(s.contributions)
+        for s in groups.summaries(con, snap)
+        if (s.variant, s.rental_type) == ("H100 NVLink 80GB", "spot")
+    ] == [3]
     reasons = dict(
         con.execute(
             "SELECT excluded_reason, count(*) FROM normalized_price"

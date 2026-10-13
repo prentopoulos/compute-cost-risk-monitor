@@ -7,7 +7,7 @@
 
 ## 2. Demo data
 
-- [ ] 2.1 Add the invented uksouth Spot `Standard_ND96isr_H100_v5` item to `tests/fixtures/synthetic/azure_demo.json` and update the fixtures README (D12). Update the demo coverage test (MODIFIED `synthetic-azure-snapshots`) and any test that counts the demo's groups or Spot regions
+- [x] 2.1 Add the invented uksouth Spot `Standard_ND96isr_H100_v5` item to `tests/fixtures/synthetic/azure_demo.json` and update the fixtures README (D12). Update the demo coverage test (MODIFIED `synthetic-azure-snapshots`) and any test that counts the demo's groups or Spot regions
 
 ## 3. View model and page
 
