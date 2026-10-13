@@ -54,6 +54,65 @@ class IngestResult:
     tallies: dict[tuple[str, str], int] = field(default_factory=dict)
 
 
+@dataclass
+class Items:
+    """A run's items after the row rules: stored rows, repeats and their counts.
+
+    Live ingest feeds it every parsed page; the synthetic Azure loader feeds it one
+    file. Both get the same scope, rejection, repeat and flag rules (Phase 4 D29).
+    """
+
+    summary: Summary = field(default_factory=Summary)
+    tallies: Counter[tuple[str, str]] = field(default_factory=Counter)
+    observations: list[tuple[az.Row, datetime, str]] = field(default_factory=list)
+    repeats: list[dict[str, Any]] = field(default_factory=list)
+    kept: dict[str, tuple[az.Row, object, datetime]] = field(default_factory=dict)
+
+    def add_page(
+        self, items: list[object], response_id: str, received_at: datetime
+    ) -> None:
+        """Classify one page's items; the first copy of an item key is stored."""
+        summary = self.summary
+        for index, item in enumerate(items):
+            summary.items_seen += 1
+            verdict = az.classify(item)
+            if verdict.outcome == "out_of_scope":
+                summary.out_of_scope += 1
+                continue
+            if verdict.row is None:
+                summary.rejected += 1
+                self.tallies[("rejected", verdict.reason or "unknown")] += 1
+                continue
+            row = verdict.row
+            first = self.kept.get(row.item_key)
+            if first is not None:
+                first_row, first_item, first_time = first
+                summary.repeats += 1
+                self.repeats.append(
+                    {
+                        "response_id": response_id,
+                        "item_index": index,
+                        "item_key": row.item_key,
+                        "first_retrieved_at": first_time,
+                        "same_price": row.retail_price == first_row.retail_price,
+                        "same_fields": item == first_item,
+                    }
+                )
+                continue
+            self.kept[row.item_key] = (row, item, received_at)
+            self.observations.append((row, received_at, response_id))
+            summary.observations_stored += 1
+            for flag in row.flags:
+                self.tallies[("flagged", flag)] += 1
+
+    def flag_shared_meters(self) -> None:
+        """Count stored rows that share a meter key with an earlier one."""
+        meters = Counter(row.meter_key for row, _, _ in self.observations)
+        shared = sum(count - 1 for count in meters.values() if count > 1)
+        if shared:
+            self.tallies[("flagged", "shared_meter_key")] += shared
+
+
 def _time(value: object) -> datetime | None:
     return None if value is None else datetime.fromisoformat(str(value))
 
@@ -79,12 +138,9 @@ def ingest_run(
     if already and already[0]:
         raise AlreadyIngested(f"run {run_id} is already in the database")
 
-    summary = Summary()
-    tallies: Counter[tuple[str, str]] = Counter()
+    found = Items()
+    summary, tallies = found.summary, found.tallies
     responses: list[dict[str, Any]] = []
-    kept: dict[str, tuple[az.Row, object, datetime]] = {}
-    observations: list[tuple[az.Row, datetime, str]] = []
-    repeats: list[dict[str, Any]] = []
 
     for sidecar in files.sidecars:
         # Every body is checked before any is parsed; a mismatch stops the ingest.
@@ -128,42 +184,9 @@ def ingest_run(
         link = page.next_link
         if isinstance(link, str) and link and az.missing_params(link):
             tallies[("flagged", "next_link_missing_params")] += 1
-        for index, item in enumerate(page.items):
-            summary.items_seen += 1
-            verdict = az.classify(item)
-            if verdict.outcome == "out_of_scope":
-                summary.out_of_scope += 1
-                continue
-            if verdict.row is None:
-                summary.rejected += 1
-                tallies[("rejected", verdict.reason or "unknown")] += 1
-                continue
-            row = verdict.row
-            first = kept.get(row.item_key)
-            if first is not None:
-                first_row, first_item, first_time = first
-                summary.repeats += 1
-                repeats.append(
-                    {
-                        "response_id": response_id,
-                        "item_index": index,
-                        "item_key": row.item_key,
-                        "first_retrieved_at": first_time,
-                        "same_price": row.retail_price == first_row.retail_price,
-                        "same_fields": item == first_item,
-                    }
-                )
-                continue
-            kept[row.item_key] = (row, item, received_at)
-            observations.append((row, received_at, response_id))
-            summary.observations_stored += 1
-            for flag in row.flags:
-                tallies[("flagged", flag)] += 1
+        found.add_page(page.items, response_id, received_at)
 
-    meters = Counter(row.meter_key for row, _, _ in observations)
-    shared = sum(count - 1 for count in meters.values() if count > 1)
-    if shared:
-        tallies[("flagged", "shared_meter_key")] += shared
+    found.flag_shared_meters()
     if files.orphan_bodies:
         tallies[("flagged", "orphan_body_file")] += len(files.orphan_bodies)
 
@@ -194,30 +217,7 @@ def ingest_run(
                 f"{stop_reason}: {detail}" if detail else stop_reason,
             ],
         )
-        connection.execute(
-            "INSERT INTO collection_run_summary VALUES"
-            " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                run_id,
-                source,
-                summary.requests,
-                summary.pages_parsed,
-                summary.failed_requests,
-                summary.throttled,
-                summary.items_seen,
-                summary.observations_stored,
-                summary.repeats,
-                summary.out_of_scope,
-                summary.rejected,
-                stop_reason,
-            ],
-        )
-        for (kind, reason), count in sorted(tallies.items()):
-            connection.execute(
-                "INSERT INTO collection_run_tally VALUES (?, ?, ?, ?, ?)",
-                [run_id, source, kind, reason, count],
-            )
-        _write_rows(connection, run_id, source, responses, observations, repeats)
+        write_records(connection, run_id, source, found, stop_reason, responses)
         connection.commit()
     except Exception:
         connection.rollback()
@@ -227,14 +227,54 @@ def ingest_run(
     )
 
 
+def write_records(
+    connection: duckdb.DuckDBPyConnection,
+    run_id: str,
+    source: str,
+    found: Items,
+    stop_reason: str,
+    responses: list[dict[str, Any]],
+) -> None:
+    """Insert a run's summary, tallies, raw responses, observations and repeats.
+
+    The caller has inserted the collection_run row and owns the transaction.
+    """
+    summary = found.summary
+    connection.execute(
+        "INSERT INTO collection_run_summary VALUES"
+        " (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+            run_id,
+            source,
+            summary.requests,
+            summary.pages_parsed,
+            summary.failed_requests,
+            summary.throttled,
+            summary.items_seen,
+            summary.observations_stored,
+            summary.repeats,
+            summary.out_of_scope,
+            summary.rejected,
+            stop_reason,
+        ],
+    )
+    for (kind, reason), count in sorted(found.tallies.items()):
+        connection.execute(
+            "INSERT INTO collection_run_tally VALUES (?, ?, ?, ?, ?)",
+            [run_id, source, kind, reason, count],
+        )
+    _write_rows(connection, run_id, source, responses, found)
+
+
 def _write_rows(
     connection: duckdb.DuckDBPyConnection,
     run_id: str,
     source: str,
     responses: list[dict[str, Any]],
-    observations: list[tuple[az.Row, datetime, str]],
-    repeats: list[dict[str, Any]],
+    found: Items,
 ) -> None:
+    observations, repeats = found.observations, found.repeats
+
     def column(rows: list[dict[str, Any]], name: str) -> list[Any]:
         return [row[name] for row in rows]
 

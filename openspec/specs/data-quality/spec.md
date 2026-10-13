@@ -16,7 +16,9 @@ injected time. It SHALL hold counts only, never prices:
 - rejected rows by reason, out-of-scope rows and repeats, from the run records;
 - duplicates: repeats and `shared_meter_key` flags for Azure, `machine_duplicate` offers for
   marketplace;
-- missing optional fields among normalized rows (location, product name, effective start date);
+- missing optional fields among normalized rows: location, product name and effective start
+  date for Azure; country code for marketplace offers (an offer without VRAM is never
+  compared, so VRAM is not counted);
 - `os_ambiguous` rows;
 - region groups labelled `single list price`;
 - thin summaries or groups;
@@ -49,6 +51,10 @@ prices.
 #### Scenario: Counts only
 - **WHEN** a report is rendered as text
 - **THEN** it contains none of the fixture's price values
+
+#### Scenario: Marketplace missing fields are its own
+- **WHEN** a compared marketplace offer has no country code
+- **THEN** the marketplace report counts one missing `country_code`, and names no Azure field
 
 ### Requirement: Quality command
 `uv run python -m compute_cost_risk_monitor.quality [--db PATH] [--as-of TIME]` SHALL print the

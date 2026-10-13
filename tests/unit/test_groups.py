@@ -73,6 +73,28 @@ def test_region_groups(con: duckdb.DuckDBPyConnection) -> None:
     assert "Standard_ND96is_noIB_H100_v5" not in names
 
 
+def test_member_carries_its_published_price_and_provenance() -> None:
+    connection = database()
+    try:
+        a100 = Price("Standard_NC48ads_A100_v4", "r1", price=7.0)  # 2 x A100 PCIe
+        azure_run(connection, "run-2", [a100])
+        normalize.normalize_pending(connection, NOW)
+        (snap,) = groups.snapshots(connection, "azure-retail")
+        (group,) = groups.region_groups(connection, snap)
+        (member,) = group.members
+    finally:
+        connection.close()
+    assert snap.data_label == "synthetic"
+    assert (member.usd_per_gpu_hour, member.price) == (3.5, 7.0)
+    assert (member.currency, member.price_unit) == ("USD", "1 Hour")
+    assert (member.run_id, member.file_path, member.seq, member.sha256) == (
+        "run-2",
+        "synthetic.json.gz",
+        0,
+        "0" * 64,
+    )
+
+
 def test_cross_region_summaries(con: duckdb.DuckDBPyConnection) -> None:
     found = {(s.variant, s.gpu_count): s for s in groups.summaries(con, snapshot(con))}
     assert set(found) == {("H100 NVLink 80GB", 8), ("T4 16GB", 1), ("T4 16GB", 4)}

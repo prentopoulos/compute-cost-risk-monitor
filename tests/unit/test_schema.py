@@ -117,6 +117,32 @@ def test_connection_reports_utc(con: duckdb.DuckDBPyConnection) -> None:
     assert con.execute("SELECT current_setting('TimeZone')").fetchone() == ("UTC",)
 
 
+def test_read_only_connection_is_utc_and_cannot_write(tmp_path: Path) -> None:
+    path = tmp_path / "monitor.duckdb"
+    writer = db.connect(path)
+    db.create_schema(writer)
+    writer.close()
+    reader = db.connect(path, read_only=True)
+    try:
+        assert reader.execute("SELECT current_setting('TimeZone')").fetchone() == (
+            "UTC",
+        )
+        assert db.applied_versions(reader)
+        with pytest.raises(duckdb.InvalidInputException, match="read-only"):
+            reader.execute("CREATE TABLE t (x INTEGER)")
+    finally:
+        reader.close()
+    # Once the reader is closed, a writer can open the file again.
+    db.connect(path).close()
+
+
+def test_read_only_connection_refuses_a_missing_file(tmp_path: Path) -> None:
+    path = tmp_path / "absent" / "monitor.duckdb"
+    with pytest.raises(duckdb.IOException):
+        db.connect(path, read_only=True)
+    assert not path.parent.exists()
+
+
 def test_timestamptz_round_trip_is_utc(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("CREATE TEMP TABLE t (ts TIMESTAMPTZ)")
     con.execute("INSERT INTO t VALUES (?)", [T0])

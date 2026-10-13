@@ -1,8 +1,13 @@
-"""Ingest labelled synthetic marketplace snapshots as synthetic runs (design D8, D22).
+"""Ingest labelled synthetic snapshots as synthetic runs (Phase 3 D8, D22; Phase 4 D7).
 
-Each snapshot file becomes one succeeded `synthetic-marketplace` run labelled
-`synthetic`, with one raw response for the file (its SHA-256) and one observation per
-offer. Synthetic runs go to their own database, never the live one.
+Two kinds of file, told apart by shape:
+- a marketplace snapshot (`offers`) becomes one `synthetic-marketplace` run, with one
+  observation per offer;
+- an Azure-shaped snapshot (one API page: `Items`) becomes one `azure-retail` run, its
+  items passing the same row rules as live ingest.
+
+Each run is labelled `synthetic` and `succeeded`, with one raw response for the file
+(its SHA-256). Synthetic runs go to their own database, never the live one.
 
     uv run python -m compute_cost_risk_monitor.synthetic FILE [FILE ...] [--db PATH]
 """
@@ -22,9 +27,10 @@ from typing import Any
 
 import duckdb
 
-from compute_cost_risk_monitor import collect, db
+from compute_cost_risk_monitor import azure_retail, collect, db, ingest
 
 SOURCE = "synthetic-marketplace"
+AZURE_SOURCE = azure_retail.SOURCE
 LABEL = "synthetic"
 REPO = collect.REPO
 MONITOR_DB = collect.DEFAULT_DB
@@ -75,8 +81,8 @@ def _offer(index: int, offer: object) -> dict[str, Any]:
     return offer
 
 
-def parse_snapshot(body: bytes) -> tuple[datetime, list[dict[str, Any]]]:
-    """The snapshot's time and offers; SyntheticError unless valid and synthetic."""
+def _labelled(body: bytes) -> tuple[dict[str, Any], datetime]:
+    """The document and its time; SyntheticError unless JSON, synthetic and timed."""
     try:
         document = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as error:
@@ -89,6 +95,22 @@ def parse_snapshot(body: bytes) -> tuple[datetime, list[dict[str, Any]]]:
         raise SyntheticError("observed_at must be an ISO time") from None
     if observed.tzinfo is None:
         raise SyntheticError("observed_at must carry a time zone")
+    return document, observed
+
+
+def kind(body: bytes) -> str:
+    """The source a synthetic file feeds, from its shape; SyntheticError if neither."""
+    document, _ = _labelled(body)
+    if "Items" in document:
+        return AZURE_SOURCE
+    if "offers" in document:
+        return SOURCE
+    raise SyntheticError("neither an Azure page (Items) nor a marketplace snapshot")
+
+
+def parse_snapshot(body: bytes) -> tuple[datetime, list[dict[str, Any]]]:
+    """The snapshot's time and offers; SyntheticError unless valid and synthetic."""
+    document, observed = _labelled(body)
     offers = document.get("offers")
     if not isinstance(offers, list) or not offers:
         raise SyntheticError("offers must be a non-empty list")
@@ -107,15 +129,29 @@ def _display_path(path: Path, repo: Path) -> str:
         return path.name
 
 
-def ingest_snapshot(
-    connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
-) -> str:
-    """Store one snapshot as a synthetic run in one transaction; return its run ID."""
-    body = path.read_bytes()
-    observed, offers = parse_snapshot(body)
+def parse_azure_snapshot(body: bytes) -> tuple[datetime, list[object]]:
+    """An Azure-shaped snapshot's time and items; SyntheticError unless valid."""
+    document, observed = _labelled(body)
+    items = document.get("Items")
+    if not isinstance(items, list) or not items:
+        raise SyntheticError("Items must be a non-empty list")
+    if document.get("NextPageLink"):
+        raise SyntheticError("a synthetic Azure snapshot is one page: NextPageLink")
+    return observed, items
+
+
+def _run_id(observed: datetime, body: bytes) -> tuple[str, str]:
+    """The run ID and the file's SHA-256."""
     digest = hashlib.sha256(body).hexdigest()
     stamp = observed.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
-    run_id = f"synthetic-{stamp}-{digest[:6]}"
+    return f"synthetic-{stamp}-{digest[:6]}", digest
+
+
+def _new_run(
+    connection: duckdb.DuckDBPyConnection, source: str, observed: datetime, body: bytes
+) -> tuple[str, str, int | None]:
+    """A fresh run ID, the file's SHA-256 and the schema version; refuse repeats."""
+    run_id, digest = _run_id(observed, body)
     db.create_schema(connection)
     exists = connection.execute(
         "SELECT count(*) FROM collection_run WHERE run_id = ?", [run_id]
@@ -124,7 +160,7 @@ def ingest_snapshot(
         raise SyntheticError(f"run {run_id} is already stored")
     same_time = connection.execute(
         "SELECT run_id FROM collection_run WHERE source = ? AND started_at = ?",
-        [SOURCE, observed],
+        [source, observed],
     ).fetchone()
     if same_time:
         raise SyntheticError(
@@ -132,6 +168,93 @@ def ingest_snapshot(
             f" {same_time[0]}"
         )
     version = connection.execute("SELECT max(version) FROM schema_version").fetchone()
+    return run_id, digest, version[0] if version else None
+
+
+def ingest_azure_snapshot(
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
+) -> str:
+    """Store one Azure-shaped snapshot as a synthetic run; return its run ID.
+
+    `body` is the file's bytes when the caller has already read them.
+    """
+    body = path.read_bytes() if body is None else body
+    observed, items = parse_azure_snapshot(body)
+    response = f"{_run_id(observed, body)[0]}-0000"
+    found = ingest.Items()
+    found.summary.requests = found.summary.pages_parsed = 1
+    found.add_page(items, response, observed)
+    found.flag_shared_meters()
+    if not found.observations:
+        summary = found.summary
+        raise SyntheticError(
+            f"no item passed the row rules ({summary.out_of_scope} out of scope,"
+            f" {summary.rejected} rejected): nothing to store"
+        )
+    run_id, digest, version = _new_run(connection, AZURE_SOURCE, observed, body)
+    shown = _display_path(path, repo)
+    connection.begin()
+    try:
+        connection.execute(
+            "INSERT INTO collection_run VALUES (?, ?, ?, ?, ?, 'succeeded', NULL, ?,"
+            " NULL, ?, ?)",
+            [
+                run_id,
+                AZURE_SOURCE,
+                LABEL,
+                observed,
+                observed,
+                version,
+                json.dumps({"file": shown}),
+                "synthetic Azure-shaped snapshot; the prices are invented",
+            ],
+        )
+        ingest.write_records(
+            connection,
+            run_id,
+            AZURE_SOURCE,
+            found,
+            "completed",
+            [
+                {
+                    "response_id": response,
+                    "seq": 0,
+                    "file_path": shown,
+                    "sha256": digest,
+                    "byte_length": len(body),
+                    "request_url": f"file:{shown}",
+                    "http_status": None,
+                    "requested_at": observed,
+                    "received_at": observed,
+                    "item_count": len(items),
+                    "parse_status": "parsed",
+                    "error": None,
+                }
+            ],
+        )
+        connection.commit()
+    except BaseException:
+        connection.rollback()
+        raise
+    return run_id
+
+
+def ingest_snapshot(
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
+) -> str:
+    """Store one snapshot as a synthetic run in one transaction; return its run ID.
+
+    `body` is the file's bytes when the caller has already read them.
+    """
+    body = path.read_bytes() if body is None else body
+    observed, offers = parse_snapshot(body)
+    run_id, digest, version = _new_run(connection, SOURCE, observed, body)
     shown = _display_path(path, repo)
     response = f"{run_id}-0000"
     n = len(offers)
@@ -146,7 +269,7 @@ def ingest_snapshot(
                 LABEL,
                 observed,
                 observed,
-                version[0] if version else None,
+                version,
                 json.dumps({"file": shown}),
                 "synthetic marketplace snapshot; the provider is fictional",
             ],
@@ -213,11 +336,26 @@ def ingest_snapshot(
     return run_id
 
 
+def ingest_file(
+    connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
+) -> tuple[str, str]:
+    """Store a marketplace or Azure-shaped snapshot; return (source, run ID).
+
+    The file is read once, so its kind, digest and rows all come from the same bytes.
+    """
+    body = path.read_bytes()
+    source = kind(body)
+    if source == AZURE_SOURCE:
+        return source, ingest_azure_snapshot(connection, path, repo, body)
+    return source, ingest_snapshot(connection, path, repo, body)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Ingest each file; 0 on success, 2 when a file or the database is refused."""
     parser = argparse.ArgumentParser(
         prog="python -m compute_cost_risk_monitor.synthetic",
-        description="Store labelled synthetic marketplace snapshots as synthetic runs.",
+        description="Store labelled synthetic marketplace or Azure-shaped snapshots"
+        " as synthetic runs.",
     )
     parser.add_argument("files", nargs="+", type=Path, help="snapshot JSON files")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB, help="DuckDB file")
@@ -233,11 +371,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         for path in args.files:
             try:
-                run_id = ingest_snapshot(connection, path)
+                source, run_id = ingest_file(connection, path)
             except (OSError, SyntheticError, duckdb.Error) as error:
                 print(f"refused: {path.name}: {error}", file=sys.stderr)
                 return 2
-            print(f"stored {run_id} (synthetic) from {path.name}")
+            print(f"stored {run_id} (synthetic) for {source} from {path.name}")
     finally:
         connection.close()
     return 0
