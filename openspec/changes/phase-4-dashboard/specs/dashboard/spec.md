@@ -1,17 +1,21 @@
 ## ADDED Requirements
 
 ### Requirement: Local-only configuration
-The repository SHALL commit `.streamlit/config.toml` at its root with:
+The repository SHALL commit `src/compute_cost_risk_monitor/.streamlit/config.toml`, beside the
+app script, so Streamlit applies it whatever folder the dashboard is launched from, with:
 - `browser.gatherUsageStats = false`;
 - `server.address = "127.0.0.1"`;
 - `client.toolbarMode = "viewer"`.
 
-The dashboard SHALL be launched from the repository root with
-`uv run streamlit run src/compute_cost_risk_monitor/app.py`.
+The dashboard SHALL be launched with `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
 
 #### Scenario: Telemetry off and bound to localhost
-- **WHEN** the committed `.streamlit/config.toml` is parsed
+- **WHEN** the committed config beside the app script is parsed
 - **THEN** usage statistics are off, the server address is 127.0.0.1 and the toolbar mode is `viewer`
+
+#### Scenario: Applies from any folder
+- **WHEN** Streamlit lists the config files it reads for the app script
+- **THEN** the committed config is among them, whatever the working folder
 
 ### Requirement: Dataset and source choice
 The dashboard SHALL offer, in the sidebar, only the known databases that exist:
@@ -45,9 +49,13 @@ The dashboard SHALL open the selected database read-only, once per page run, and
 the run ends. It SHALL never cache a connection and never write. It SHALL show, instead of
 figures:
 - no database: a message naming the command that creates one;
+- a database file with no tables yet: a message naming the commands that store a run;
 - no stored rule set: "run normalize first";
 - a source with no succeeded run: "no snapshot", never zero prices;
-- a database that another process holds open for writing: "in use, rerun when it finishes".
+- a database that another process holds open for writing: "in use, rerun when it finishes";
+- a file DuckDB cannot open for any other reason: the error itself.
+
+Commands shown on the page SHALL quote the database path, so they can be pasted as they are.
 
 When the latest snapshot has observations without a row under the rule set, the page SHALL show
 a `NOT NORMALIZED` banner with that count and the normalize command, and SHALL withhold the group
@@ -68,6 +76,14 @@ views for that snapshot.
 #### Scenario: Not normalized
 - **WHEN** the latest snapshot has observations and no normalized rows
 - **THEN** the page shows the `NOT NORMALIZED` banner with the count and shows no group view
+
+#### Scenario: Database without tables
+- **WHEN** the selected database file exists but holds no tables
+- **THEN** the page names the commands that store a run and shows no figure
+
+#### Scenario: Unreadable file is not called in use
+- **WHEN** the selected file is not a DuckDB database
+- **THEN** the page shows the open error, not the "in use" message
 
 #### Scenario: Connection closed after the run
 - **WHEN** a page run finishes
@@ -146,10 +162,10 @@ when present.
 
 ### Requirement: Group browser
 The dashboard SHALL list every region group of the latest snapshot for the chosen source, with
-a toggle that narrows the list to the chosen GPU variant, showing each group's key, member count
-and labels (`single list price`,
-`thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, SHALL sort
-groups by key, and SHALL be captioned with the snapshot's start time in UTC, run ID and data
+a toggle that narrows the list to the chosen GPU variant, showing each group's key, its member
+count (for marketplace groups, its distinct machines and its offers) and labels
+(`single list price`, `thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, SHALL sort
+groups by key in its field order (variant, GPU count, region, rental type), and SHALL be captioned with the snapshot's start time in UTC, run ID and data
 label.
 
 #### Scenario: No prices in the browser

@@ -5,7 +5,8 @@ A synthetic Azure snapshot SHALL be a JSON file shaped like one Azure Retail Pri
 (`Items`, with `NextPageLink` null) that also holds `"_label": "synthetic"` and an `observed_at`
 time with a time zone. Its prices SHALL be invented; its size names MAY be real Azure names so
 the packaged GPU map applies. A file without the synthetic label, without a valid `observed_at`,
-or without a non-empty `Items` list SHALL be refused before anything is written.
+or without a non-empty `Items` list SHALL be refused before anything is written, and so SHALL a
+file none of whose items passes the row rules.
 
 The committed file `tests/fixtures/synthetic/azure_demo.json` SHALL cover at least:
 - a region group with several sizes and one with a single list price;
@@ -16,6 +17,10 @@ The committed file `tests/fixtures/synthetic/azure_demo.json` SHALL cover at lea
 #### Scenario: Unlabelled file refused
 - **WHEN** an Azure-shaped file lacks `"_label": "synthetic"`
 - **THEN** ingest raises an error and writes nothing
+
+#### Scenario: Nothing stored is refused
+- **WHEN** every item in a synthetic Azure file is out of scope or rejected
+- **THEN** ingest raises an error and stores no run
 
 #### Scenario: Demo file covers the dashboard cases
 - **WHEN** `azure_demo.json` is ingested and normalized into an empty database

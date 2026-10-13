@@ -30,8 +30,9 @@ with their basis.
 - **Labels on every figure.** Each table and chart is captioned with its group key (or
   "crosses regions"), snapshot time (UTC) and run ID, data label, and the exclusions text. A
   framing line says what the data is: published Azure retail list prices, or synthetic.
-- **Local only.** A committed `.streamlit/config.toml` turns usage statistics off, binds the
-  server to 127.0.0.1 and hides the Deploy button.
+- **Local only.** A committed Streamlit config beside the app script turns usage statistics
+  off, binds the server to 127.0.0.1 and hides the Deploy button, whatever folder it is launched
+  from.
 - **Region-group members carry their source price and provenance.** The Phase 3 group query
   also returns each member's published price, currency, unit, run ID and raw-response file,
   sequence number and SHA-256 (MODIFIED `comparable-groups`).
@@ -79,6 +80,8 @@ with their basis.
 - `comparable-groups`: "Region groups" members also report the observation's published price,
   currency and unit, and the run ID, raw-response file path, sequence number and SHA-256 they
   trace to.
+- `data-quality`: "Quality report" counts the marketplace's own optional fields (VRAM, country
+  code) as missing, instead of the Azure fields its rows do not have (code review, D31).
 - `dev-environment`: "Locked Python dependencies" lists the dependencies actually declared:
   pytz (Phase 1 D6), pytest-socket, detect-secrets and types-pytz (Phase 2) were added without
   updating it, and Altair joins in this phase (D5, D30).
@@ -88,7 +91,7 @@ with their basis.
 - New:
   - Package code: `src/compute_cost_risk_monitor/dashboard.py` (pure view model, no Streamlit
     import) and `src/compute_cost_risk_monitor/app.py` (the Streamlit script).
-  - `.streamlit/config.toml`.
+  - `src/compute_cost_risk_monitor/.streamlit/config.toml`, beside the app script.
   - `tests/fixtures/synthetic/azure_demo.json` (synthetic, invented prices).
   - Tests: dashboard view-model unit tests, AppTest flows on synthetic databases, config and
     loader tests.
