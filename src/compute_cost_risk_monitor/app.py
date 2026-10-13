@@ -23,6 +23,7 @@ from compute_cost_risk_monitor.dashboard import SourceView
 from compute_cost_risk_monitor.groups import GroupKey
 
 Choice = tuple[str, int, str, str]  # variant, GPU count, rental type, region
+VIEWS = ("Comparable groups", "Group browser", "Data quality")
 
 
 def _table(frame: pd.DataFrame) -> None:
@@ -179,16 +180,20 @@ def main(known: Sequence[tuple[str, Path]], as_of: datetime) -> None:
     view = views[source]
     _header(view, dataset.path, as_of)
     choice = _filters(view)
+    # Lazy tabs: only the open tab is drawn, so no table is laid out while hidden.
     groups_tab, browser_tab, quality_tab = st.tabs(
-        ["Comparable groups", "Group browser", "Data quality"]
+        list(VIEWS), key="view", on_change="rerun"
     )
-    with groups_tab:
-        _groups(view, choice)
-    with browser_tab:
-        _browser(view, choice)
-    with quality_tab:
-        for each in views.values():
-            _panel(each, dataset.path, as_of)
+    if groups_tab.open:
+        with groups_tab:
+            _groups(view, choice)
+    if browser_tab.open:
+        with browser_tab:
+            _browser(view, choice)
+    if quality_tab.open:
+        with quality_tab:
+            for each in views.values():
+                _panel(each, dataset.path, as_of)
 
 
 if __name__ == "__main__":

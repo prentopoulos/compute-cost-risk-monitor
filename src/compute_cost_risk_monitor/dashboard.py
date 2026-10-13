@@ -79,6 +79,8 @@ BROWSER = (
     "Group keys, member counts and labels only: no prices, so nothing is compared."
 )
 MEDIAN = "median (a statistic, not a listed price)"
+POINT_COLOUR = "#4c78a8"
+RULE_COLOURS = ["#9e9e9e", "#f58518", "#9e9e9e"]  # minimum, median, maximum
 
 USD = "USD/GPU-hour"
 PUBLISHED = "Published price"
@@ -422,10 +424,15 @@ def summary_chart(summary: CrossRegionSummary) -> alt.LayerChart:
             USD: [summary.stats.minimum, summary.stats.median, summary.stats.maximum],
         }
     )
-    x = alt.X(f"{USD}:Q", title="USD per GPU-hour", scale=alt.Scale(zero=False))
+    x = alt.X(
+        f"{USD}:Q",
+        title="USD per GPU-hour",
+        scale=alt.Scale(zero=False),
+        axis=alt.Axis(format=".4~f"),
+    )
     dots = (
         alt.Chart(points)
-        .mark_point(filled=True, size=90)
+        .mark_point(filled=True, size=90, color=POINT_COLOUR)
         .encode(
             x=x,
             y=alt.Y("Region:N", sort=None, title=None),
@@ -438,10 +445,16 @@ def summary_chart(summary: CrossRegionSummary) -> alt.LayerChart:
     )
     lines = (
         alt.Chart(marks)
-        .mark_rule(strokeDash=[4, 3])
+        .mark_rule(strokeDash=[4, 3], strokeWidth=2)
         .encode(
             x=f"{USD}:Q",
-            color=alt.Color("Statistic:N", sort=None, title=None),
+            color=alt.Color(
+                "Statistic:N",
+                sort=None,
+                title=None,
+                scale=alt.Scale(domain=list(marks["Statistic"]), range=RULE_COLOURS),
+                legend=alt.Legend(orient="bottom", labelLimit=0),
+            ),
             tooltip=["Statistic:N", alt.Tooltip(f"{USD}:Q", format=".4f")],
         )
     )
@@ -500,8 +513,12 @@ def panel(view: SourceView, as_of: datetime) -> Panel:
             ),
             (
                 "Unmapped",
-                f"sizes not in the map {len(report.unmapped_sizes)}; rows excluded"
-                f" as {unmapped_reason} {unmapped_rows}",
+                (
+                    f"sizes not in the map {len(report.unmapped_sizes)}; "
+                    if azure
+                    else ""
+                )
+                + f"rows excluded as {unmapped_reason} {unmapped_rows}",
             ),
         ]
     )

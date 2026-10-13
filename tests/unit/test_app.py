@@ -71,6 +71,13 @@ def choose(at: AppTest, variant: str, count: int, rental: str, region: str) -> N
     assert not at.exception
 
 
+def show(at: AppTest, view: str) -> None:
+    """Open a tab: the tabs are lazy, so only the open one is drawn."""
+    at.session_state["view"] = view
+    at.run()
+    assert not at.exception
+
+
 def captions(block: Any) -> list[str]:
     return [c.value for c in block.caption]
 
@@ -164,6 +171,7 @@ def test_marketplace_without_a_run_says_no_snapshot(tmp_path: Path) -> None:
     at.sidebar.radio[1].set_value(dashboard.MARKETPLACE)
     at.run()
     assert dashboard.NO_SNAPSHOT in [i.value for i in at.info]
+    show(at, "Data quality")
     quality = at.tabs[2]
     assert dashboard.NO_SNAPSHOT in [i.value for i in quality.info]
 
@@ -276,8 +284,19 @@ def test_marketplace_view_marks_duplicates(tmp_path: Path) -> None:
     assert not tab.get("vega_lite_chart")
 
 
+def test_only_the_open_tab_is_drawn(demo: list[tuple[str, Path]]) -> None:
+    at = page(demo)
+    assert at.tabs[0].dataframe
+    assert not at.tabs[1].dataframe
+    assert not at.tabs[2].dataframe
+    show(at, "Group browser")
+    assert not at.tabs[0].dataframe
+    assert at.tabs[1].dataframe
+
+
 def test_group_browser_has_no_prices(demo: list[tuple[str, Path]]) -> None:
     at = page(demo)
+    show(at, "Group browser")
     tab = at.tabs[1]
     frame = tab.dataframe[0].value
     assert "USD" not in " ".join(frame.columns)
@@ -285,7 +304,8 @@ def test_group_browser_has_no_prices(demo: list[tuple[str, Path]]) -> None:
     every = len(frame)
     assert dashboard.BROWSER in captions(tab)[0]
     tab.toggle[0].set_value(True)
-    at.run()
+    # AppTest keeps no tab state between runs, so the run reopens the tab.
+    show(at, "Group browser")
     narrowed = at.tabs[1].dataframe[0].value
     assert set(narrowed["Variant"]) == {"A100 PCIe 80GB"}
     assert len(narrowed) < every
@@ -293,6 +313,7 @@ def test_group_browser_has_no_prices(demo: list[tuple[str, Path]]) -> None:
 
 def test_quality_panel(demo: list[tuple[str, Path]]) -> None:
     at = page(demo)
+    show(at, "Data quality")
     tab = at.tabs[2]
     assert [s.value for s in tab.subheader] == [
         "Azure retail list prices",
@@ -307,6 +328,7 @@ def test_quality_panel(demo: list[tuple[str, Path]]) -> None:
     ]
     marketplace = dict(tab.dataframe[2].value.values.tolist())
     assert marketplace["Stale"].startswith("yes ")
+    assert marketplace["Unmapped"] == "rows excluded as unmapped_gpu_name 2"
     for text in captions(tab):
         assert "data label: synthetic" in text
         assert "as of 2026-10-12 12:00 UTC" in text
