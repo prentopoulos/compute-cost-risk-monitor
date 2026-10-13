@@ -3,6 +3,7 @@
 All runs are synthetic; expected counts are worked out from the seeded rows by hand.
 """
 
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from seed import DAY, Price, azure_run, database
 from support import FIXTURES
 
 NOW = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
+SNAPSHOT = FIXTURES / "marketplace" / "snapshot-1.json"
 PRICES = [
     Price(meter="a", price=80.0),
     Price(meter="b", price=96.0, product=None),
@@ -101,6 +103,27 @@ def test_marketplace_report() -> None:
     assert report.duplicates == {"machine_duplicate": 0}
     assert report.thin == 2  # H100 x2 (one machine) and RTX 4090 Spot (two)
     assert (report.changes, report.absent_once, report.not_listed) == (0, 0, 1)
+
+
+def test_marketplace_counts_its_own_missing_fields(tmp_path: Path) -> None:
+    doc = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    doc["offers"] = [o for o in doc["offers"] if o["offer_id"] in ("S-101", "S-103")]
+    del doc["offers"][0]["country_code"]
+    path = tmp_path / "s.json"
+    path.write_text(json.dumps(doc), encoding="utf-8")
+    con = database()
+    synthetic.ingest_snapshot(con, path, repo=tmp_path)
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "synthetic-marketplace", NOW)
+    assert report.missing_fields == {"country_code": 1}
+
+
+def test_passed_region_groups_are_used() -> None:
+    con = database()
+    azure_run(con, "run-1", PRICES)
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "azure-retail", NOW, region_groups=[])
+    assert (report.region_groups, report.summaries) == (0, 0)
 
 
 def test_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

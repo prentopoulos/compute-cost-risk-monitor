@@ -1,12 +1,12 @@
-"""The local Streamlit dashboard (Phase 4 design D3-D6, D13, D15, D28).
+"""The local Streamlit dashboard (Phase 4 design D3-D6, D13, D15, D28, D31).
 
     uv run streamlit run src/compute_cost_risk_monitor/app.py
 
-Launch it from the repository root so `.streamlit/config.toml` applies: no usage
+`.streamlit/config.toml` beside this script applies from any folder: no usage
 statistics, and the server listens on 127.0.0.1 only. Each page run opens the chosen
-database read-only, reads what it shows, and closes the connection before drawing, so
-collect and normalize are never blocked. Every figure comes from `dashboard`, which only
-arranges Phase 3 outputs.
+database read-only, reads what it shows, and closes the connection before drawing. While
+it reads, a collect or normalize started in another process fails instead of waiting,
+so rerun it. Every figure comes from `dashboard`, which only arranges Phase 3 outputs.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+import duckdb
 import pandas as pd
 import streamlit as st
 
@@ -171,9 +172,12 @@ def main(known: Sequence[tuple[str, Path]], as_of: datetime) -> None:
         st.warning(str(problem))
         return
     try:
-        views = dashboard.load_all(connection, dataset.path, as_of)
+        views = dashboard.load_all(connection, dataset.path, as_of, source)
     except dashboard.Problem as problem:
         st.warning(str(problem))
+        return
+    except duckdb.Error as error:  # shown, not a traceback
+        st.error(f"Cannot read {dataset.path}: {error}")
         return
     finally:
         connection.close()

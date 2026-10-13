@@ -128,6 +128,19 @@ def test_bad_files_refused(
     assert one(con, "SELECT count(*) FROM collection_run") == 0
 
 
+def test_file_with_nothing_stored_refused(
+    tmp_path: Path, con: duckdb.DuckDBPyConnection
+) -> None:
+    rejected = item(isPrimaryMeterRegion=False)
+    outside = item(
+        meterId="00000000-0000-0000-0000-000000000009", armSkuName="Standard_D2s_v5"
+    )
+    path = write(tmp_path, page([rejected, outside]))
+    with pytest.raises(synthetic.SyntheticError, match="1 out of scope, 1 rejected"):
+        synthetic.ingest_azure_snapshot(con, path, repo=tmp_path)
+    assert one(con, "SELECT count(*) FROM collection_run") == 0
+
+
 def test_same_snapshot_twice_refused(
     tmp_path: Path, con: duckdb.DuckDBPyConnection
 ) -> None:

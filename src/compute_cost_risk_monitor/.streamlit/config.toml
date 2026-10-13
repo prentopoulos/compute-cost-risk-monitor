@@ -1,0 +1,17 @@
+# Streamlit settings for the local dashboard (Phase 4 design D11, D12, D31).
+# Streamlit reads this file because it sits beside the app script, whatever folder the
+# dashboard is launched from:
+#   uv run streamlit run src/compute_cost_risk_monitor/app.py
+
+[browser]
+# Send no usage statistics to Streamlit.
+gatherUsageStats = false
+
+[server]
+# Listen on this PC only: live Azure figures stay local (PROJECT.md §6).
+# Setting an address also skips the startup banner's IP lookups.
+address = "127.0.0.1"
+
+[client]
+# Hide developer options, including the Deploy button.
+toolbarMode = "viewer"

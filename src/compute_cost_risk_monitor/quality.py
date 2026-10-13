@@ -26,6 +26,9 @@ from compute_cost_risk_monitor import db, groups, history, rules
 from compute_cost_risk_monitor.collect import DEFAULT_DB
 
 SOURCES = ("azure-retail", "synthetic-marketplace")
+AZURE_OPTIONAL = ("location", "product_name", "effective_start_date")
+# An offer without VRAM is never compared (unmapped_gpu_name), so VRAM is not counted.
+MARKETPLACE_OPTIONAL = ("country_code",)
 _WIN = re.compile(r"\bWin")
 
 
@@ -85,8 +88,13 @@ def build(
     source: str,
     as_of: datetime,
     rule_version: str = rules.RULE_VERSION,
+    region_groups: list[groups.RegionGroup] | None = None,
 ) -> QualityReport:
-    """The report for a source's latest snapshot as of a given time."""
+    """The report for a source's latest snapshot as of a given time.
+
+    A caller that already built the latest snapshot's region groups may pass them, so
+    they are not built twice.
+    """
     report = QualityReport(source, as_of)
     ordered = groups.snapshots(connection, source)
     if not ordered:
@@ -104,6 +112,8 @@ def build(
         " JOIN raw_response rr ON rr.response_id = p.response_id"
         " LEFT JOIN azure_retail_price a ON a.source = n.source"
         " AND a.item_key = n.item_key AND a.retrieved_at = n.retrieved_at"
+        " LEFT JOIN marketplace_offer m ON m.source = n.source"
+        " AND m.item_key = n.item_key AND m.retrieved_at = n.retrieved_at"
         " WHERE rr.run_id = ? AND n.rule_version = ?"
     )
     report.observations = _one(
@@ -131,15 +141,22 @@ def build(
             [run, rule_version],
         ).fetchall()
     ]
+    # Each source's own optional fields (Phase 4 D31): never Azure fields for offers.
+    detail, names = (
+        ("m", MARKETPLACE_OPTIONAL)
+        if source == "synthetic-marketplace"
+        else ("a", AZURE_OPTIONAL)
+    )
     report.missing_fields = {
         name: _one(
             connection,
+            # Aliases and names come from the fixed tuples above, never from input.
             f"SELECT count(*) {in_run} AND n.excluded_reason IS NULL"  # noqa: S608
-            f" AND a.source IS NOT NULL AND a.{name} IS NULL",
+            f" AND {detail}.source IS NOT NULL AND {detail}.{name} IS NULL",
             run,
             rule_version,
         )
-        for name in ("location", "product_name", "effective_start_date")
+        for name in names
     }
     report.rejected = {
         reason: count
@@ -155,7 +172,8 @@ def build(
     ).fetchone()
     if summary:
         report.out_of_scope, report.repeats = summary
-    region_groups = groups.region_groups(connection, latest, rule_version)
+    if region_groups is None:
+        region_groups = groups.region_groups(connection, latest, rule_version)
     report.region_groups = len(region_groups)
     if source == "synthetic-marketplace":
         report.duplicates = {

@@ -30,4 +30,4 @@
 - [x] 5.3 Run the market-review read-through of what the dashboard shows (keys, units, labels, exclusions, thin and single-price flags, no cross-group ranking) and the build-safety check (telemetry, network exposure, read-only access, CSV reading), and record them in `docs/reviews/`
 - [x] 5.4 Run the gate green and `uv audit`, then record the output
 - [ ] 5.5 Update PROJECT.md (§4 decisions pointer, §6 Phase 4 status) and HANDOFF.md with the checkpoint, evidence, limitations and the next task
-- [ ] 5.6 Resolve the `/code-review` findings on PR #9 with tests (design D31)
+- [x] 5.6 Resolve the `/code-review` findings on PR #9 with tests (design D31)

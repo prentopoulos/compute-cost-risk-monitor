@@ -129,6 +129,14 @@ def test_no_rule_set_says_run_normalize_first(tmp_path: Path) -> None:
     assert not at.dataframe
 
 
+def test_database_without_tables_names_the_commands(tmp_path: Path) -> None:
+    path = tmp_path / "synthetic.duckdb"
+    db.connect(path).close()
+    at = page([(dashboard.SYNTHETIC_DATASET, path)])
+    assert "holds no tables yet" in at.warning[0].value
+    assert not at.dataframe
+
+
 def test_not_normalized_banner_withholds_groups(tmp_path: Path) -> None:
     path = build(tmp_path / "synthetic.duckdb", [DEMO])
     connection = db.connect(path)

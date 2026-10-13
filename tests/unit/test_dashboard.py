@@ -15,7 +15,14 @@ from typing import Any
 import duckdb
 import pytest
 
-from compute_cost_risk_monitor import dashboard, db, groups, normalize, synthetic
+from compute_cost_risk_monitor import (
+    dashboard,
+    db,
+    groups,
+    normalize,
+    quality,
+    synthetic,
+)
 from compute_cost_risk_monitor.groups import GroupKey, Snapshot
 from seed import DAY, Price, azure_run, database
 from support import FIXTURES
@@ -97,6 +104,56 @@ def test_database_held_by_a_writer_is_in_use(tmp_path: Path) -> None:
     finally:
         holder.communicate("", timeout=30)
     dashboard.open_read_only(path).close()
+
+
+def test_unreadable_file_is_not_called_in_use(tmp_path: Path) -> None:
+    path = tmp_path / "broken.duckdb"
+    path.write_text("not a database", encoding="utf-8")
+    with pytest.raises(dashboard.Problem) as caught:
+        dashboard.open_read_only(path)
+    assert str(caught.value).startswith(f"Cannot open {path}")
+    assert dashboard.IN_USE not in str(caught.value)
+
+
+def test_database_without_tables_names_the_commands(tmp_path: Path) -> None:
+    path = tmp_path / "synthetic.duckdb"
+    db.connect(path).close()  # what a refused synthetic command leaves behind
+    connection = dashboard.open_read_only(path)
+    try:
+        with pytest.raises(dashboard.Problem, match="holds no tables yet"):
+            dashboard.load_all(connection, path, AS_OF)
+    finally:
+        connection.close()
+
+
+def test_commands_quote_the_path() -> None:
+    connection = database()
+    azure_run(connection, "run-1", [Price()])
+    path = Path("C:/Market Projects/Compute Cost & Risk Monitor/data/monitor.duckdb")
+    with pytest.raises(dashboard.Problem) as caught:
+        dashboard.load(connection, path, dashboard.AZURE, AS_OF)
+    assert f'--db "{path}"' in str(caught.value)
+    assert f'--db "{path}"' in dashboard.NOT_NORMALIZED.format(count=1, path=path)
+
+
+def test_other_key_errors_are_not_called_a_missing_rule_set(
+    con: duckdb.DuckDBPyConnection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        raise KeyError("thin_below_machines")
+
+    monkeypatch.setattr(quality, "build", broken)
+    with pytest.raises(KeyError, match="thin_below_machines"):
+        dashboard.load(con, Path("x.duckdb"), dashboard.AZURE, AS_OF)
+
+
+def test_groups_load_for_the_selected_source_only(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    views = dashboard.load_all(con, Path("x.duckdb"), AS_OF, dashboard.MARKETPLACE)
+    assert views[dashboard.MARKETPLACE].region_groups
+    assert views[dashboard.AZURE].region_groups == []
+    assert views[dashboard.AZURE].report.region_groups > 0  # its report is complete
 
 
 def test_read_only_connection_lets_a_writer_in_after_close(tmp_path: Path) -> None:
@@ -193,14 +250,15 @@ def test_browser_has_keys_counts_and_labels_but_no_prices(
     ]
     assert not any(word in " ".join(frame.columns) for word in PRICE_WORDS)
     assert len(frame) == len(azure(views).region_groups)
-    shown = frame[["Variant", "GPUs", "Rental type", "Region"]].values.tolist()
+    # Key order, as the columns read: variant, GPU count, region, rental type.
+    shown = frame[["Variant", "GPUs", "Region", "Rental type"]].values.tolist()
     by_key = sorted(
-        (g.key.variant, g.key.gpu_count, g.key.rental_type, g.key.region)
+        (g.key.variant, g.key.gpu_count, g.key.region, g.key.rental_type)
         for g in azure(views).region_groups
     )
     assert shown == [
-        [variant, count, dashboard.rental_name(rental), region]
-        for variant, count, rental, region in by_key
+        [variant, count, region, dashboard.rental_name(rental)]
+        for variant, count, region, rental in by_key
     ]
     t4 = dashboard.browser_frame(azure(views).region_groups, variant="T4 16GB")
     assert t4[["Region", "Members", "Labels"]].values.tolist() == [
@@ -329,6 +387,46 @@ def test_marketplace_duplicate_marked() -> None:
     machines = set(frame["Machine"])
     assert stats.count == len(machines)
     assert groups.SYNTHETIC in flagged[0].labels
+
+
+def test_marketplace_browser_counts_machines_and_offers() -> None:
+    connection = database()
+    synthetic.ingest_snapshot(connection, SNAPSHOTS[0])
+    normalize.normalize_pending(connection, AS_OF)
+    view = dashboard.load(connection, Path("x.duckdb"), dashboard.MARKETPLACE, AS_OF)
+    frame = dashboard.browser_frame(view.region_groups)
+    assert list(frame.columns) == [
+        "Variant",
+        "GPUs",
+        "Region",
+        "Rental type",
+        "Machines",
+        "Offers",
+        "Labels",
+    ]
+    (flagged,) = [
+        g
+        for g in view.region_groups
+        if any(groups.DUPLICATE in m.flags for m in g.members)
+    ]
+    row = frame[
+        (frame["Variant"] == flagged.key.variant)
+        & (frame["GPUs"] == flagged.key.gpu_count)
+        & (frame["Region"] == flagged.key.region)
+    ]
+    machines = len({m.machine_id for m in flagged.members})
+    assert row[["Machines", "Offers"]].values.tolist() == [
+        [machines, len(flagged.members)]
+    ]
+    assert machines < len(flagged.members)
+
+
+def test_panels_compare_by_identity(views: dict[str, dashboard.SourceView]) -> None:
+    first = dashboard.panel(azure(views), AS_OF)
+    second = dashboard.panel(azure(views), AS_OF)
+    assert first == first
+    assert first != second  # no DataFrame truth-value error
+    assert first in [first]
 
 
 def test_framing_lines() -> None:

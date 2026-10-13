@@ -1,5 +1,5 @@
 """View model for the local Streamlit dashboard (Phase 4 design D3, D9, D10, D13, D17,
-D23-D26).
+D23-D26, D31).
 
 Plain Python and pandas with no Streamlit import, so every rule here is tested directly.
 It only arranges what Phase 3 code computes (region groups, cross-region summaries,
@@ -18,7 +18,14 @@ import altair as alt
 import duckdb
 import pandas as pd
 
-from compute_cost_risk_monitor import db, groups, quality, rules
+from compute_cost_risk_monitor import (
+    azure_retail,
+    db,
+    groups,
+    quality,
+    rules,
+    synthetic,
+)
 from compute_cost_risk_monitor.collect import DEFAULT_DB as MONITOR_DB
 from compute_cost_risk_monitor.groups import (
     CrossRegionSummary,
@@ -27,17 +34,16 @@ from compute_cost_risk_monitor.groups import (
     Snapshot,
     Stats,
 )
-from compute_cost_risk_monitor.synthetic import DEFAULT_DB as SYNTHETIC_DB
 
 TITLE = "Compute Cost & Risk Monitor"
 LIVE_DATASET = "Live Azure list prices (local only)"
 SYNTHETIC_DATASET = "Synthetic (invented prices)"
 KNOWN: tuple[tuple[str, Path], ...] = (
     (LIVE_DATASET, MONITOR_DB),
-    (SYNTHETIC_DATASET, SYNTHETIC_DB),
+    (SYNTHETIC_DATASET, synthetic.DEFAULT_DB),
 )
-AZURE = "azure-retail"
-MARKETPLACE = "synthetic-marketplace"
+AZURE = azure_retail.SOURCE
+MARKETPLACE = synthetic.SOURCE
 SOURCE_NAMES = {AZURE: "Azure retail list prices", MARKETPLACE: "Synthetic marketplace"}
 RENTAL_NAMES = {"on_demand": "pay-as-you-go", "spot": "Spot"}
 
@@ -53,13 +59,26 @@ IN_USE = (
     "The database is in use by another process, probably collect or normalize."
     " Rerun when it finishes."
 )
+# DuckDB's lock errors on Windows and elsewhere; any other open error is shown as is.
+LOCK_ERRORS = (
+    "being used by another process",
+    "Could not set lock",
+    "Conflicting lock",
+)
+EMPTY = (
+    "{path} holds no tables yet. Store a run with"
+    " `uv run python -m compute_cost_risk_monitor.collect` or"
+    " `uv run python -m compute_cost_risk_monitor.synthetic`, then run normalize."
+)
+# Paths are quoted: the owner's repository path holds spaces and "&".
 NO_RULES = (
     "No rule set is stored in {path}: run normalize first"
-    " (`uv run python -m compute_cost_risk_monitor.normalize --db {path}`)."
+    ' (`uv run python -m compute_cost_risk_monitor.normalize --db "{path}"`).'
 )
 NOT_NORMALIZED = (
     "NOT NORMALIZED: {count} observations in the latest snapshot have no row under the"
-    " rule set. Run `uv run python -m compute_cost_risk_monitor.normalize --db {path}`."
+    " rule set. Run"
+    ' `uv run python -m compute_cost_risk_monitor.normalize --db "{path}"`.'
     " The group views are withheld until then."
 )
 NO_SNAPSHOT = "No snapshot: this source has no succeeded run."
@@ -118,7 +137,9 @@ def open_read_only(path: Path) -> duckdb.DuckDBPyConnection:
     try:
         return db.connect(path, read_only=True)
     except duckdb.IOException as error:
-        raise Problem(IN_USE) from error
+        if any(text in str(error) for text in LOCK_ERRORS):
+            raise Problem(IN_USE) from error
+        raise Problem(f"Cannot open {path}: {error}") from error
     except duckdb.Error as error:
         raise Problem(f"Cannot open {path}: {error}") from error
 
@@ -154,33 +175,56 @@ def load(
     source: str,
     as_of: datetime,
     rule_version: str = rules.RULE_VERSION,
+    with_groups: bool = True,
 ) -> SourceView:
-    """One source's quality report and, unless withheld, its groups and summaries."""
+    """One source's quality report and, when asked and not withheld, its groups.
+
+    The region groups are built once and shared with the quality report.
+    """
     try:
+        ordered = groups.snapshots(connection, source)
+    except duckdb.CatalogException as error:  # a database file with no tables yet
+        raise Problem(EMPTY.format(path=path)) from error
+    labels = tuple(sorted({s.data_label for s in ordered}))
+    if not ordered:
         report = quality.build(connection, source, as_of, rule_version)
+        return SourceView(source, report, labels)
+    try:
+        params = rules.stored(connection, rule_version)
     except KeyError as error:  # no rule set stored yet
         raise Problem(NO_RULES.format(path=path)) from error
-    labels = sorted({s.data_label for s in groups.snapshots(connection, source)})
-    view = SourceView(source, report, tuple(labels))
-    if report.snapshot is None:
+    found = (
+        groups.region_groups(connection, ordered[-1], rule_version)
+        if with_groups
+        else None
+    )
+    report = quality.build(connection, source, as_of, rule_version, found)
+    view = SourceView(source, report, labels, int(params["stale_after_days"]))
+    if found is None or view.withheld:
         return view
-    params = rules.stored(connection, rule_version)
-    view.stale_after_days = int(params["stale_after_days"])
-    if view.withheld:
-        return view
-    view.region_groups = groups.region_groups(connection, report.snapshot, rule_version)
+    view.region_groups = found
     if source == AZURE:
-        view.summaries = groups.cross_region(
-            view.region_groups, params["thin_below_regions"]
-        )
+        view.summaries = groups.cross_region(found, params["thin_below_regions"])
     return view
 
 
 def load_all(
-    connection: duckdb.DuckDBPyConnection, path: Path, as_of: datetime
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    as_of: datetime,
+    selected: str | None = None,
 ) -> dict[str, SourceView]:
-    """Both sources of one database."""
-    return {source: load(connection, path, source, as_of) for source in SOURCE_NAMES}
+    """Both sources' reports, with groups for the selected source (all when None)."""
+    return {
+        source: load(
+            connection,
+            path,
+            source,
+            as_of,
+            with_groups=selected is None or source == selected,
+        )
+        for source in SOURCE_NAMES
+    }
 
 
 # --- filters (D1): cascading, offering only groups that exist ---
@@ -288,7 +332,7 @@ def framing(
 ) -> str:
     """The line under the title saying what the data is (D6)."""
     when = utc(snapshot.started_at)
-    if snapshot.data_label == "synthetic":
+    if snapshot.data_label == synthetic.LABEL:
         text = (
             "Synthetic data: invented prices for demonstration, not Azure list prices"
             f" · snapshot {when}"
@@ -377,35 +421,36 @@ def stats_frame(stats: Stats, counted: str) -> pd.DataFrame:
 
 
 def browser_frame(
-    found: Sequence[RegionGroup],
-    variant: str | None = None,
-    count: int | None = None,
-    rental: str | None = None,
+    found: Sequence[RegionGroup], variant: str | None = None
 ) -> pd.DataFrame:
-    """Group keys with member counts and labels, sorted by key, with no prices (D4)."""
-    rows = [
-        {
+    """Group keys with member counts and labels, in key order, with no prices (D4).
+
+    A marketplace group counts its distinct machines and its offers, so a `thin` label
+    (fewer than 5 machines) matches the count beside it.
+    """
+    marketplace = any(g.snapshot.source == MARKETPLACE for g in found)
+    counts = ["Machines", "Offers"] if marketplace else ["Members"]
+    rows = []
+    for g in sorted(
+        found,
+        key=lambda g: (g.key.variant, g.key.gpu_count, g.key.region, g.key.rental_type),
+    ):
+        if variant is not None and g.key.variant != variant:
+            continue
+        row: dict[str, object] = {
             "Variant": g.key.variant,
             "GPUs": g.key.gpu_count,
             "Region": g.key.region,
             "Rental type": rental_name(g.key.rental_type),
-            "Members": len(g.members),
-            "Labels": ", ".join(g.labels),
         }
-        for g in sorted(
-            found,
-            key=lambda g: (
-                g.key.variant,
-                g.key.gpu_count,
-                g.key.rental_type,
-                g.key.region,
-            ),
-        )
-        if (variant is None or g.key.variant == variant)
-        and (count is None or g.key.gpu_count == count)
-        and (rental is None or g.key.rental_type == rental)
-    ]
-    columns = ["Variant", "GPUs", "Region", "Rental type", "Members", "Labels"]
+        if marketplace:
+            row["Machines"] = g.stats.count if g.stats is not None else 0
+            row["Offers"] = len(g.members)
+        else:
+            row["Members"] = len(g.members)
+        row["Labels"] = ", ".join(g.labels)
+        rows.append(row)
+    columns = ["Variant", "GPUs", "Region", "Rental type", *counts, "Labels"]
     return pd.DataFrame(rows, columns=columns)
 
 
@@ -464,7 +509,7 @@ def summary_chart(summary: CrossRegionSummary) -> alt.LayerChart:
 # --- data-quality panel (D25) ---
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)  # DataFrames have no truth value to compare
 class Panel:
     source: str
     snapshot: Snapshot | None

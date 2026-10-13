@@ -140,13 +140,18 @@ def parse_azure_snapshot(body: bytes) -> tuple[datetime, list[object]]:
     return observed, items
 
 
+def _run_id(observed: datetime, body: bytes) -> tuple[str, str]:
+    """The run ID and the file's SHA-256."""
+    digest = hashlib.sha256(body).hexdigest()
+    stamp = observed.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"synthetic-{stamp}-{digest[:6]}", digest
+
+
 def _new_run(
     connection: duckdb.DuckDBPyConnection, source: str, observed: datetime, body: bytes
 ) -> tuple[str, str, int | None]:
     """A fresh run ID, the file's SHA-256 and the schema version; refuse repeats."""
-    digest = hashlib.sha256(body).hexdigest()
-    stamp = observed.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
-    run_id = f"synthetic-{stamp}-{digest[:6]}"
+    run_id, digest = _run_id(observed, body)
     db.create_schema(connection)
     exists = connection.execute(
         "SELECT count(*) FROM collection_run WHERE run_id = ?", [run_id]
@@ -167,18 +172,30 @@ def _new_run(
 
 
 def ingest_azure_snapshot(
-    connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
 ) -> str:
-    """Store one Azure-shaped snapshot as a synthetic run; return its run ID."""
-    body = path.read_bytes()
+    """Store one Azure-shaped snapshot as a synthetic run; return its run ID.
+
+    `body` is the file's bytes when the caller has already read them.
+    """
+    body = path.read_bytes() if body is None else body
     observed, items = parse_azure_snapshot(body)
-    run_id, digest, version = _new_run(connection, AZURE_SOURCE, observed, body)
-    shown = _display_path(path, repo)
-    response = f"{run_id}-0000"
+    response = f"{_run_id(observed, body)[0]}-0000"
     found = ingest.Items()
     found.summary.requests = found.summary.pages_parsed = 1
     found.add_page(items, response, observed)
     found.flag_shared_meters()
+    if not found.observations:
+        summary = found.summary
+        raise SyntheticError(
+            f"no item passed the row rules ({summary.out_of_scope} out of scope,"
+            f" {summary.rejected} rejected): nothing to store"
+        )
+    run_id, digest, version = _new_run(connection, AZURE_SOURCE, observed, body)
+    shown = _display_path(path, repo)
     connection.begin()
     try:
         connection.execute(
@@ -226,10 +243,16 @@ def ingest_azure_snapshot(
 
 
 def ingest_snapshot(
-    connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
+    connection: duckdb.DuckDBPyConnection,
+    path: Path,
+    repo: Path = REPO,
+    body: bytes | None = None,
 ) -> str:
-    """Store one snapshot as a synthetic run in one transaction; return its run ID."""
-    body = path.read_bytes()
+    """Store one snapshot as a synthetic run in one transaction; return its run ID.
+
+    `body` is the file's bytes when the caller has already read them.
+    """
+    body = path.read_bytes() if body is None else body
     observed, offers = parse_snapshot(body)
     run_id, digest, version = _new_run(connection, SOURCE, observed, body)
     shown = _display_path(path, repo)
@@ -316,11 +339,15 @@ def ingest_snapshot(
 def ingest_file(
     connection: duckdb.DuckDBPyConnection, path: Path, repo: Path = REPO
 ) -> tuple[str, str]:
-    """Store a marketplace or Azure-shaped snapshot; return (source, run ID)."""
-    source = kind(path.read_bytes())
+    """Store a marketplace or Azure-shaped snapshot; return (source, run ID).
+
+    The file is read once, so its kind, digest and rows all come from the same bytes.
+    """
+    body = path.read_bytes()
+    source = kind(body)
     if source == AZURE_SOURCE:
-        return source, ingest_azure_snapshot(connection, path, repo)
-    return source, ingest_snapshot(connection, path, repo)
+        return source, ingest_azure_snapshot(connection, path, repo, body)
+    return source, ingest_snapshot(connection, path, repo, body)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
