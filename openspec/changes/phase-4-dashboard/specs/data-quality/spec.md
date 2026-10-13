@@ -12,7 +12,8 @@ injected time. It SHALL hold counts only, never prices:
 - duplicates: repeats and `shared_meter_key` flags for Azure, `machine_duplicate` offers for
   marketplace;
 - missing optional fields among normalized rows: location, product name and effective start
-  date for Azure; GPU VRAM and country code for marketplace offers;
+  date for Azure; country code for marketplace offers (an offer without VRAM is never
+  compared, so VRAM is not counted);
 - `os_ambiguous` rows;
 - region groups labelled `single list price`;
 - thin summaries or groups;
@@ -35,5 +36,5 @@ prices.
 - **THEN** normalized plus excluded rows equal the snapshot's observations, and the reason counts match the fixture's known answers
 
 #### Scenario: Marketplace missing fields are its own
-- **WHEN** a compared marketplace offer has no VRAM and no country code
-- **THEN** the marketplace report counts one missing `gpu_vram_gb` and one missing `country_code`, and names no Azure field
+- **WHEN** a compared marketplace offer has no country code
+- **THEN** the marketplace report counts one missing `country_code`, and names no Azure field
