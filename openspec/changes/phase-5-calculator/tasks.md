@@ -3,7 +3,7 @@
 - [x] 1.1 Write `scenarios.py`: a frozen `scenarios-v1` (version, and per scenario ID, name, kind, magnitude and narrative) plus the judgement note, as data only (D6). Test the contents (a decline and a spike, four scenarios, narratives) and that the set cannot be changed
 - [x] 1.2 Write `calculator.py` (D3, D5, D13–D16, D18, D21, D24): the workload validator (whole VMs with the nearest counts; hours, storage and custom bounds; non-finite refused), the starting price from a region group and an optional picked size, compute cost and total, scenario rows with signed exposure and effect, the price ≤ 0 refusal and the custom row. Known-answer tests: 32 × 720 × $0.50 = $11,520, the spec's decline, cost with and without storage, and every refusal
 - [x] 1.3 Add the Spot to pay-as-you-go fallback, the above-pay-as-you-go note and budget headroom to `calculator.py` (D7, D9, D11, D25). Test fallback priced, equal (0, "no change"), missing ("not computed"), no fallback on pay-as-you-go, the note on a crossing row and not below, known headroom and the zero-budget refusal
-- [ ] 1.4 Write `workload_check.py` (D19): imports no calculator code; re-derives every figure from plain values and `scenarios.py`; names failing checks. Test that a correct result passes, that tampering with each figure kind fails with its name, and, by inspecting imports, that it imports nothing from `calculator.py`
+- [x] 1.4 Write `workload_check.py` (D19): imports no calculator code; re-derives every figure from plain values and `scenarios.py`; names failing checks. Test that a correct result passes, that tampering with each figure kind fails with its name, and, by inspecting imports, that it imports nothing from `calculator.py`
 
 ## 2. Demo data
 
