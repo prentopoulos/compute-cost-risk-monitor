@@ -1,6 +1,7 @@
 # Phase 5 calculator review (manual check, market review and build safety)
 
-- **Scope:** OpenSpec change `phase-5-calculator` at commit a084b45: the scenario set
+- **Scope:** OpenSpec change `phase-5-calculator` at commit a084b45, plus the code-review fixes
+  at 2abdeb1 (§ Code review): the scenario set
   (`scenarios.py`), the calculator (`calculator.py`), the independent check
   (`workload_check.py`), the workload view model in `dashboard.py`, the "Workload cost" tab in
   `app.py`, and the demo fixture's uksouth Spot item.
@@ -116,3 +117,23 @@ Workflows read (2026-10-13), applied through the skill's project adaptation:
 | Supply chain | No dependency added. `uv audit`: no known vulnerabilities in 67 packages | `uv.lock` unchanged |
 
 The scheduling, spend and publishing gates are untouched. Nothing here is hosted.
+
+## Code review (2026-10-13)
+
+`/code-review` (high) on PR #10 found 14 issues; all were fixed with tests in 2abdeb1 (design
+D29). The ones that touched this review's checks:
+- **The check could reject valid input.** The calculator and the check priced a percentage
+  scenario with two formulas, so a custom change of −99.99999% failed the check on about 17% of
+  prices and the page showed no figures. Both now use one formula per kind, at tolerances scaled
+  to each figure; a test runs extreme changes over 400 invented prices and two workloads.
+- **A large storage entry could hide a cent.** Tolerances included the storage amount. Storage
+  now adds only its sum's rounding (`test_a_large_storage_amount_never_hides_a_cent`).
+- **Unchecked labels.** Each row's effect, the storage shown, notes on rows that may not carry
+  one, and the member the figures were priced from are now checked.
+- **A price before the check.** The starting price was drawn before validation and the check;
+  it now appears only with the checked figures, under the cost table's caption.
+- **Traceability (main agent, same pass):** the fallback caption now names the pay-as-you-go
+  size and item key, so the fallback price traces to its record.
+
+After the fixes the live check was rerun with the stricter check: 2,476 of 2,476 results pass,
+with the same counts as above. The gate is green (§ Evidence in the PR).

@@ -23,6 +23,9 @@ The view SHALL behave as follows:
 - **Failed check:** when the independent check fails, the tab SHALL show "The independent check
   failed: <checks>. No figures are shown." and no figure.
 
+The starting price SHALL appear only with the checked figures, under the cost table's caption,
+so no price is ever shown with a refused input or a failed check.
+
 #### Scenario: Known workload on the demo
 - **WHEN** the synthetic demo is open on an H100 ×8 pay-as-you-go group with 32 GPUs and 720 hours
 - **THEN** the tab shows 4 VMs, the compute cost, and the PROJECT example row with exposure USD 11,520.00 labelled "Scenario calculation, not a forecast"
@@ -30,6 +33,10 @@ The view SHALL behave as follows:
 #### Scenario: Inputs kept across tabs
 - **WHEN** the user enters 16 GPUs, opens "Group browser" and returns to "Workload cost"
 - **THEN** the GPU input still holds 16
+
+#### Scenario: No price before the check
+- **WHEN** the budget entered is 0, or the independent check fails
+- **THEN** the tab shows the message and no price, not even the starting price
 
 #### Scenario: Marketplace source
 - **WHEN** the synthetic marketplace source is selected

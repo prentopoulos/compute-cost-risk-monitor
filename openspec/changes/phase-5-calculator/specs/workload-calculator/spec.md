@@ -153,17 +153,31 @@ empty budget SHALL give no figure, and 0 SHALL be refused.
 - **THEN** it is refused with "enter an amount above zero" and no figure is shown
 
 ### Requirement: Independent check of workload figures
-A check module that imports no calculator code SHALL re-derive every workload figure from plain
-values: GPUs, hours, the starting member's VM-hour price and GPUs per VM, storage, the
-pay-as-you-go member's VM-hour price, the budget, and `scenarios-v1`'s definitions. Using
-`math.isclose` with a relative tolerance of 1e-9, it SHALL check that:
+A check module that imports no calculator code SHALL re-derive every workload figure from
+plain values. Its inputs are:
+- GPUs, hours and the storage entered;
+- the member the page picked, with its item key, VM-hour price and GPUs per VM;
+- the pay-as-you-go member's VM-hour price;
+- the budget;
+- `scenarios-v1`'s definitions.
+
+It SHALL use the calculator's two pricing formulas: a percentage multiplies the starting
+price, and a USD scenario's change is its magnitude exactly. Tolerances SHALL be a relative
+1e-9 of each figure's own scale (GPU-hours times the larger of the starting and scenario
+prices); a storage amount added to a cost SHALL widen a tolerance only by that sum's
+rounding. It SHALL check that:
+- the figures were priced from the member the page picked;
 - VM-hour price ÷ GPUs per VM equals the starting USD/GPU-hour;
 - VM-hour price × VMs × hours equals compute cost;
-- total = compute + storage;
+- the storage shown equals the storage entered, and total = compute + storage;
 - each scenario price matches its kind and magnitude;
 - exposure equals both GPUs × hours × change and scenario cost − starting cost;
-- a row is refused exactly when its price is zero or below;
+- each row's effect matches the sign of its exposure, and a refused row reads "not computed";
+- a row is refused exactly when its price is zero or below, either way within rounding of
+  zero;
 - the fallback matches the pay-as-you-go VM-hour price;
+- the above-pay-as-you-go note appears exactly on Spot rows above that price, and on no other
+  row;
 - GPUs × hours × headroom equals the budget;
 - every figure is finite.
 
@@ -176,6 +190,18 @@ Figures SHALL be shown only when every check passes.
 #### Scenario: Tampered figure caught
 - **WHEN** one exposure in a result is changed by one cent
 - **THEN** the check fails and names that row
+
+#### Scenario: Large storage hides no cent
+- **WHEN** USD 10,000,000 of storage is entered and one row's cost and exposure are each changed by one cent
+- **THEN** the check fails and names that row's cost and exposure
+
+#### Scenario: Valid extreme change passes
+- **WHEN** a custom change of −99.99999% is applied across many starting prices
+- **THEN** every result passes the check
+
+#### Scenario: Result from another member caught
+- **WHEN** the figures were priced from a different size than the one the page picked
+- **THEN** the check fails on the starting member
 
 #### Scenario: Independent of the calculator
 - **WHEN** the check module's imports are inspected
