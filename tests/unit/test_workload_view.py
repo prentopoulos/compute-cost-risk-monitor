@@ -136,6 +136,8 @@ def test_known_workload_on_the_demo(found: list[RegionGroup]) -> None:
     )
     frame = dashboard.scenario_frame(shown)
     assert list(frame.columns) == dashboard.SCENARIO_COLUMNS
+    assert list(frame.columns)[:3] == ["Scenario", "Effect", dashboard.EXPOSURE]
+    assert list(frame.columns)[-1] == "Narrative"
     assert frame["Scenario"][0] == dashboard.STARTING
     assert frame["Effect"][0] == dashboard.BASELINE
     example = frame[frame["Scenario"] == "PROJECT example +$0.50/GPU-hour"].iloc[0]
@@ -182,6 +184,12 @@ def test_spot_captions_add_the_spot_line_and_the_crossing(
         "H100 NVLink 80GB · 8 GPUs · westeurope · Spot →"
         " H100 NVLink 80GB · 8 GPUs · westeurope · pay-as-you-go"
     ) in caption
+    assert "(not listed in this snapshot)" not in caption
+    unlisted = dashboard.scenario_caption(result(found, "uksouth", "spot"))
+    assert unlisted.endswith(
+        "H100 NVLink 80GB · 8 GPUs · uksouth · pay-as-you-go"
+        " (not listed in this snapshot)"
+    )
     plain = dashboard.scenario_caption(result(found))
     assert dashboard.CROSSES_RENTAL not in plain
     assert NOT_A_FORECAST in plain

@@ -756,9 +756,10 @@ def scenario_caption(result: Result) -> str:
         scenarios.JUDGEMENT,
     ]
     if result.payg_key is not None:
+        missing = " (not listed in this snapshot)" if result.payg is None else ""
         parts.append(
             f"Fallback row {CROSSES_RENTAL}: {key_text(result.start.key)}"
-            f" → {key_text(result.payg_key)}"
+            f" → {key_text(result.payg_key)}{missing}"
         )
     return " · ".join(parts)
 
@@ -791,16 +792,18 @@ def note(row: Row) -> str:
     return ""
 
 
+# The outcome first and the long narrative last, so a wide table never hides the
+# effect or a note off-screen (manual check, task 4.1).
 SCENARIO_COLUMNS = [
     "Scenario",
-    "Narrative",
+    "Effect",
+    EXPOSURE,
+    SCENARIO_COST,
+    SCENARIO_USD,
     CHANGE_USD,
     CHANGE_PCT,
-    SCENARIO_USD,
-    SCENARIO_COST,
-    EXPOSURE,
-    "Effect",
     "Note",
+    "Narrative",
 ]
 
 
