@@ -178,7 +178,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 | 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Done |
 | 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Done |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Done |
-| 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
+| 5 | Workload cost calculator and labelled budget-exposure scenarios | In progress |
 | 6 | Tests for units, calculations, missing data and stale offers | Planned |
 | 7 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
