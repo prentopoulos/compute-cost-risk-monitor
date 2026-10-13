@@ -76,6 +76,37 @@ def test_fresh_and_stale() -> None:
     assert "STALE" in quality.render(stale) and "not stale" in quality.render(fresh)
 
 
+def test_exactly_seven_days_is_not_stale() -> None:
+    con = database()
+    azure_run(con, "run-1", [Price()])  # started at DAY
+    normalize.normalize_pending(con, NOW)
+    week = DAY + timedelta(days=7)
+    assert quality.build(con, "azure-retail", week).stale is False
+    later = week + timedelta(seconds=1)
+    assert quality.build(con, "azure-retail", later).stale is True
+
+
+@pytest.mark.parametrize("status", ["partial", "failed"])
+def test_staleness_comes_from_the_latest_succeeded_run(status: str) -> None:
+    con = database()
+    azure_run(con, "old", [Price()])  # succeeded, started at DAY
+    azure_run(con, "newer", [], started=DAY + timedelta(days=7), status=status)
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=8))
+    assert report.snapshot is not None and report.snapshot.run_id == "old"
+    assert report.stale is True
+
+
+def test_snapshot_dated_after_the_as_of_time_is_not_stale() -> None:
+    con = database()
+    azure_run(con, "ahead", [Price()])  # started at DAY
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "azure-retail", DAY - timedelta(days=30))
+    assert report.stale is False
+    assert "not stale" in quality.render(report)
+    assert report.snapshot is not None and report.snapshot.run_id == "ahead"
+
+
 def test_no_snapshot_is_not_zero_prices() -> None:
     con = database()
     azure_run(con, "run-1", [], status="failed")

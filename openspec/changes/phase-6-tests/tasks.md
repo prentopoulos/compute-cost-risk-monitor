@@ -13,7 +13,7 @@
   - a run without a summary row;
   - the `app.py` states at 94, 221, 272–273, 287, 319–321 and 327–329;
   - the remaining uncovered lines in `collect.py`, `db.py`, `dashboard.py`, `ingest.py`, `normalize.py` and `raw_store.py`, each with a known answer
-- [ ] 2.4 Stale: exactly 7 days not stale and 7 days + 1 s stale; staleness from the latest succeeded run when the newest run is partial or failed; a snapshot dated after the as-of time is not stale (D10; MODIFIED "Quality report")
+- [x] 2.4 Stale: exactly 7 days not stale and 7 days + 1 s stale; staleness from the latest succeeded run when the newest run is partial or failed; a snapshot dated after the as-of time is not stale (D10; MODIFIED "Quality report")
 
 ## 3. Property tests
 
