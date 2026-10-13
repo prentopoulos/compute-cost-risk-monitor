@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import duckdb
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -191,6 +192,56 @@ def test_marketplace_without_a_run_says_no_snapshot(tmp_path: Path) -> None:
     show(at, "Data quality")
     quality = at.tabs[3]
     assert dashboard.NO_SNAPSHOT in [i.value for i in quality.info]
+
+
+def test_withheld_snapshot_lists_no_groups_and_flags_the_panel(
+    tmp_path: Path,
+) -> None:
+    path = build(tmp_path / "synthetic.duckdb", [DEMO])
+    connection = db.connect(path)
+    azure_run(connection, "later", [Price()], started=DAY + timedelta(days=1))
+    connection.close()
+    at = page([(dashboard.SYNTHETIC_DATASET, path)])
+    show(at, "Group browser")
+    assert [i.value for i in at.tabs[2].info] == ["No groups to list."]
+    assert not at.tabs[2].dataframe
+    show(at, "Data quality")
+    banners = [e.value for e in at.tabs[3].error]
+    assert banners and banners[0].startswith("NOT NORMALIZED: 1 observations")
+
+
+def test_file_that_is_not_a_database_is_named(tmp_path: Path) -> None:
+    path = tmp_path / "synthetic.duckdb"
+    path.write_text("plain text, not DuckDB", encoding="utf-8")
+    at = page([(dashboard.SYNTHETIC_DATASET, path)])
+    assert at.warning[0].value.startswith(f"Cannot open {path}")
+    assert not at.dataframe
+
+
+def test_read_error_is_shown_not_raised(
+    demo: list[tuple[str, Path]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def failing(*_: object, **__: object) -> None:
+        raise duckdb.IOException("simulated read failure")
+
+    monkeypatch.setattr(dashboard, "load_all", failing)
+    at = page(demo)
+    (error,) = at.error
+    assert error.value.startswith("Cannot read ")
+    assert error.value.endswith("simulated read failure")
+    assert not at.dataframe
+
+
+def test_choice_naming_no_group_draws_nothing(
+    demo: list[tuple[str, Path]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The filters only offer existing groups; if a choice ever named none, the
+    # group and workload tabs draw nothing rather than a figure for another group.
+    monkeypatch.setattr(dashboard, "find_group", lambda *_: None)
+    at = page(demo)
+    assert not at.tabs[0].subheader and not at.tabs[0].dataframe
+    show(at, "Workload cost")
+    assert not at.tabs[1].subheader and not at.tabs[1].dataframe
 
 
 def test_connection_closed_after_the_run(demo: list[tuple[str, Path]]) -> None:
