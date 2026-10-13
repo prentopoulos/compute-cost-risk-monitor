@@ -35,6 +35,18 @@ prices.
 - **WHEN** a report is built after normalizing a known-answer fixture
 - **THEN** normalized plus excluded rows equal the snapshot's observations, and the reason counts match the fixture's known answers
 
+#### Scenario: Not normalized yet
+- **WHEN** the latest snapshot was stored after the last normalize
+- **THEN** the report flags `NOT NORMALIZED` with the count of observations lacking a row, instead of showing empty groups as if nothing were comparable
+
+#### Scenario: No snapshot
+- **WHEN** a source has only a failed run
+- **THEN** the report says it has no snapshot and gives no row counts as if they were zero prices
+
+#### Scenario: Counts only
+- **WHEN** a report is rendered as text
+- **THEN** it contains none of the fixture's price values
+
 #### Scenario: Marketplace missing fields are its own
 - **WHEN** a compared marketplace offer has no country code
 - **THEN** the marketplace report counts one missing `country_code`, and names no Azure field
