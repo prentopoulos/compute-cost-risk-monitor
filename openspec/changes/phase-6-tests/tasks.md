@@ -17,10 +17,10 @@
 
 ## 3. Property tests
 
-- [ ] 3.1 Write `tests/unit/test_properties.py` (D4), first the never-cut pair:
+- [x] 3.1 Write `tests/unit/test_properties.py` (D4), first the never-cut pair:
   - the calculator and `workload_check` agree on generated valid workloads, custom changes and budgets;
   - `classify_azure`'s USD/GPU-hour × GPU count gives back the price.
-- [ ] 3.2 Add the rest:
+- [x] 3.2 Add the rest:
   - cost is linear in GPUs and hours;
   - exposure = scenario cost − base cost, with its sign following the change;
   - `groups.lowest` and `groups.stats` don't depend on row order.
