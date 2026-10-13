@@ -160,6 +160,9 @@ def test_refused_row_must_carry_no_figure_and_say_so() -> None:
     unlabelled = dataclasses.replace(refused, effect=LOWER)
     failed = check(inputs, dataclasses.replace(FIGURES, rows=(*ROWS, unlabelled)))
     assert failed == ["custom effect"]
+    noted = dataclasses.replace(refused, above_payg=4.0)
+    failed = check(inputs, dataclasses.replace(FIGURES, rows=(*ROWS, noted)))
+    assert failed == ["custom note"]
 
 
 def test_a_price_within_rounding_of_zero_may_be_refused_or_shown() -> None:
@@ -175,6 +178,13 @@ def test_unknown_row_is_a_failed_definition() -> None:
     failed = check(INPUTS, dataclasses.replace(FIGURES, rows=(*ROWS, odd)))
     assert "mystery definition" in failed
     assert "scenario rows" in failed
+
+
+def test_custom_change_of_an_unknown_kind_is_a_failed_definition() -> None:
+    inputs = dataclasses.replace(INPUTS, custom=("per-day", 0.5))
+    row = RowFigures("custom", 3.0, 0.5, 20.0, 2_400.0, 400.0, None, ADDITIONAL)
+    failed = check(inputs, dataclasses.replace(FIGURES, rows=(*ROWS, row)))
+    assert failed == ["custom definition"]
 
 
 # Spot: one 8-GPU VM at USD 8 per VM-hour (1.0 USD/GPU-hour) for 10 hours; the same
@@ -245,6 +255,9 @@ def test_headroom_checked() -> None:
     assert "headroom" in check(inputs, dataclasses.replace(figures, headroom=0.51))
     assert "headroom %" in check(
         inputs, dataclasses.replace(figures, headroom_pct=21.0)
+    )
+    assert "headroom %" in check(
+        inputs, dataclasses.replace(figures, headroom_pct=None)
     )
     assert "headroom note" in check(
         inputs, dataclasses.replace(figures, headroom_above_payg=3.0)

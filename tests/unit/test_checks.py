@@ -89,6 +89,38 @@ def test_unknown_reason_and_text_caught(con: duckdb.DuckDBPyConnection) -> None:
     ]
 
 
+def without_constraints(con: duckdb.DuckDBPyConnection) -> None:
+    """Swap normalized_price for a copy without its CHECKs, as a damaged or foreign
+    database might hold: the checks must not lean on the schema's constraints."""
+    con.execute("CREATE TABLE loose AS SELECT * FROM normalized_price")
+    con.execute("DROP TABLE normalized_price")
+    con.execute("ALTER TABLE loose RENAME TO normalized_price")
+
+
+def test_row_with_neither_reason_nor_price_caught(
+    con: duckdb.DuckDBPyConnection,
+) -> None:
+    without_constraints(con)
+    con.execute(
+        "UPDATE normalized_price SET usd_per_gpu_hour = NULL WHERE item_key = ?",
+        [NORMAL.key()],
+    )
+    assert checks.reason_or_price(con, "groups-v1").failures == [
+        f"azure-retail {NORMAL.key()}: reason and price must exclude each other"
+    ]
+
+
+def test_compared_row_without_a_variant_caught(con: duckdb.DuckDBPyConnection) -> None:
+    without_constraints(con)
+    con.execute(
+        "UPDATE normalized_price SET gpu_model = NULL WHERE item_key = ?",
+        [NORMAL.key()],
+    )
+    assert checks.reason_or_price(con, "groups-v1").failures == [
+        f"azure-retail {NORMAL.key()}: normalized without a GPU variant"
+    ]
+
+
 def test_unmapped_row_with_gpu_fields_caught(con: duckdb.DuckDBPyConnection) -> None:
     con.execute(
         "UPDATE normalized_price SET gpu_model = 'H100 NVLink 80GB', gpu_count = 8"
