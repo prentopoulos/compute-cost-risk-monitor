@@ -294,6 +294,7 @@ name = "compute-cost-risk-monitor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "altair" },
     { name = "duckdb" },
     { name = "pandas" },
     { name = "pytz" },
@@ -315,6 +316,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "altair", specifier = ">=6.3,<7" },
     { name = "duckdb", specifier = ">=1.5" },
     { name = "pandas", specifier = ">=3.0" },
     { name = "pytz", specifier = ">=2026.5" },

@@ -5,6 +5,7 @@ description = "Comparable GPU VM options, workload costs and budget exposure fro
 authors = [{ name = "Peter Rentopoulos" }]
 requires-python = ">=3.13"
 dependencies = [
+    "altair>=6.3,<7",
     "duckdb>=1.5",
     "pandas>=3.0",
     "pytz>=2026.5",
