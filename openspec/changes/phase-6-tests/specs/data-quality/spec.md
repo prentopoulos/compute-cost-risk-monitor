@@ -21,8 +21,9 @@ injected time. It SHALL hold counts only, never prices:
   snapshot.
 
 A source with no succeeded run SHALL be reported as having no snapshot, never as having zero
-prices. When the latest snapshot's run has no summary row, its out-of-scope and repeat counts
-SHALL be reported as unknown, never as zero.
+prices. When the latest snapshot's run has no summary row, its out-of-scope, repeat and
+rejected totals, and any tallied count with no tally row, SHALL be reported as unknown, never
+as zero; tally rows that exist are still reported.
 
 #### Scenario: Fresh snapshot
 - **WHEN** the latest snapshot started 2 days before the as-of time
@@ -66,7 +67,7 @@ SHALL be reported as unknown, never as zero.
 
 #### Scenario: Run without a summary
 - **WHEN** the latest snapshot's run has no `collection_run_summary` row
-- **THEN** the report and the dashboard panel give its out-of-scope and repeat counts as `unknown (no run summary)`, not 0
+- **THEN** the report and the dashboard panel give its out-of-scope, repeat and rejected totals and its `shared_meter_key` count as `unknown (no run summary)`, not 0, while a tally row that exists, such as `rejected missing_field: 2`, is still shown
 
 ### Requirement: Quality command
 `uv run python -m compute_cost_risk_monitor.quality [--db PATH] [--as-of TIME]` SHALL print the

@@ -235,10 +235,34 @@ def test_run_without_a_summary_counts_are_unknown() -> None:
     con.execute("DELETE FROM collection_run_summary WHERE run_id = 'run-1'")
     normalize.normalize_pending(con, NOW)
     report = quality.build(con, "azure-retail", DAY + timedelta(days=1))
-    assert (report.out_of_scope, report.repeats) == (None, None)
+    assert (report.out_of_scope, report.repeats, report.rejected_total) == (
+        None,
+        None,
+        None,
+    )
     text = quality.render(report)
     assert (
         "run records: out of scope unknown (no run summary),"
-        " repeats unknown (no run summary), rejected 0"
+        " repeats unknown (no run summary), rejected unknown (no run summary)"
     ) in text
-    assert "duplicates: repeats unknown (no run summary), shared_meter_key 0" in text
+    assert (
+        "duplicates: repeats unknown (no run summary),"
+        " shared_meter_key unknown (no run summary)"
+    ) in text
+
+
+def test_tallies_without_a_summary_stay_known() -> None:
+    # A tally row records a count above zero, so it stands without the summary; the
+    # totals it cannot prove (zeros, the rejected total) stay unknown.
+    con = database()
+    tallies = {("rejected", "missing_field"): 2, ("flagged", "shared_meter_key"): 1}
+    azure_run(con, "run-1", [Price()], tallies=tallies)
+    con.execute("DELETE FROM collection_run_summary WHERE run_id = 'run-1'")
+    normalize.normalize_pending(con, NOW)
+    report = quality.build(con, "azure-retail", DAY + timedelta(days=1))
+    assert report.rejected == {"missing_field": 2}
+    assert report.rejected_total is None
+    assert report.duplicates == {"repeats": None, "shared_meter_key": 1}
+    text = quality.render(report)
+    assert "rejected unknown (no run summary)" in text
+    assert "    rejected missing_field: 2" in text

@@ -44,6 +44,7 @@ class QualityReport:
     by_status: dict[str, int] = field(default_factory=dict)
     unmapped_sizes: list[str] = field(default_factory=list)
     rejected: dict[str, int] = field(default_factory=dict)
+    rejected_total: int | None = 0  # None when the run has no summary row
     out_of_scope: int | None = 0  # None when the run has no summary row
     repeats: int | None = 0
     duplicates: dict[str, int | None] = field(default_factory=dict)
@@ -177,10 +178,13 @@ def build(
         "SELECT out_of_scope, repeats FROM collection_run_summary WHERE run_id = ?",
         [run],
     ).fetchone()
+    # Tallies exist only for counts above zero; the summary row is the only record of a
+    # zero. Without it, a count with no tally row is unknown, never 0.
     if summary:
         report.out_of_scope, report.repeats = summary
+        report.rejected_total = sum(report.rejected.values())
     else:
-        report.out_of_scope = report.repeats = None
+        report.out_of_scope = report.repeats = report.rejected_total = None
     if region_groups is None:
         region_groups = groups.region_groups(connection, latest, rule_version)
     report.region_groups = len(region_groups)
@@ -192,15 +196,16 @@ def build(
         }
         report.thin = sum(groups.THIN in g.labels for g in region_groups)
     else:
+        shared = _one(
+            connection,
+            "SELECT coalesce(sum(occurrences), 0) FROM collection_run_tally"
+            " WHERE run_id = ? AND kind = 'flagged'"
+            " AND reason = 'shared_meter_key'",
+            run,
+        )
         report.duplicates = {
             "repeats": report.repeats,
-            "shared_meter_key": _one(
-                connection,
-                "SELECT coalesce(sum(occurrences), 0) FROM collection_run_tally"
-                " WHERE run_id = ? AND kind = 'flagged'"
-                " AND reason = 'shared_meter_key'",
-                run,
-            ),
+            "shared_meter_key": shared if shared or summary else None,
         }
         report.os_ambiguous = _os_ambiguous(connection, run)
         report.single_price_groups = sum(
@@ -243,7 +248,7 @@ def render(report: QualityReport) -> str:
     )
     lines.append(
         f"  run records: out of scope {shown(report.out_of_scope)},"
-        f" repeats {shown(report.repeats)}, rejected {sum(report.rejected.values())}"
+        f" repeats {shown(report.repeats)}, rejected {shown(report.rejected_total)}"
     )
     lines += [f"    rejected {reason}: {n}" for reason, n in report.rejected.items()]
     lines.append(

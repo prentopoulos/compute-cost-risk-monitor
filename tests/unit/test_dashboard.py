@@ -520,11 +520,11 @@ def test_panel_shows_unknown_counts_without_a_run_summary(
     )
     checks = dict(shown.checks.values.tolist())
     assert checks["Duplicates"] == (
-        "repeats unknown (no run summary), shared_meter_key 0"
+        "repeats unknown (no run summary), shared_meter_key unknown (no run summary)"
     )
-    assert dict(shown.secondary.values.tolist())["Out of scope"] == (
-        "unknown (no run summary)"
-    )
+    secondary = dict(shown.secondary.values.tolist())
+    assert secondary["Out of scope"] == "unknown (no run summary)"
+    assert secondary["Rejected by the collector"] == "unknown (no run summary)"
 
 
 def test_marketplace_panel_counts_machine_duplicates(
