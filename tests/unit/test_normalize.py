@@ -103,6 +103,39 @@ CASES: list[tuple[str, Price, str | None, float | None, float | None]] = [
         1.0,
     ),
     ("not hourly", Price(unit="1/Month"), "unit_not_hourly", None, 8.0),
+    # The unit must be exactly "1 Hour": no change of case or plural (Phase 6).
+    ("unit in lower case", Price(unit="1 hour"), "unit_not_hourly", None, 8.0),
+    ("unit in the plural", Price(unit="1 Hours"), "unit_not_hourly", None, 8.0),
+    ("hundred hours", Price(unit="100 Hours"), "unit_not_hourly", None, 8.0),
+    # The first matching reason wins past the first one too (Phase 6).
+    (
+        "government before Windows and unit",
+        Price(region="usgovvirginia", product="X Series Windows", unit="1/Day"),
+        "government_cloud",
+        None,
+        8.0,
+    ),
+    (
+        "Windows before unit",
+        Price(product="Virtual Machines NDsr H100 v5 Series Windows", unit="1/Day"),
+        "windows",
+        None,
+        8.0,
+    ),
+    (
+        "unit before unmapped",
+        Price("Standard_ND96is_noIB_H100_v5", unit="1/Day"),
+        "unit_not_hourly",
+        None,
+        None,
+    ),
+    (
+        "unit before retired",
+        Price("Standard_NC24s_v3", unit="1/Day"),
+        "unit_not_hourly",
+        None,
+        4.0,
+    ),
     (
         "unmapped",
         Price("Standard_ND96is_noIB_H100_v5"),
