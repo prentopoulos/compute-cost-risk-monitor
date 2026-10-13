@@ -4,18 +4,18 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 2 (Azure Retail Prices collector) is Done. It was delivered through PR #7 from branch
-`phase-2-collector` and archived as
-`openspec/changes/archive/2026-10-12-phase-2-collector`. Its specs live in
-`openspec/specs/azure-price-collector`, with updates to `price-data-schema` and
-`quality-gate`. After the merge, no OpenSpec change is active.
+Phase 3 (normalization, comparable groups, history and quality checks) is Done. It was delivered
+through PR #8 from branch `phase-3-normalization` and archived as
+`openspec/changes/archive/2026-10-12-phase-3-normalization`. Its specs live in
+`openspec/specs/` as `price-normalization`, `comparable-groups`, `snapshot-history`,
+`data-quality` and `synthetic-marketplace`. After the merge, no OpenSpec change is active.
 
-Earlier phases are Done and merged: Phase 1 (PR #5) and Phase 0 (PR #3).
+Earlier phases are Done and merged: Phase 2 (PR #7), Phase 1 (PR #5) and Phase 0 (PR #3).
 
 Each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). Everything the
 next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
-PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 2). Copies in AGENTS.md
+PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 3). Copies in AGENTS.md
 and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`.
 
 **Live-data gate resolved for Azure (owner, 2026-10-12).** The scope, recorded in PROJECT.md §6:
@@ -26,112 +26,150 @@ and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`
 
 The scheduling, spend and publishing gates are untouched.
 
-## Implemented behavior (Phase 2)
+## Commands
 
-- **Command:**
-  - `uv run python -m compute_cost_risk_monitor.collect` fetches one run labelled `live` into
-    `data/raw/azure-retail/YYYY/MM/DD/`, then ingests it into `data/monitor.duckdb`.
-  - Both paths are anchored to the repo, not the working directory.
-  - `--ingest-run RUN_ID` loads kept files without the network. It refuses a run that may still
-    be fetching (no end manifest, less than 35 minutes since its start).
-  - A live fetch within 24 hours of the last one that sent requests is refused.
-  - Output is counts only, never prices.
-  - In this environment's bash, uv lives at
-    `/c/Users/Peter/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`.
-- **Request:** `api-version=2023-01-01-preview`, `currencyCode='USD'`, `meterRegion='primary'`,
-  and `$filter=serviceName eq 'Virtual Machines' and contains(armSkuName, 'Standard_N')`.
-  - A client-side check keeps NC, ND, NG and NV sizes.
-  - Next links are pinned to the API: printable ASCII only, https, the API's host and path.
-- **Pacing:**
-  - requests ≥ 1 s apart, ≥ 2 s after a 429;
-  - waits follow Retry-After, or Azure's `x-ms-ratelimit-retailprices-retry-after` after a 429,
-    capped at 300 s;
-  - otherwise 60 s after a 429 and 2/4/8/16 s backoff;
-  - 5 attempts per page; caps of 200 pages, 30 minutes and 64 MiB per body;
-  - an empty first page, or an empty page after a full one, is fetched once more.
-- **Raw files:** each file is written once.
-  - Gzip bodies (level 9, mtime 0) plus JSON sidecars, and start and end manifests.
-  - The end manifest records the stop reason and the number of requests.
-  - Any unexpected error ends a run with stop reason `error`.
-- **Row rules (`azure_retail.py`):**
-  - scope, then rejection reasons counted per reason, then rental type and flags;
-  - item key = Phase 1 D15 + `armSkuName`;
-  - reservations get the unit "<term> term".
-- **Ingest:** one transaction, from the files only.
-  - Bodies are verified against their SHA-256 first.
-  - First copy wins; later copies go to `observation_repeat`.
-  - Status is `succeeded` only when paging completed; otherwise `partial` or `failed`.
-- **Schema v2:** `002_run_records.sql` adds `collection_run_summary` (with the accounting
-  identity), `collection_run_tally` and `observation_repeat`. Run rows are write-once.
-- **Gate:** detect-secrets scans against `.secrets.baseline`. pytest runs with sockets blocked;
-  only the Streamlit smoke test may connect, and only to 127.0.0.1.
-- **Diagrams:** the FigJam container view and the ERD (schema v2) are updated, and the SVGs in
-  `docs/architecture/` are re-exported.
+In this environment's bash, uv lives at
+`/c/Users/Peter/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`.
+Every command prints counts, names and keys only, never prices.
+
+- **Collect (Phase 2):** `uv run python -m compute_cost_risk_monitor.collect` fetches one `live`
+  run into `data/raw/azure-retail/` and ingests it into `data/monitor.duckdb`.
+  - `--ingest-run RUN_ID` restores kept files without the network.
+  - A live fetch within 24 hours of the last one is refused.
+- **Normalize (Phase 3):** `uv run python -m compute_cost_risk_monitor.normalize [--db PATH]`.
+  - Stores `groups-v1` and `gpu-map-v1` once, then writes one `normalized_price` row for every
+    observation lacking one, in one transaction, and runs the independent checks.
+  - Exit codes: 0 when the checks pass, 1 when a check fails, 2 when refused (a changed frozen
+    row, a bad map file, or a database that cannot be opened); a refusal writes nothing.
+  - **Run it after every collect**; the quality report flags a snapshot that is not normalized
+    yet.
+- **Quality (Phase 3):** `uv run python -m compute_cost_risk_monitor.quality [--db PATH]
+  [--as-of TIME]` prints the counts-only report for each source's latest snapshot.
+- **Synthetic marketplace (Phase 3):** `uv run python -m compute_cost_risk_monitor.synthetic FILE
+  ... [--db PATH]` stores labelled synthetic snapshots as `synthetic` runs. It defaults to
+  `data/synthetic.duckdb` and refuses `data/monitor.duckdb`. Then run normalize and quality with
+  `--db data/synthetic.duckdb`.
+
+## Implemented behavior (Phase 3)
+
+Owner decisions are D1–D11 in the archived design; D12–D25 are settled with their basis. D24
+(regional retirement extensions) was flagged for review on PR #8, which the owner approved for
+merge on 2026-10-12 without comment on it.
+
+- **GPU map `gpu-map-v1`:** `src/compute_cost_risk_monitor/reference/gpu_sku_map_v1.csv`.
+  - 51 sizes (35 whole-GPU, 16 fractional), hand-built from Microsoft Learn size pages, with a
+    URL and retrieval date on every row and the CC BY 4.0 credit.
+  - A size is mapped only if Learn names it exactly (D9). Labels follow Learn's wording, e.g.
+    "H100 NVLink 80GB" or "H100 NVL 94GB confidential" (D3).
+- **Rule set `groups-v1`** (`rules.py`), stored once and refused if changed:
+  - compared rental types: on_demand and spot;
+  - exclusion order: rental type, government cloud (`usgov`/`usdod`), Windows (last
+    product-name word `Windows`/`Win`), unit not hourly, unmapped, fractional, retired;
+  - retirements are by snapshot date, with Learn's regional extensions: NCv3 in Jio India West
+    until 2027-06-30 and NVv3 in UAE North until 2027-01-31 (D24);
+  - thresholds: stale after 7 days, thin below 5 regions or 5 machines, "not listed" after 2
+    absences;
+  - the exclusions text and the synthetic marketplace GPU names.
+- **Normalization:** USD/GPU-hour = price ÷ mapped GPU count. Excluded rows keep their reason and
+  their map reference when mapped.
+- **Independent checks (`checks.py`, imports no normalization code):**
+  - multiply-back and one row per observation;
+  - reasons are valid per source, and each one is re-derived from the stored rules;
+  - GPU fields match the map row for the observation's own size;
+  - compared rows follow the rules, and totals match the run records.
+- **Groups (`groups.py`):**
+  - region groups (variant, count, region, rental type), labelled `single list price` when they
+    hold one price;
+  - cross-region summaries from each region's lowest listed member: region count, min, median and
+    max, labelled `thin` below 5 regions;
+  - marketplace groups take one price per machine and flag the others `machine_duplicate`.
+- **History (`history.py`):**
+  - changes between consecutive succeeded snapshots, keyed by item for Azure and by machine
+    continuity for the marketplace;
+  - "absent once (unconfirmed)", then "not listed" after two absences.
+- **Quality (`quality.py`):**
+  - the stale flag, a `NOT NORMALIZED` flag, and rows by reason;
+  - unmapped size names, run-record counts, duplicates and missing fields;
+  - `os_ambiguous`, single-price and thin counts, changes and absences.
+- **Diagrams:** the FigJam container view marks normalization as built and adds the synthetic
+  database; `docs/architecture/c4-container.svg` is re-exported. The ERD is unchanged (no schema
+  change, D10).
 
 ## Data collected so far
 
-- **First live run:** `20261012T151909Z-5473f1`, started by the owner on 2026-10-12. It
-  succeeded.
-  - 15 pages and 14,593 rows: 14,347 stored, 246 out of scope (NP FPGA and NM MA35D), 0 repeats,
-    0 rejected, no 429s.
-  - 100 GPU sizes in 60 regions.
-  - By rental type: on_demand 3,285, spot 3,048, dev_test 3,803, reservation 2,387, other (Low
-    Priority) 1,824.
-  - The data is local in `data/` (gitignored). Counts only are recorded anywhere in Git.
-- **Live-run observations (design Open Questions):**
-  - next links keep the fixed parameters;
-  - there is no standard Retry-After, but `x-ms-ratelimit-remaining-retailprices-requests: 9`
-    and `x-ms-ratelimit-retailprices-retry-after: 60` appear on every response;
-  - reservation terms include 5 Years;
-  - 8,014 rows are Windows products.
+- **One live snapshot:** `20261012T151909Z-5473f1` (owner, 2026-10-12), succeeded.
+  - 14,347 stored rows, covering 100 GPU sizes in 60 regions.
+  - By rental type: on_demand 3,285, spot 3,048, dev_test 3,803, reservation 2,387 and other
+    (Low Priority) 1,824.
+  - 7,878 stored rows are Windows, including all 3,803 Dev/Test rows.
+- **Normalized under `groups-v1` (2026-10-12):**
+  - 1,238 compared: 629 pay-as-you-go and 609 Spot, covering 34 sizes, 17 variants and 54
+    regions.
+  - Excluded:
+
+    | Reason | Rows |
+    |---|---|
+    | rental type not compared | 8,014 |
+    | Windows | 3,009 |
+    | unmapped | 775 |
+    | fractional | 666 |
+    | retired | 334 |
+    | government cloud | 311 |
+
+  - 49 sizes are not in the map.
+  - 929 region groups, of which 684 hold a single list price. 51 cross-region summaries, of which
+    11 are thin.
+- The data is local in `data/` (gitignored). `data/monitor.pre-phase3.duckdb` is a copy taken
+  before the first normalize; the owner may delete it. Only counts appear anywhere in Git.
 
 ## Verification
 
-- **Gate:** green at e0a51d3 in Windows PowerShell; 298 tests pass. Branch coverage is 100% for
-  the row rules, raw store and fetch loop, and about 99% overall.
-- **CI:** hosted CI (Linux) passed on the branch pushes. There the real-page test skips because
-  no data is kept.
-- **Audit:** `uv audit` found no known vulnerabilities in 67 packages.
-- **Live run:** a script independent of ingest re-hashed all 15 kept bodies and matched every
-  count in DuckDB.
-- **Code review:** `/code-review` on PR #7 found 14 defects, all fixed with tests (design D28).
+- **Gate:** green in Git Bash and Windows PowerShell; 422 tests pass, about 98% branch coverage.
+  `uv audit` found no known vulnerabilities in 67 packages.
+- **CI:** hosted CI passed on the branch pushes.
+- **Live normalize:**
+  - all seven independent checks pass on the 14,347 rows;
+  - a script sharing no package code recounted every exclusion reason and matched;
+  - an SQL recompute of multiply-back found 0 mismatches.
+- **Code review:** `/code-review` on PR #8 found 15 issues. 12 were fixed with tests, and 3 were
+  answered without code change (design D25).
 - **Read-through:** the market-review and build-safety read-through is in
-  `docs/reviews/2026-10-12-phase-2-collector.md`.
-- **Deliberate failures checked:**
-  - a planted fake AWS key fails the gate;
-  - the Streamlit test fails without its loopback marker;
-  - Windows-style sidecar paths could escape the raw root until fixed.
+  `docs/reviews/2026-10-12-phase-3-normalization.md`.
 
 ## Findings for later phases
 
-- **Phase 3:**
-  - Exclude Windows rows and Low Priority (`other`) rows from comparisons (Phase 1 D11).
-  - Offset paging (`$skip`) can miss rows silently when the catalogue changes mid-run, so infer
-    "not listed" only from repeated absence across succeeded snapshots.
-  - Build `gpu_sku_map` from Microsoft Learn (CC BY 4.0); the live run has 100 distinct GPU
-    `armSkuName` values to map.
-  - Fractional NV sizes are left out of v1 (Phase 1 D12).
-- **DuckDB 1.5.6 limits:** a `collection_run` row cannot be updated once referenced, and
-  migrations cannot add CHECKs or constrained columns (Phase 1 D23 was wrong). Changing a
-  version-1 CHECK list means rebuilding into a new database file.
-- **D27 (owner-confirmed on PR #7, 2026-10-12):** `--ingest-run` restores a run under its own ID and label.
-  `recorded` is for a new run built from kept responses (as in `test_real_page.py`).
+- **Phase 4 (dashboard):**
+  - Show every member of a multi-size region group with its size name. In 64 of 245 multi-size
+    groups the highest member is over 1.5× the lowest, because of vCPU, RAM and disk differences.
+  - Say that "lowest listed per region" picks the cheapest configuration.
+  - 48 Spot rows equal their pay-as-you-go price; they are published that way, so show them as
+    listed, not as errors.
+  - Show the `NOT NORMALIZED`, stale, thin and single-price labels.
+  - Set Streamlit `gatherUsageStats = false`.
+- **Map v2:** add the H100 `noIB`/`flex`/`isrf` sizes, MI300X `ND96is` and 20 RTX PRO 6000 sizes
+  only when Learn names them exactly. A new version, never an edit.
+- **History:** only one live snapshot exists. Changes and "not listed" need owner-started runs, at
+  most one a day.
+- **DuckDB 1.5.6 limits:** a referenced row (for example a run, rule set or map row) cannot be
+  updated, and migrations cannot add CHECKs or constrained columns. Changing a version-1 CHECK
+  list means rebuilding into a new database file.
 - **Local quirks:**
-  - In the Phase 2 session, pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter`
-    ("access denied"). Gate runs there used `PYTEST_ADDOPTS=--basetemp=tmp/pytest` (`tmp/` is
-    gitignored and must exist). If you see the same error, delete that folder.
+  - pytest could not use `%LOCALAPPDATA%\Temp\pytest-of-Peter` ("access denied"). Gate runs used
+    `PYTEST_ADDOPTS=--basetemp=tmp/pytest` (`tmp/` is gitignored and must exist).
   - npm's Windows `.cmd` shims break on the `&` in the folder name; run Node CLIs as
     `node node_modules/<pkg>/<bin>.js`.
+  - Figma's `use_figma` returns at most 20 KB, so a large SVG export needs chunking. Phase 3 sent
+    it LZW-compressed in 17 chunks, rebuilt it from the session transcript, and verified it
+    against Figma's length and checksum.
 - **Carried over:**
   - Phase 7 stays synthetic unless the publishing gate approves derived live figures.
-  - Phase 4 sets Streamlit `gatherUsageStats = false`.
   - Recheck CME futures before Phase 7.
   - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
   - detect-secrets scans files only: scan Git history before the repo goes public.
 
 ## Next action
 
-Start Phase 3 in a fresh session: the owner clears the context and runs `/next-phase`. Then
-grill Phase 3 (normalization to USD/GPU-hour, `gpu_sku_map` v1, comparable groups, duplicate and
-quality checks), using the Phase 1 acceptance row and the findings above. Collecting more live
-data is the owner's choice: one manual run a day at most.
+Start Phase 4 (Streamlit dashboard with comparable-group filters and the data-quality panel) in
+a fresh session: the owner clears the context and runs `/next-phase`. Then grill Phase 4 using
+the Phase 1 acceptance row and the findings above. Collecting more live data is the owner's
+choice: one manual run a day at most, followed by normalize.

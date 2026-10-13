@@ -33,7 +33,9 @@ In scope (one phase per session, see §6):
 - Live price collection from the Azure Retail Prices API (public, no account): timestamped
   price rows, original responses retained.
 - Comparable pricing: separate GPU variants, GPU counts, regions and rental types
-  (pay-as-you-go and Spot, Linux); compute USD/GPU-hour.
+  (pay-as-you-go and Spot, Linux, commercial-cloud regions, sizes Microsoft has not retired);
+  compute USD/GPU-hour. GPU fields come from a map built only from Microsoft Learn; sizes it
+  does not name exactly stay unmapped and are counted, never guessed.
 - Synthetic marketplace-style offers, labelled synthetic: they exercise marketplace-only rules
   and are the public demo's dataset unless the publishing gate approves live Azure figures.
 - Workload calculator: GPU count, hours and storage in; cost out, with disclosed exclusions.
@@ -74,6 +76,8 @@ user before each later phase. Evidence that counts in every phase:
 
   Stale is a computed age flag (latest snapshot older than 7 days), not a label. A snapshot is
   one succeeded run. A mocked fetch is not a live result.
+- A listing counts as "not listed" only after two consecutive snapshots without it; one absence
+  is "absent once (unconfirmed)", because offset paging can miss rows (Phase 3 grilling, owner).
 - Trends need several weeks of observations; until then the app says the sample is thin.
 
 ## 4. Stack and commands
@@ -89,7 +93,10 @@ user before each later phase. Evidence that counts in every phase:
   (unauthenticated; the docs invite "your own tools for internal analysis and price comparison
   across SKUs and regions"). The live-data gate is resolved for this API (§6, 2026-10-12), and
   the Phase 2 collector reads it. Phase 2 grilling decisions are cited in
-  `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Vast.ai
+  `openspec/changes/archive/2026-10-12-phase-2-collector/design.md` D1–D28. Phase 3 grilling
+  decisions (normalization, comparable groups, history, synthetic marketplace rules; owner
+  answered every owner call on 2026-10-12) are cited in
+  `openspec/changes/archive/2026-10-12-phase-3-normalization/design.md` D1–D25. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -163,7 +170,7 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 | 0 | Toolchain, lockfile, quality gate, smoke checks | Done |
 | 1 | Requirements, data schema and acceptance criteria; architecture diagrams in Figma | Done |
 | 2 | Working Azure Retail Prices collector keeping original responses; observations start accumulating | Done |
-| 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Planned |
+| 3 | Normalization to USD/GPU-hour, comparable-group mapping, duplicate handling, quality checks | Done |
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Planned |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Planned |
 | 6 | Tests for units, calculations, missing data and stale offers | Planned |
