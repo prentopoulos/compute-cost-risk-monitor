@@ -22,7 +22,7 @@ and only workflows relevant to the current boundary. Source examples are not pro
 - Source frameworks, cloud defaults, inventory examples, sample budgets and evaluation counts
   are illustrative. Use this project's actual stack, lockfile and gate.
 - Current target: a single-owner local prototype (Python, pandas, DuckDB, Streamlit) built in
-  seven sessions as a portfolio demo; Phase 7 adds a public demo. Live Azure Retail Prices reads,
+  eight sessions as a portfolio demo; Phase 8 adds a public demo. Live Azure Retail Prices reads,
   scheduled collection, paid calls, a second source, the optional AI brief drafter and
   hosting are absent/deferred until their PROJECT gates, not silently implemented. No
   accounts, multiple users, sensitive personal data or instance-changing actions.
@@ -51,7 +51,7 @@ and only workflows relevant to the current boundary. Source examples are not pro
 | API rate limits, paid calls or hosting cost | apply_finops_governance.md |
 | Calculation tests, data-quality checks and phase readiness | generate_eval_metrics.md, define_release_gates.md, orchestrate_ci_cd.md |
 | Scheduled collection or demo hosting (deferred until their ⛔ gates) | design_iac_blueprint.md |
-| AI market-brief drafter (deferred until Phase 7 and the spend gate) | standardize_system_prompt.md plus relevant tool/data workflows |
+| AI market-brief drafter (deferred until Phase 8 and the spend gate) | standardize_system_prompt.md plus relevant tool/data workflows |
 
 Source filenames above resolve in [agent-builder/](agent-builder/README.md).
 Read [compute-cost-risk-monitor-market-review](../compute-cost-risk-monitor-market-review/SKILL.md)

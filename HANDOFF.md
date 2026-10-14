@@ -4,6 +4,16 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
+Phase 7 (front-office interface) is planned and specified, with no code yet:
+- The owner added the phase on 2026-10-13, ahead of the demo, which is now Phase 8.
+- Branch `phase-7-interface`, with a draft PR.
+- OpenSpec change `openspec/changes/phase-7-interface`: proposal, design D1–D26, tasks and delta
+  specs for `dashboard` and `workload-calculator`.
+- The grilling is done: the owner accepted every recommendation on 2026-10-13. Owner decisions
+  are D1–D15; D16–D26 are settled with their basis.
+- The next task is 1.1: the impeccable `shape` brief, which the owner confirms. A Figma mock (1.3)
+  and the owner's approval of it (1.4) come before any layout code.
+
 Phase 6 (tests for units, calculations, missing data and stale offers) is Done. It was delivered
 through PR #11 from branch `phase-6-tests` and archived as
 `openspec/changes/archive/2026-10-13-phase-6-tests`. Specs changed in `openspec/specs/`:
@@ -16,8 +26,6 @@ through PR #11 from branch `phase-6-tests` and archived as
 - `price-normalization`: the exact `1 Hour` unit and exclusion order;
 - `workload-calculator`: hours and budget at least 0.01;
 - `synthetic-marketplace`: ADDED "Synthetic command checks every file first".
-
-After the merge, no OpenSpec change is active.
 
 Earlier phases are Done and merged: Phase 5 (PR #10), Phase 4 (PR #9), Phase 3 (PR #8), Phase 2
 (PR #7), Phase 1 (PR #5) and Phase 0 (PR #3).
@@ -152,18 +160,22 @@ in their archived designs and the main specs.
 
 ## Findings for later phases
 
-- **Phase 7 (demo):**
+- **Phase 8 (demo; it was Phase 7 until 2026-10-13):**
   - "PROJECT example +$0.50/GPU-hour" reads oddly to a public audience. Renaming it needs a
-    `scenarios-v2` and an owner call.
+    `scenarios-v2` and an owner call. Phase 7 D8 deferred it to the start of Phase 8, with the
+    demo copy.
   - Screenshots of the tables need a visible Chrome window: in a hidden window the data grid's
     canvas does not paint.
   - In the FigJam container view, the label "Dashboard reads synthetic (read-only)" overlaps
-    "Creates tables" (from Phase 4). Fix it with the Phase 7 diagram update.
-  - Custom theme and branding were deferred (Phase 4 D6). `azure_demo.json` is the likely
+    "Creates tables" (from Phase 4). Fix it with the Phase 8 diagram update.
+  - Phase 7 builds the custom theme (deferred by Phase 4 D6). `azure_demo.json` is the likely
     public demo dataset, subject to the publishing gate.
   - Design skills (2026-10-13): `.agents/skills/next-phase/design-skills.md` routes UI work to
     impeccable, ui-ux-pro-max, the tasteskill, 21st.dev and design-eval, with their limits
-    here. The 21st.dev MCP plugin is not installed yet; it needs the owner's `API_KEY_21ST`.
+    here. The 21st.dev plugin is installed and the key is in the user environment. The account
+    is free tier: AI generation off, free searches, and 2 free code copies a day.
+  - Some 21st.dev code copies could be saved for Phase 8's public page, where React or HTML
+    code could actually run (Phase 7 D15).
   - The methodology document can cite the Phase 6 traceability table and the end-to-end
     fixture's worked answers.
   - Hours now start at 0.01 (D23). If the owner prefers one billed minute (1/60 h), that is a
@@ -215,8 +227,8 @@ in their archived designs and the main specs.
     background `<rect>` to match earlier exports.
   - Cloning a FigJam connector shared its label with the original; build new connectors fresh.
 - **Carried over:**
-  - Phase 7 stays synthetic unless the publishing gate approves derived live figures.
-  - Recheck CME futures before Phase 7.
+  - Phase 8 stays synthetic unless the publishing gate approves derived live figures.
+  - Recheck CME futures before Phase 8.
   - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
   - detect-secrets scans files only: scan Git history before the repo goes public.
   - Untracked `.agents/skills/openspec-*` and `source-command-opsx-*` folders appeared on
@@ -225,8 +237,15 @@ in their archived designs and the main specs.
 
 ## Next action
 
-Start Phase 7 (public demo, methodology document, market brief, two-minute walkthrough, updated
-diagrams) in a fresh session: the owner clears the context and runs `/next-phase`. Then grill
-Phase 7 using the Phase 1 acceptance row and the findings above. The publishing gate (§6) stays
-the owner's. Collecting more live data is the owner's choice: one manual run a day at most,
-followed by normalize.
+Continue Phase 7 on branch `phase-7-interface` at task 1.1. Run impeccable `shape` with a
+scratch PRODUCT.md (design D22), and have the owner confirm the brief. Then:
+- 1.2, the 21st.dev references;
+- 1.3, the Figma mock: load the Figma skills first, and re-authenticate Figma if its connection
+  dropped;
+- 1.4, design-eval on the mock and the owner's approval.
+
+Layout code waits for that approval. After Phase 7 merges, Phase 8 (public demo, methodology
+document, market brief, two-minute walkthrough, updated diagrams) starts in a fresh session. It
+is grilled with the Phase 1 acceptance row "7 Demo and brief" and the Phase 8 findings above. The
+publishing gate (§6) stays the owner's. Collecting more live data is the owner's choice: one
+manual run a day at most, followed by normalize.

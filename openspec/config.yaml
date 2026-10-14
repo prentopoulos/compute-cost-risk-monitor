@@ -4,7 +4,7 @@ context: |
   Compute Cost & Risk Monitor: answers which comparable GPU cloud options are listed, what a workload would cost, and how exposed a compute budget is to changing prices, using published Azure list prices (Azure Retail Prices API) plus labelled synthetic marketplace-style data.
   Read PROJECT.md for current scope and WORKFLOW.md for the phase workflow.
   Stack: Python 3.13, pandas, DuckDB, Streamlit, pytest; uv with uv.lock; Ruff, strict mypy. Gate: uv run --frozen python scripts/gate.py.
-  Phases 1-7 follow PROJECT.md section 6: schema and acceptance, Azure Retail Prices collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, public demo.
+  Phases 1-8 follow PROJECT.md section 6: schema and acceptance, Azure Retail Prices collector, normalization and quality checks, dashboard, workload costs and exposure scenarios, tests, front-office interface, public demo.
   Normalize prices to USD/GPU-hour. Keep original API responses with retrieval time. Flag duplicates, stale offers and thin samples.
   Tests use synthetic or recorded fixtures with no network or credentials.
   Gated in PROJECT.md: live source reads, scheduled collection, paid calls, publishing or making the repo public.

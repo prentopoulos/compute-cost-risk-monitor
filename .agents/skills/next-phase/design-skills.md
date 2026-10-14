@@ -48,4 +48,6 @@ dashboard's stack is an owner decision recorded in PROJECT.md §4.
   `/plugin install 21st@21st-dev`. It connects to `https://21st.dev/api/mcp` with the key in the
   `API_KEY_21ST` environment variable, from https://21st.dev/settings/api-keys. Set it in the
   user environment, never in this repo. The CLI skills come from
-  `npx @21st-dev/cli install-skill`.
+  `npx @21st-dev/cli install-skill`. Installed on this PC on 2026-10-13, with the key in the user
+  environment. The account is free tier (`get_usage`): AI generation off, 0 credits, free
+  searches, and 2 free component code copies a day.

@@ -97,3 +97,9 @@ Seeded from the test on 2026-10-11. Replace or extend them with the owner's own 
 - Whether free included CI minutes count under the spend gate: owner (Gate).
 - Staleness threshold for an offer: owner (Methodology).
 - Import package name: owner (Showcase, One-way door).
+- A design mock before UI code (Phase 7, 2026-10-13): owner (Showcase, Value trade-off). The
+  owner reopened "settled (default): no mock". A constraint such as the UI stack is a reason to
+  constrain the mock, not to skip it.
+- How to spend a free tier's allowance on an outside service, such as 21st.dev's daily code
+  copies (Phase 7, 2026-10-13): owner (Private knowledge). The owner reopened "settled (fact):
+  search only" because the fact left out an allowance they knew about.
