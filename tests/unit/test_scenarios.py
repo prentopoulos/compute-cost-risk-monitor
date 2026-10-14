@@ -43,3 +43,43 @@ def test_set_cannot_be_changed_in_place() -> None:
     with pytest.raises(dataclasses.FrozenInstanceError):
         SCENARIOS_V1[0].magnitude = -50.0  # type: ignore[misc]
     assert isinstance(SCENARIOS_V1, tuple)
+
+
+# --- ladder-v1 (phase-7 D7) ---
+
+
+def test_ladder_holds_seven_percentages_then_the_flat_usd_step() -> None:
+    assert scenarios.LADDER_VERSION == "ladder-v1"
+    assert [(s.id, s.kind, s.magnitude) for s in scenarios.LADDER_V1] == [
+        ("down-50", PERCENT, -50.0),
+        ("down-25", PERCENT, -25.0),
+        ("down-10", PERCENT, -10.0),
+        ("up-10", PERCENT, 10.0),
+        ("up-25", PERCENT, 25.0),
+        ("up-50", PERCENT, 50.0),
+        ("up-100", PERCENT, 100.0),
+        ("flat-050", USD, 0.50),
+    ]
+    assert [s.label for s in scenarios.LADDER_V1] == [
+        "−50%",
+        "−25%",
+        "−10%",
+        "+10%",
+        "+25%",
+        "+50%",
+        "+100%",
+        "+0.50 USD/GPU-h",
+    ]
+    assert scenarios.LADDER_GPUS == (8, 16, 32, 64, 128)
+
+
+def test_ladder_cannot_be_changed_in_place() -> None:
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        scenarios.LADDER_V1[0].magnitude = -60.0  # type: ignore[misc]
+    assert isinstance(scenarios.LADDER_V1, tuple)
+    assert isinstance(scenarios.LADDER_GPUS, tuple)
+
+
+def test_ladder_ids_never_clash_with_scenarios_v1() -> None:
+    ladder = {s.id for s in scenarios.LADDER_V1}
+    assert not ladder & ({s.id for s in SCENARIOS_V1} | {"fallback", "custom"})

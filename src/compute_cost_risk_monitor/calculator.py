@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from compute_cost_risk_monitor import groups
 from compute_cost_risk_monitor.groups import GroupKey, Member, RegionGroup, Snapshot
 from compute_cost_risk_monitor.scenarios import (
+    LADDER_GPUS,
+    LADDER_V1,
+    LADDER_VERSION,
     PERCENT,
     SCENARIOS_V1,
     USD,
@@ -54,6 +57,7 @@ FALLBACK_NARRATIVE = (
     " away after an eviction."
 )
 CUSTOM_NARRATIVE = "A change entered by you."
+FALLBACK_LABEL = "Spot → pay-as-you-go"  # the ladder row; it crosses rental types
 
 
 class Refused(ValueError):
@@ -141,12 +145,40 @@ class Headroom:
 
 
 @dataclass(frozen=True)
+class LadderRow:
+    """One ladder row: a change in cost per column, or no cells with the reason."""
+
+    id: str
+    label: str
+    kind: str  # PERCENT, USD or FALLBACK
+    magnitude: float | None  # None for the fallback, which is priced from a listing
+    price: float | None = None  # scenario USD/GPU-hour
+    change: float | None = None  # USD/GPU-hour
+    cells: tuple[float, ...] | None = None  # one per column, for the hours entered
+    refusal: str = ""
+    above_payg: float | None = None  # the pay-as-you-go USD/GPU-hour a Spot row exceeds
+
+    @property
+    def computed(self) -> bool:
+        return self.cells is not None
+
+
+@dataclass(frozen=True)
+class Ladder:
+    version: str
+    columns: tuple[int, ...]  # GPU counts, ascending
+    entered: int  # the column for the GPUs entered
+    rows: tuple[LadderRow, ...]
+
+
+@dataclass(frozen=True)
 class Result:
     start: Start
     workload: Workload
     cost: Cost
     rows: tuple[Row, ...]
     version: str
+    ladder: Ladder
     payg_key: GroupKey | None = (
         None  # for a Spot start, the key the fallback crosses to
     )
@@ -346,6 +378,112 @@ def pay_as_you_go(
     return key, next((m for m in group.members if m.name == begin.member.name), None)
 
 
+# --- scenario ladder (phase-7 D7, D20) ---
+
+
+def ladder_columns(gpus: int, gpus_per_vm: int) -> tuple[int, ...]:
+    """The defined GPU counts that are whole VMs here, plus the GPUs entered."""
+    defined = {n for n in LADDER_GPUS if n % gpus_per_vm == 0}
+    return tuple(sorted(defined | {gpus}))
+
+
+def custom_label(change: Custom) -> str:
+    sign = "+" if change.magnitude >= 0 else "−"
+    unit = "%" if change.kind == PERCENT else " USD/GPU-h"
+    return f"Custom {sign}{_amount(abs(change.magnitude))}{unit}"
+
+
+def _ladder_row(
+    begin: Start,
+    work: Workload,
+    columns: tuple[int, ...],
+    *,
+    ident: str,
+    label: str,
+    kind: str,
+    magnitude: float | None,
+    price: float,
+    change: float,
+    payg: float | None,
+) -> LadderRow:
+    """One row's change in cost per column, or a refusal when its price is at or
+    below zero. Storage is unchanged, so it is not in the cells."""
+    if not price > 0:
+        return LadderRow(ident, label, kind, magnitude, refusal=ZERO_OR_BELOW)
+    cells = tuple(n * work.hours * change for n in columns)
+    above = payg if begin.spot and payg is not None and price > payg else None
+    return LadderRow(
+        ident, label, kind, magnitude, price, change, cells, above_payg=above
+    )
+
+
+def ladder(
+    begin: Start, work: Workload, payg: float | None, change: Custom | None = None
+) -> Ladder:
+    """ladder-v1 by GPU count for the hours entered, then, in `calculate`'s order, the
+    fallback row for a Spot start and the custom row.
+
+    `payg` is the same size's pay-as-you-go USD/GPU-hour, when listed. Each cell uses
+    `priced`, the formulas `workload_check` re-derives.
+    """
+    columns = ladder_columns(work.gpus, begin.gpus_per_vm)
+    start_price = begin.usd_per_gpu_hour
+    rows: list[LadderRow] = []
+    for step in LADDER_V1:
+        price, delta = priced(start_price, step.kind, step.magnitude)
+        rows.append(
+            _ladder_row(
+                begin,
+                work,
+                columns,
+                ident=step.id,
+                label=step.label,
+                kind=step.kind,
+                magnitude=step.magnitude,
+                price=price,
+                change=delta,
+                payg=payg,
+            )
+        )
+    if begin.spot:
+        if payg is None:
+            rows.append(
+                LadderRow(FALLBACK, FALLBACK_LABEL, FALLBACK, None, refusal=NO_PAYG)
+            )
+        else:
+            rows.append(
+                _ladder_row(
+                    begin,
+                    work,
+                    columns,
+                    ident=FALLBACK,
+                    label=FALLBACK_LABEL,
+                    kind=FALLBACK,
+                    magnitude=None,
+                    price=payg,
+                    change=payg - start_price,
+                    payg=None,
+                )
+            )
+    if change is not None:
+        price, delta = priced(start_price, change.kind, change.magnitude)
+        rows.append(
+            _ladder_row(
+                begin,
+                work,
+                columns,
+                ident=CUSTOM,
+                label=custom_label(change),
+                kind=change.kind,
+                magnitude=change.magnitude,
+                price=price,
+                change=delta,
+                payg=payg,
+            )
+        )
+    return Ladder(LADDER_VERSION, columns, work.gpus, tuple(rows))
+
+
 def calculate(
     begin: Start,
     work: Workload,
@@ -353,7 +491,8 @@ def calculate(
     change: Custom | None = None,
     limit: float | None = None,
 ) -> Result:
-    """Cost, every scenario row and headroom for one workload at one starting price.
+    """Cost, every scenario row, the ladder and headroom for one workload at one
+    starting price.
 
     `found` holds the snapshot's region groups, where a Spot start finds its size on
     pay-as-you-go. The fallback row follows the presets, and the custom row comes last.
@@ -443,6 +582,7 @@ def calculate(
         cost(begin, work),
         tuple(rows),
         VERSION,
+        ladder(begin, work, payg_price, change),
         payg_key,
         payg,
         change,

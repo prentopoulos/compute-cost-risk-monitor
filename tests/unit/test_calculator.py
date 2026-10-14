@@ -430,3 +430,123 @@ def test_known_headroom() -> None:
 def test_no_headroom_without_a_budget() -> None:
     begin = calc.start(group())
     assert calc.calculate(begin, Workload(8, 10.0), [begin.group]).headroom is None
+
+
+# --- scenario ladder ladder-v1 (phase-7 D7) ---
+
+
+def ladder_rows(result: calc.Result) -> dict[str, calc.LadderRow]:
+    return {row.id: row for row in result.ladder.rows}
+
+
+def cell(result: calc.Result, row_id: str, gpus: int) -> float:
+    row = ladder_rows(result)[row_id]
+    assert row.cells is not None
+    return row.cells[result.ladder.columns.index(gpus)]
+
+
+def test_known_ladder_cells() -> None:
+    begin = calc.start(group())  # 2.5 USD/GPU-hour
+    result = calc.calculate(begin, Workload(32, 720.0), [begin.group])
+    ladder = result.ladder
+    assert ladder.version == "ladder-v1"
+    assert ladder.columns == (8, 16, 32, 64, 128)
+    assert ladder.entered == 32
+    assert cell(result, "up-25", 32) == pytest.approx(14_400.0)
+    assert cell(result, "down-50", 32) == pytest.approx(-28_800.0)
+    assert cell(result, "up-100", 32) == pytest.approx(57_600.0)
+    assert cell(result, "flat-050", 32) == pytest.approx(11_520.0)
+    assert cell(result, "up-10", 8) == pytest.approx(1_440.0)
+    assert [row.id for row in ladder.rows] == [
+        "down-50",
+        "down-25",
+        "down-10",
+        "up-10",
+        "up-25",
+        "up-50",
+        "up-100",
+        "flat-050",
+    ]
+    assert all(row.refusal == "" and row.above_payg is None for row in ladder.rows)
+
+
+def test_entered_count_adds_a_column() -> None:
+    begin = calc.start(group())
+    result = calc.calculate(begin, Workload(24, 720.0), [begin.group])
+    assert result.ladder.columns == (8, 16, 24, 32, 64, 128)
+    assert result.ladder.entered == 24
+    assert cell(result, "up-100", 24) == pytest.approx(24 * 720 * 2.5)
+
+
+def test_defined_columns_that_are_not_whole_vms_are_left_out() -> None:
+    assert calc.ladder_columns(32, 16) == (16, 32, 64, 128)
+    assert calc.ladder_columns(256, 8) == (8, 16, 32, 64, 128, 256)
+
+
+def test_entered_column_matches_scenarios_v1() -> None:
+    begin = calc.start(group("on_demand", (H100, 3.7)))
+    result = calc.calculate(begin, Workload(40, 333.0), [begin.group])
+    exposure = {row.id: row.exposure for row in result.rows}
+    pairs = {
+        "down-25": "decline-25",
+        "up-25": "increase-25",
+        "up-100": "spike-100",
+        "flat-050": "example-050",
+    }
+    for step, scenario in pairs.items():
+        assert cell(result, step, 40) == pytest.approx(exposure[scenario])
+
+
+def test_storage_is_not_in_the_ladder() -> None:
+    begin = calc.start(group())
+    bare = calc.calculate(begin, Workload(32, 720.0), [begin.group])
+    stored = calc.calculate(begin, Workload(32, 720.0, 5_000.0), [begin.group])
+    assert bare.ladder == stored.ladder
+
+
+def test_custom_ladder_row_comes_last_and_is_refused_at_or_below_zero() -> None:
+    begin = calc.start(group("on_demand", (H100, 0.40)))
+    result = calc.calculate(begin, Workload(8, 10.0), [begin.group], Custom(USD, -0.50))
+    custom = result.ladder.rows[-1]
+    assert custom.id == calc.CUSTOM
+    assert custom.label == "Custom −0.5 USD/GPU-h"
+    assert custom.cells is None and not custom.computed
+    assert custom.refusal == calc.ZERO_OR_BELOW
+
+
+def test_custom_percent_ladder_row() -> None:
+    begin = calc.start(group())
+    result = calc.calculate(
+        begin, Workload(8, 10.0), [begin.group], Custom(PERCENT, 15.0)
+    )
+    custom = ladder_rows(result)[calc.CUSTOM]
+    assert custom.label == "Custom +15%"
+    assert cell(result, calc.CUSTOM, 8) == pytest.approx(8 * 10 * 2.5 * 0.15)
+
+
+def test_fallback_ladder_row_crosses_to_pay_as_you_go() -> None:
+    begin, found = spot_case(1.0, 4.0)
+    result = calc.calculate(begin, Workload(8, 10.0), found, Custom(PERCENT, 10.0))
+    ids = [row.id for row in result.ladder.rows]
+    assert ids[-2:] == [calc.FALLBACK, calc.CUSTOM]
+    fallback = ladder_rows(result)[calc.FALLBACK]
+    assert fallback.label == "Spot → pay-as-you-go"
+    assert cell(result, calc.FALLBACK, 8) == pytest.approx(240.0)
+    assert fallback.above_payg is None
+
+
+def test_fallback_ladder_row_not_computed_without_a_listing() -> None:
+    begin, found = spot_case(1.0, None)
+    result = calc.calculate(begin, Workload(8, 10.0), found)
+    fallback = ladder_rows(result)[calc.FALLBACK]
+    assert fallback.cells is None
+    assert fallback.refusal == calc.NO_PAYG
+
+
+def test_spot_ladder_rows_above_pay_as_you_go_are_marked() -> None:
+    begin, found = spot_case(0.6, 1.0)  # Spot at 60% of pay-as-you-go
+    result = calc.calculate(begin, Workload(8, 10.0), found)
+    marked = {row.id for row in result.ladder.rows if row.above_payg is not None}
+    assert marked == {"up-100", "flat-050"}  # 1.2 and 1.1 against 1.0
+    assert ladder_rows(result)["up-100"].above_payg == 1.0
+    assert cell(result, "up-100", 8) == pytest.approx(8 * 10 * 0.6)

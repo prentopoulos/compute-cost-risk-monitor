@@ -7,7 +7,7 @@
 
 ## 2. Ladder
 
-- [ ] 2.1 Freeze `ladder-v1` in `scenarios.py` (seven % steps and +0.50 USD/GPU-hour). Compute the ladder in `calculator.py` (ADDED "Scenario ladder ladder-v1"):
+- [x] 2.1 Freeze `ladder-v1` in `scenarios.py` (seven % steps and +0.50 USD/GPU-hour). Compute the ladder in `calculator.py` (ADDED "Scenario ladder ladder-v1"):
   - rows, plus the Custom and fallback rows;
   - columns, with the entered count marked;
   - signed cells, refused rows, and above-pay-as-you-go marks for Spot.
@@ -20,7 +20,7 @@
   - the fallback row (240);
   - the Spot row at 60% of pay-as-you-go;
   - the frozen set
-- [ ] 2.2 Re-derive every ladder row, column, cell, refusal and mark in `workload_check.py` from plain values and `ladder-v1` (D20; MODIFIED "Independent check of workload figures"). Tests:
+- [x] 2.2 Re-derive every ladder row, column, cell, refusal and mark in `workload_check.py` from plain values and `ladder-v1` (D20; MODIFIED "Independent check of workload figures"). Tests:
   - a tampered cell is named by row and column;
   - a dropped column, and a non-multiple column;
   - a wrong refusal or mark;

@@ -9,9 +9,10 @@ The scenario ladder set `ladder-v1` SHALL be frozen in code, in the same module 
 A changed step SHALL need a new set version, never an edit in place.
 
 For a valid workload, the ladder SHALL have:
-- **rows:** one per step. Then, when a custom move is entered, a "Custom" row priced like the
-  custom scenario. Then, for a Spot starting member, a "Spot → pay-as-you-go" row priced from the
-  same size's pay-as-you-go listing in the same region, marked as crossing rental types;
+- **rows:** one per step. Then, for a Spot starting member, a "Spot → pay-as-you-go" row priced
+  from the same size's pay-as-you-go listing in the same region, marked as crossing rental types.
+  Then, when a custom move is entered, a "Custom" row priced like the custom scenario. This is
+  the order of the `scenarios-v1` rows;
 - **columns:** 8, 16, 32, 64 and 128 GPUs, plus the entered GPU count when it is not one of
   them, in ascending order. The column for the entered count is marked as entered, whether or not
   it is one of the defined counts. A defined column whose GPU count is not a whole multiple of the
@@ -94,8 +95,8 @@ rounding. It SHALL check that:
 - the above-pay-as-you-go note appears exactly on Spot rows above that price, and on no other
   row;
 - GPUs × hours × headroom equals the budget;
-- the ladder's rows are exactly `ladder-v1`'s steps, then the Custom row when a custom move is
-  entered, then the fallback row for a Spot start;
+- the ladder's rows are exactly `ladder-v1`'s steps, then the fallback row for a Spot start,
+  then the Custom row when a custom move is entered;
 - the ladder's columns are exactly the defined GPU counts that are whole multiples of GPUs per
   VM, plus the entered count;
 - each ladder cell equals (column GPUs ÷ GPUs per VM) × hours × (scenario − starting VM-hour

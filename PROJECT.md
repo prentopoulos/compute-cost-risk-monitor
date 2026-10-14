@@ -191,7 +191,7 @@ brief lists.
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Done |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
-| 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Planned |
+| 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | In progress |
 | 8 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
 ### ⛔ Before reading live data from any source

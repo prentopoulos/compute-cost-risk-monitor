@@ -985,5 +985,15 @@ def check(
         headroom=None if room is None else room.rise,
         headroom_pct=None if room is None else room.rise_pct,
         headroom_above_payg=None if room is None else room.above_payg,
+        ladder=workload_check.LadderFigures(
+            result.ladder.columns,
+            result.ladder.entered,
+            tuple(
+                workload_check.LadderRowFigures(
+                    row.id, row.cells, row.refusal, row.above_payg
+                )
+                for row in result.ladder.rows
+            ),
+        ),
     )
     return workload_check.check(inputs, figures)
