@@ -33,7 +33,7 @@
 
 ## 3. Theme and layout
 
-- [ ] 3.1 Add the dark `[theme]` to `config.toml` with v3's values (ADDED "Desk theme"; D4, D10, D13, D26, D31):
+- [x] 3.1 Add the dark `[theme]` to `config.toml` with v3's values (ADDED "Desk theme"; D4, D10, D13, D26, D31):
   - `primaryColor` #7AA2D6, `borderColor` #646E7C, red #EF6B63, green #5CC98A, `orangeColor` #F2CC60;
   - the grid's entered-column shade #1F2A3A as a dashboard constant;
   - chart colours from the same values, replacing `POINT_COLOUR` and `RULE_COLOURS` (D24).

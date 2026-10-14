@@ -103,8 +103,25 @@ BROWSER = (
     "Group keys, member counts and labels only: no prices, so nothing is compared."
 )
 MEDIAN = "median (a statistic, not a listed price)"
-POINT_COLOUR = "#4c78a8"
-RULE_COLOURS = ["#9e9e9e", "#f58518", "#9e9e9e"]  # minimum, median, maximum
+# The theme's colours (config.toml [theme]; phase-7 D4, D10, D24, D26). The scenario
+# grid and the charts draw with them, and tests/repo/test_streamlit_config.py keeps
+# them equal to the config and above the contrast floor.
+COLOURS = {
+    "background": "#0E1116",
+    "panel": "#161B22",
+    "text": "#E6E8EB",
+    "muted": "#9AA3AE",
+    "accent": "#7AA2D6",  # the active tab and the entered grid column only
+    "border": "#646E7C",
+    "rule": "#2A313C",
+    "zero": "#4A5462",  # the grid's rule between price falls and rises
+    "shade": "#1F2A3A",  # the entered grid column
+    "red": "#EF6B63",  # an added cost
+    "green": "#5CC98A",  # a saving
+    "amber": "#F2CC60",  # data labels and the stale warning
+}
+POINT_COLOUR = COLOURS["text"]
+RULE_COLOURS = [COLOURS["muted"], COLOURS["text"], COLOURS["muted"]]  # min, median, max
 
 USD = "USD/GPU-hour"
 PUBLISHED = "Published price"
