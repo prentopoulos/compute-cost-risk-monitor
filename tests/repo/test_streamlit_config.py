@@ -30,8 +30,9 @@ def test_server_listens_on_this_pc_only() -> None:
     assert _config()["server"]["address"] == "127.0.0.1"
 
 
-def test_developer_options_are_hidden() -> None:
-    assert _config()["client"]["toolbarMode"] == "viewer"
+def test_streamlit_menu_is_hidden() -> None:
+    # No developer options, Deploy button or theme switch (Phase 7 design D47).
+    assert _config()["client"]["toolbarMode"] == "minimal"
 
 
 def test_streamlit_reads_it_from_any_folder(

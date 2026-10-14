@@ -13,8 +13,10 @@ gatherUsageStats = false
 address = "127.0.0.1"
 
 [client]
-# Hide developer options, including the Deploy button.
-toolbarMode = "viewer"
+# Hide Streamlit's menu entirely: no developer options or Deploy button, and no
+# theme switch, since the scenario grid's colours are tuned for the dark theme
+# (Phase 7 design D47).
+toolbarMode = "minimal"
 
 [theme]
 # One dark desk theme (Phase 7 design D4, D10, D13, D26, D31). The colours are

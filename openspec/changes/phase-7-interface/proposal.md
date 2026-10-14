@@ -117,6 +117,8 @@ None. The ladder extends `workload-calculator`, and the theme and layout extend 
   - MODIFIED "Budget headroom": the figure is a key figure and its sentence is in Sources.
 - `dashboard`:
   - ADDED "Desk theme" and "Status line and key figures";
+  - MODIFIED "Local-only configuration": Streamlit's menu is hidden, so there is no theme switch
+    (D47);
   - MODIFIED "Figure captions and framing line": the status line, the compliance footer and
     Sources;
   - MODIFIED "Workload cost view": first tab, key figures, the ladder and the cost table. No

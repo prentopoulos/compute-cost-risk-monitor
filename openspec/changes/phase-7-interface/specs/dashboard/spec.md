@@ -102,6 +102,25 @@ formatting".
 
 ## MODIFIED Requirements
 
+### Requirement: Local-only configuration
+The repository SHALL commit `src/compute_cost_risk_monitor/.streamlit/config.toml`, beside the
+app script, so Streamlit applies it whatever folder the dashboard is launched from, with:
+- `browser.gatherUsageStats = false`;
+- `server.address = "127.0.0.1"`;
+- `client.toolbarMode = "minimal"`, so Streamlit's menu is hidden: no developer options, no
+  Deploy button and no theme switch, because the scenario grid's colours are tuned for the
+  dark theme.
+
+The dashboard SHALL be launched with `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
+
+#### Scenario: Telemetry off and bound to localhost
+- **WHEN** the committed config beside the app script is parsed
+- **THEN** usage statistics are off, the server address is 127.0.0.1 and the toolbar mode is `minimal`
+
+#### Scenario: Applies from any folder
+- **WHEN** Streamlit lists the config files it reads for the app script
+- **THEN** the committed config is among them, whatever the working folder
+
 ### Requirement: Dataset and source choice
 The dashboard SHALL offer, in the sidebar, only the known databases that exist, as a dropdown
 labelled "Dataset": `data/monitor.duckdb` as "Azure list prices (local only)" and
