@@ -363,12 +363,12 @@ def test_cross_region_view_and_chart(demo: list[tuple[str, Path]]) -> None:
     show(at, "Comparable groups")
     tab = at.tabs[1]
     summary = tab.dataframe[1].value  # members, then the summary and its statistics
-    assert summary["Region"].tolist() == [
-        "eastus",
-        "southcentralus",
-        "swedencentral",
-        "westeurope",
-        "westus3",
+    assert summary["Region"].tolist() == [  # stored names, as in the filter
+        "EU West",
+        "Sweden Central",
+        "US East",
+        "US South Central",
+        "US West 3",
     ]
     stats = tab.dataframe[2].value.to_dict("records")
     assert stats == [{"Regions": 5, "Minimum": 12.0, "Median": 13.0, "Maximum": 15.0}]
@@ -455,6 +455,7 @@ def test_group_browser_has_no_prices(demo: list[tuple[str, Path]]) -> None:
     show(at, "Group browser")
     narrowed = at.tabs[2].dataframe[0].value
     assert set(narrowed["Variant"]) == {"A100 PCIe 80GB"}
+    assert set(frame["Region"]) >= {"US East", "EU West"}  # stored names
     assert len(narrowed) < every
 
 

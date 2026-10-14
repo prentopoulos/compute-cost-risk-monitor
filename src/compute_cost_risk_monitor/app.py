@@ -135,9 +135,11 @@ def _groups(view: SourceView, choice: Choice | None) -> None:
         st.markdown(
             ":gray[**ACROSS REGIONS**] " + dashboard.labels_text(summary.labels)
         )
-        _table(dashboard.summary_frame(summary))
+        _table(dashboard.summary_frame(summary, view.region_names))
         _table(dashboard.stats_frame(summary.stats, "Regions"))
-        st.altair_chart(dashboard.summary_chart(summary), width="stretch")
+        st.altair_chart(
+            dashboard.summary_chart(summary, view.region_names), width="stretch"
+        )
     _sources(dashboard.group_sources(view, group, summary), group)
 
 
@@ -296,7 +298,11 @@ def _browser(view: SourceView, choice: Choice | None) -> None:
         return
     narrow = choice is not None and st.toggle("Only the chosen GPU")
     variant = choice[0] if narrow and choice is not None else None
-    _table(dashboard.browser_frame(view.region_groups, variant=variant))
+    _table(
+        dashboard.browser_frame(
+            view.region_groups, variant=variant, names=view.region_names
+        )
+    )
     _sources(dashboard.browser_sources(snapshot), None)
 
 

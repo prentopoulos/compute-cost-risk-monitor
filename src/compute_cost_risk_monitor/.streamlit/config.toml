@@ -54,4 +54,8 @@ blueColor = "#7AA2D6"
 blueTextColor = "#7AA2D6"
 grayColor = "#9AA3AE"
 grayTextColor = "#9AA3AE"
+# Inline code (the group tags) is neutral: Streamlit would colour it green, which
+# marks a saving here (Phase 7 design D10, D48).
+codeTextColor = "#9AA3AE"
+codeBackgroundColor = "#161B22"
 chartCategoricalColors = ["#E6E8EB", "#9AA3AE", "#7AA2D6"]

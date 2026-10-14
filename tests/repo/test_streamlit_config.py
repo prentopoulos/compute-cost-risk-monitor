@@ -107,6 +107,9 @@ def test_dashboard_colours_match_the_theme() -> None:
     }
     for name, key in pairs.items():
         assert dashboard.COLOURS[name] == theme[key], key
+    # Tags are inline code: muted on the panel colour, never the saving green.
+    assert theme["codeTextColor"] == dashboard.COLOURS["muted"]
+    assert theme["codeBackgroundColor"] == dashboard.COLOURS["panel"]
     for colour in ("red", "green", "orange", "yellow", "blue", "gray"):
         assert theme[f"{colour}TextColor"] == theme[f"{colour}Color"]
     assert dashboard.POINT_COLOUR in dashboard.COLOURS.values()

@@ -272,6 +272,35 @@ def test_browser_has_keys_counts_and_labels_but_no_prices(
     ]
 
 
+def test_regions_show_their_stored_names_sorted_by_name(
+    views: dict[str, dashboard.SourceView],
+) -> None:
+    # Phase 7 D48: the same names as the Region filter, wherever a region is shown.
+    view = azure(views)
+    summary = dashboard.find_summary(view.summaries, H100, 8, "on_demand")
+    assert summary is not None
+    named = ["EU West", "Sweden Central", "US East", "US South Central", "US West 3"]
+    assert (
+        dashboard.summary_frame(summary, view.region_names)["Region"].tolist() == named
+    )
+    (_, points), _ = _layers(dashboard.summary_chart(summary, view.region_names))
+    assert [row["Region"] for row in points] == named
+    t4 = dashboard.browser_frame(view.region_groups, "T4 16GB", view.region_names)
+    assert t4[["Region", "Members", "Labels"]].values.tolist() == [
+        ["EU West", 1, groups.SINGLE],
+        ["US East", 2, ""],
+    ]
+    # A region without a stored name keeps its code.
+    partial = {"eastus": "US East"}
+    assert dashboard.summary_frame(summary, partial)["Region"].tolist() == [
+        "southcentralus",
+        "swedencentral",
+        "US East",
+        "westeurope",
+        "westus3",
+    ]
+
+
 # --- group views, captions and formats ---
 
 

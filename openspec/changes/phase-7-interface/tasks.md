@@ -77,7 +77,7 @@
   - no scenario table, chart, helper sentence or alert element on the page, and each sentence is in Sources;
   - inputs kept across tabs;
   - the marketplace and not-normalized states
-- [ ] 4.2 Local manual check on the synthetic database, in a visible Chrome window:
+- [x] 4.2 Local manual check on the synthetic database, in a visible Chrome window:
   - screenshots at 1920×1080 and 1440×900, compared with mock v3 and its state frames;
   - whether Source Sans's digits line up in the tables (D13);
   - the stock light theme from the Settings menu, viewed once (D4)

@@ -5,6 +5,8 @@ The committed `src/compute_cost_risk_monitor/.streamlit/config.toml` SHALL set o
 - `theme.base = "dark"`, with explicit `backgroundColor`, `secondaryBackgroundColor`,
   `textColor`, `primaryColor` (the steel-blue accent), `borderColor`, `redColor`, `greenColor`,
   `orangeColor` (the amber for data labels and the stale warning) and chart colours;
+- `codeTextColor` set to the muted grey and `codeBackgroundColor` to `secondaryBackgroundColor`,
+  so tags, drawn as inline code, are neutral (Streamlit colours inline code green by default);
 - no `[theme.light]` or `[theme.dark]` section, no `fontFaces`, and no
   `server.enableStaticServing`. Streamlit's bundled fonts are used and no font is fetched from
   elsewhere;
@@ -38,6 +40,10 @@ The page SHALL:
 #### Scenario: Colour only for meaning
 - **WHEN** the grid shows +14,400 and −28,800 cells
 - **THEN** the first is red with its plus sign, the second green with its minus sign, and no price or price-change cell is coloured
+
+#### Scenario: Tags are neutral
+- **WHEN** the committed config is parsed
+- **THEN** inline code text is the muted grey on the panel colour, not the green that marks a saving
 
 #### Scenario: No alert boxes
 - **WHEN** an input is refused, the check fails, or the snapshot is not normalized
@@ -351,7 +357,9 @@ size SHALL be shown as listed, with no warning.
 ### Requirement: Cross-region summary view
 For the chosen variant, GPU count and rental type of an Azure snapshot, the dashboard SHALL show
 the cross-region summary: one row per region with the region, its lowest listed size and that
-size's USD/GPU-h, and the region count, minimum, median and maximum. It SHALL show the tags
+size's USD/GPU-h, and the region count, minimum, median and maximum. Regions in the table and the
+chart SHALL be shown as in the filters, by stored name or else by code, and sorted by that name
+ignoring case. Sources keep the region code, since it is part of the group key. It SHALL show the tags
 `lowest listed per region` and `crosses regions`, and `thin` when present. Sources SHALL say
 that each region contributes its lowest listed size, the cheapest configuration listed there,
 and that the median is a statistic, not a listed price.
@@ -363,6 +371,10 @@ listing SHALL be absent from the chart, never filled in.
 #### Scenario: Known-answer summary shown
 - **WHEN** five regions' lowest members have USD/GPU-hour 1, 2, 3, 4 and 10
 - **THEN** the view shows 5 regions, minimum 1, median 3 and maximum 10, without the `thin` tag
+
+#### Scenario: Regions by name
+- **WHEN** the summary covers eastus, stored as "US East", and westeurope, stored as "EU West"
+- **THEN** the table and the chart show "EU West" then "US East"
 
 #### Scenario: Thin summary tagged
 - **WHEN** a summary covers 4 regions
@@ -377,7 +389,8 @@ The dashboard SHALL list every region group of the latest snapshot for the chose
 a toggle that narrows the list to the chosen GPU variant, showing each group's key, its member
 count (for marketplace groups, its distinct machines and its offers) and tags (`single list
 price`, `thin`, `synthetic`). It SHALL show no price, statistic or price-ordered ranking, and
-SHALL sort groups by key in its field order (variant, GPU count, region, rental type). The status
+SHALL sort groups by key in its field order (variant, GPU count, region, rental type), with
+each region shown and sorted by its stored name, as in the filters. The status
 line names its data and time. Sources SHALL hold the snapshot's run ID and the note that the
 browser shows no prices, so nothing is compared.
 

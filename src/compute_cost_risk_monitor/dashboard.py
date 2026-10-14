@@ -10,7 +10,7 @@ shown. Nothing is computed from a rounded value, and nothing is written.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -468,7 +468,12 @@ def region_choices(
 ) -> list[str]:
     """The region codes the filters offer, sorted by the name shown for each."""
     codes = regions(view.region_groups, variant, count, rental)
-    return sorted(codes, key=lambda code: (region_name(view, code), code))
+    return sorted(codes, key=lambda code: (placed(region_name(view, code)), code))
+
+
+def placed(name: str) -> str:
+    """The sort key for a shown region: its name, ignoring case, so a code sorts in."""
+    return name.casefold()
 
 
 def short_size(name: str) -> str:
@@ -521,16 +526,25 @@ def provenance_frame(group: RegionGroup) -> pd.DataFrame:
     )
 
 
-def summary_frame(summary: CrossRegionSummary) -> pd.DataFrame:
-    """Each region's lowest listed size, by region."""
+def summary_frame(
+    summary: CrossRegionSummary, names: Mapping[str, str] | None = None
+) -> pd.DataFrame:
+    """Each region's lowest listed size, by the region's shown name (phase-7 D48).
+
+    `names` maps region codes to stored names; a code without one is shown as is.
+    """
+    shown = names or {}
+    ordered = sorted(
+        summary.contributions, key=lambda c: placed(shown.get(c.region, c.region))
+    )
     return pd.DataFrame(
         [
             {
-                "Region": c.region,
+                "Region": shown.get(c.region, c.region),
                 "Lowest listed size": c.member.name,
                 USD: c.member.usd_per_gpu_hour,
             }
-            for c in summary.contributions
+            for c in ordered
         ]
     )
 
@@ -550,26 +564,35 @@ def stats_frame(stats: Stats, counted: str) -> pd.DataFrame:
 
 
 def browser_frame(
-    found: Sequence[RegionGroup], variant: str | None = None
+    found: Sequence[RegionGroup],
+    variant: str | None = None,
+    names: Mapping[str, str] | None = None,
 ) -> pd.DataFrame:
     """Group keys with member counts and labels, in key order, with no prices (D4).
 
-    A marketplace group counts its distinct machines and its offers, so a `thin` label
-    (fewer than 5 machines) matches the count beside it.
+    Regions show their stored names and sort by them (phase-7 D48). A marketplace group
+    counts its distinct machines and its offers, so a `thin` label (fewer than 5
+    machines) matches the count beside it.
     """
+    shown = names or {}
     marketplace = any(g.snapshot.source == MARKETPLACE for g in found)
     counts = ["Machines", "Offers"] if marketplace else ["Members"]
     rows = []
     for g in sorted(
         found,
-        key=lambda g: (g.key.variant, g.key.gpu_count, g.key.region, g.key.rental_type),
+        key=lambda g: (
+            g.key.variant,
+            g.key.gpu_count,
+            placed(shown.get(g.key.region, g.key.region)),
+            g.key.rental_type,
+        ),
     ):
         if variant is not None and g.key.variant != variant:
             continue
         row: dict[str, object] = {
             "Variant": g.key.variant,
             "GPUs": g.key.gpu_count,
-            "Region": g.key.region,
+            "Region": shown.get(g.key.region, g.key.region),
             "Rental type": rental_name(g.key.rental_type),
         }
         if marketplace:
@@ -586,12 +609,14 @@ def browser_frame(
 # --- chart (D5) ---
 
 
-def summary_chart(summary: CrossRegionSummary) -> alt.LayerChart:
+def summary_chart(
+    summary: CrossRegionSummary, names: Mapping[str, str] | None = None
+) -> alt.LayerChart:
     """Each region's lowest listed USD/GPU-hour as a point, with min, median and max.
 
     Only regions with a listing are plotted, and no line joins the points.
     """
-    points = summary_frame(summary)
+    points = summary_frame(summary, names)
     marks = pd.DataFrame(
         {
             "Statistic": ["minimum", MEDIAN, "maximum"],
