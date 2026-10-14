@@ -2,30 +2,40 @@
 
 ### Requirement: Scenario ladder ladder-v1
 The scenario ladder set `ladder-v1` SHALL be frozen in code, in the same module as
-`scenarios-v1`. It holds seven steps, each a percentage of the starting price: −50, −25, −10,
-+10, +25, +50 and +100. A changed step SHALL need a new set version, never an edit in place.
+`scenarios-v1`. It holds eight steps, in this order:
+- seven percentages of the starting price: −50, −25, −10, +10, +25, +50 and +100;
+- one absolute change of +0.50 USD per GPU-hour.
+
+A changed step SHALL need a new set version, never an edit in place.
 
 For a valid workload, the ladder SHALL have:
-- **rows:** one per step;
+- **rows:** one per step. Then, when a custom move is entered, a "Custom" row priced like the
+  custom scenario. Then, for a Spot starting member, a "Spot → pay-as-you-go" row priced from the
+  same size's pay-as-you-go listing in the same region, marked as crossing rental types;
 - **columns:** 8, 16, 32, 64 and 128 GPUs, plus the entered GPU count when it is not one of
   them, in ascending order. The column for the entered count is marked as entered, whether or not
   it is one of the defined counts. A defined column whose GPU count is not a whole multiple of the
-  group's GPUs per VM SHALL be left out.
-- **cells:** each cell's exposure SHALL be column GPUs × hours entered × starting USD/GPU-hour ×
-  step ÷ 100, signed and computed from unrounded values. It is stated "for the hours entered",
-  never as a month. Storage is unchanged and not in the cells.
+  group's GPUs per VM SHALL be left out;
+- **cells:** each cell SHALL be column GPUs × hours entered × (scenario − starting USD/GPU-hour),
+  signed and computed from unrounded values. A percentage step's change is starting price × step
+  ÷ 100, and a USD step's change is its magnitude exactly. Cells are stated for the hours
+  entered, never as a month. Storage is unchanged and not in the cells.
 
-For a Spot starting member, a row whose scenario price (starting price × (1 + step ÷ 100)) is
-above the same size's pay-as-you-go list price in the same region SHALL be marked, and the
-above-pay-as-you-go note SHALL accompany the ladder. No row SHALL be capped or refused for this
-reason.
+A row whose scenario price would be zero or below SHALL be refused ("not computed: the price
+would be zero or below") and carry no cells. A fallback row with no pay-as-you-go listing SHALL
+read "not computed: no pay-as-you-go listing for this size in this region" and carry no cells. No
+row SHALL be floored or filled in.
+
+For a Spot starting member, a row whose scenario price is above the same size's pay-as-you-go
+list price in the same region SHALL be marked, and the above-pay-as-you-go note SHALL accompany
+the ladder. No row SHALL be capped or refused for this reason.
 
 The ladder SHALL carry `ladder-v1`, "Scenario calculation, not a forecast" and "Round
 sensitivities chosen by judgement, not calibrated to history (one snapshot) or to any model".
 
 #### Scenario: Set contents
 - **WHEN** `ladder-v1` is read
-- **THEN** it holds exactly the seven steps above, as percentages
+- **THEN** it holds exactly the seven percentage steps and the +0.50 USD/GPU-hour step above, in that order
 
 #### Scenario: Frozen set
 - **WHEN** code tries to change a step of `ladder-v1`
@@ -33,19 +43,27 @@ sensitivities chosen by judgement, not calibrated to history (one snapshot) or t
 
 #### Scenario: Known cells
 - **WHEN** a workload of 32 GPUs for 720 hours starts at 2.5 USD/GPU-hour
-- **THEN** the 32-GPU cells are 14,400 at +25%, −28,800 at −50% and 57,600 at +100%, and the 8-GPU cell at +10% is 1,440
+- **THEN** the 32-GPU cells are 14,400 at +25%, −28,800 at −50%, 57,600 at +100% and 11,520 at +0.50 USD, and the 8-GPU cell at +10% is 1,440
 
 #### Scenario: Entered count added
 - **WHEN** a workload of 24 GPUs is entered in a group with 8 GPUs per VM
 - **THEN** the columns are 8, 16, 24, 32, 64 and 128 GPUs, with 24 marked as entered
 
-#### Scenario: Matches the scenario table
+#### Scenario: Matches scenarios-v1
 - **WHEN** the ladder and `scenarios-v1` are computed for the same workload
-- **THEN** the entered column's +25% and +100% cells equal the `increase-25` and `spike-100` exposures, and its −25% cell equals `decline-25`'s
+- **THEN** the entered column's −25%, +25%, +100% and +0.50 USD cells equal the `decline-25`, `increase-25`, `spike-100` and `example-050` exposures
+
+#### Scenario: Custom row refused
+- **WHEN** a custom change of −0.50 USD/GPU-hour is entered for a starting price of 0.40
+- **THEN** the Custom row reads "not computed: the price would be zero or below" and has no cells
+
+#### Scenario: Fallback row
+- **WHEN** a Spot size at 1.0 USD/GPU-hour is listed on pay-as-you-go at 4.0 in the same region, for 8 GPUs and 10 hours
+- **THEN** the "Spot → pay-as-you-go" row's 8-GPU cell is 240, and the row is marked as crossing rental types
 
 #### Scenario: Spot row above pay-as-you-go
 - **WHEN** a Spot size at 60% of its pay-as-you-go price is laddered
-- **THEN** only the +100% row (120% of pay-as-you-go) is marked, it keeps its computed cells, and the above-pay-as-you-go note accompanies the ladder
+- **THEN** only the +100% row (120% of pay-as-you-go) is marked among the percentage rows, it keeps its computed cells, and the above-pay-as-you-go note accompanies the ladder
 
 ## MODIFIED Requirements
 
@@ -76,9 +94,13 @@ rounding. It SHALL check that:
 - the above-pay-as-you-go note appears exactly on Spot rows above that price, and on no other
   row;
 - GPUs × hours × headroom equals the budget;
-- the ladder's rows are exactly `ladder-v1`'s steps, and its columns are exactly the defined
-  GPU counts that are whole multiples of GPUs per VM, plus the entered count;
-- each ladder cell equals (column GPUs ÷ GPUs per VM) × VM-hour price × hours × step ÷ 100;
+- the ladder's rows are exactly `ladder-v1`'s steps, then the Custom row when a custom move is
+  entered, then the fallback row for a Spot start;
+- the ladder's columns are exactly the defined GPU counts that are whole multiples of GPUs per
+  VM, plus the entered count;
+- each ladder cell equals (column GPUs ÷ GPUs per VM) × hours × (scenario − starting VM-hour
+  price), and a refused ladder row carries no cells exactly when its price is zero or below or
+  its pay-as-you-go listing is missing;
 - the ladder's above-pay-as-you-go marks are exactly on Spot rows priced above that price;
 - every figure is finite.
 
@@ -94,7 +116,7 @@ Figures SHALL be shown only when every check passes.
 
 #### Scenario: Tampered ladder cell caught
 - **WHEN** one ladder cell is changed by one cent
-- **THEN** the check fails and names that step and column
+- **THEN** the check fails and names that row and column
 
 #### Scenario: Ladder column dropped or added
 - **WHEN** a ladder column is missing, or holds a count that is not a whole multiple of GPUs per VM

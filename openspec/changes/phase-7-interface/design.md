@@ -10,7 +10,7 @@ The main agent's recommendation, accepted with that choice, has four parts:
 - borrow a trading screen's discipline, not its costume;
 - stay on Streamlit (PROJECT.md §4, "decided"), because a React rewrite would discard the
   AppTest-based tests;
-- add a scenario ladder: price change × GPU count → signed exposure;
+- add a scenario ladder: price change × GPU count → signed change in cost;
 - use 21st.dev for inspiration.
 
 The grilling ran one round on 2026-10-13:
@@ -22,13 +22,41 @@ The grilling ran one round on 2026-10-13:
   - Phase 5 design's live spread of a flat $0.50 against the lowest price per group;
   - PROJECT.md § Amending the constitution;
   - the references to Phase 7 in PROJECT.md, AGENTS.md and the build-safety skill.
-- **Reclassified as settled:**
-  - 21st.dev use, on a fact: `get_usage` on 2026-10-13 showed the free tier, with AI generation
-    off, 0 credits and 2 free code copies a day;
-  - impeccable's PRODUCT.md, on a recorded basis.
-- **Owner reopened:** a Figma mock first, and the free 21st.dev code copies ("that's a reason to
-  constrain the mock, not skip it"). Both became owner calls (D14, D15).
+- **Reclassified as settled:** 21st.dev use, on a fact (`get_usage`, 2026-10-13: free tier, AI
+  generation off, 0 credits, 2 free code copies a day); and impeccable's PRODUCT.md, on a
+  recorded basis.
+- **Owner reopened:** a Figma mock first, and the free 21st.dev code copies. Both became owner
+  calls (D14, D15).
 - **Owner:** accepted every recommendation ("agreed on your changes then proceed").
+
+### Brief, research and mock rounds (2026-10-13 to 2026-10-14)
+
+1. **First brief rejected.** impeccable `shape` produced a brief, a "desk risk sheet" with one-line
+   captions and numbered notes. The owner rejected it as "too cluttered". The owner asked for no
+   internal terms ("snapshot") and for the screen an options sales trader at Jane Street, Optiver
+   or Citadel Securities would keep next to their Bloomberg terminals, and asked for research.
+2. **Research (2026-10-13).** The firms' internal tools are not public. Professional tools agree
+   on four things:
+   - a scenario grid of price moves with profit and loss against the current position, which is
+     marked ([TT Options Risk Matrix](https://library.tradingtechnologies.com/trade/orm-options-risk-matrix-display.html);
+     [IB Risk Navigator](https://www.interactivebrokers.com/campus/trading-lessons/risk-navigator-plot-viewer-selector/));
+   - colour by sign: green gain, red loss ([US7774249](https://patents.google.com/patent/US7774249));
+   - colour only for status, with one neutral colour for everything else and a colour-blind
+     scheme ([Bloomberg UX](https://www.bloomberg.com/ux/2021/10/14/designing-the-terminal-for-color-accessibility/));
+   - dark grounds for long hours in dim rooms.
+3. **Quick mock 1.** The owner chose steel blue, rename now, no bar chart, and inputs under the
+   key figures. The owner then corrected it: "this is repetition" (the group line repeats the
+   sidebar), and "remove the AI explainers ... this needs to look official with no helpers like
+   bloomberg terminal or quant analysis tool".
+4. **Quick mock 2** ([node 5:2](https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=5-2)),
+   approved by the owner on 2026-10-14 ("i like this design approved"). It has:
+   - terse labels with units, and no helper text;
+   - one status line;
+   - key figures, then inputs;
+   - one scenario grid, and one compliance footer;
+   - a cost table, and a closed Sources section.
+
+   D6–D10 and D14 below are revised to match it, and D27–D32 record its other choices.
 
 ### Measured facts (2026-10-13, main at 2c0eb60)
 
@@ -42,18 +70,8 @@ The grilling ran one round on 2026-10-13:
 - **GPUs per VM:** compared rows have 1, 2, 4 or 8 GPUs per VM. Fractional sizes are excluded
   (`normalize.py`, `fractional_gpu`), so 8, 16, 32, 64 and 128 are whole multiples for every
   group.
-- **Caption length:** a Spot Workload tab repeats about 930–1,230 characters of caption text
-  under each of its four figures today, about 4,300 in all. Measured lengths, in characters:
-
-  | Text | Length |
-  |---|---|
-  | exclusions | 158 |
-  | billing | 280 |
-  | Spot | 289 |
-  | storage entered | 176 |
-  | hours note | 60 |
-  | judgement | 98 |
-  | above pay-as-you-go | 280 |
+- **Region names:** the schema stores Azure's `location` display name beside `arm_region_name`
+  (`schema/001_initial.sql`, `azure_retail.py`). It is optional, so it can be missing.
 - **Flat $0.50 against the lowest listed price per group (live, Phase 5 design):**
 
   | Share of the price | Groups |
@@ -63,18 +81,20 @@ The grilling ran one round on 2026-10-13:
   | 25–100% | 356 |
   | 100% or more | 74 |
 - **Display:** the owner's PC has one 1920×1080 display at 100% scaling.
-- **21st.dev:** the plugin is installed, `API_KEY_21ST` is set in the user environment, and the
-  account is free tier (`get_usage`, 2026-10-13).
+- **Synthetic demo figures used in the mock:** H100 NVLink 80GB × 8, eastus, pay-as-you-go,
+  Standard_ND96isr_H100_v5, 12.0000 USD/GPU-hour (96.00 USD per VM-hour), snapshot 2026-10-12
+  09:00 UTC. 32 GPUs × 720 h = 276,480.00 USD.
 - **Hard-coded chart colours:** `dashboard.py` sets `POINT_COLOUR` and `RULE_COLOURS` for the
   default light theme.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Make the dashboard read like a front-office screen without implying a market.
-- Lead with the commercial answer: cost and exposure for the workload.
-- Add the scenario ladder, checked like every other figure.
-- Keep every required label and text visible while cutting repetition.
+- Make the dashboard read like an official desk tool without implying a market.
+- Lead with the commercial answer: cost and its sensitivity to price moves.
+- Make the ladder the single scenario grid, checked like every other figure.
+- Keep every required label on screen in its shortest honest form, and put the rest one click
+  away.
 
 **Non-Goals:** as in the proposal.
 
@@ -83,52 +103,62 @@ The grilling ran one round on 2026-10-13:
 | # | Decision | Who / basis |
 |---|---|---|
 | D1 | Roadmap: a new Phase 7 before the demo, which becomes Phase 8. One more session | **owner** (Scope) |
-| D2 | Scope:<br>- a custom theme for the whole app;<br>- an answer-first rework of "Workload cost" and "Comparable groups", whose region-group, cross-region and marketplace views share the `_groups` code;<br>- the scenario ladder.<br>Group browser and Data quality get the theme only.<br>**Acceptance:**<br>- AppTest flows on synthetic data, including known-answer ladder cells;<br>- every ladder cell passes the independent check, with the core modules still at 100% branch coverage;<br>- a local manual check with synthetic-only screenshots at 1920×1080 and 1440×900;<br>- one design-eval run without the taste reviewer: no P0 open, and every P1 fixed or recorded with its reason;<br>- the market-review read-through of the ladder, and `/code-review`.<br>No diagram change | **owner** (Scope) |
-| D3 | Timebox: one session of about 3¾ h, including about 45 min for the Figma mock (D14).<br>**Cut in this order:**<br>1. restyling Group browser and Data quality beyond the theme;<br>2. chart restyling beyond theme colours;<br>3. the Comparable groups strip;<br>4. DESIGN.md (D12);<br>5. P1 fixes after the first pass, recorded for Phase 8. P0 fixes are always made.<br>**Never cut:**<br>- every caption field and note text with every figure;<br>- the framing line and the STALE, NOT NORMALIZED, thin and single-list-price labels;<br>- the independent check on every shown figure, and no price before it passes;<br>- the D10 colour rules and no market costume;<br>- the three local-only config settings;<br>- the theme, the Workload strip and the ladder with its known-answer tests;<br>- AppTest flows, the manual check, the green gate, counts-only Git;<br>- the Figma mock and the design-eval run | **owner** (Scope, Value trade-off, Private knowledge) |
-| D4 | Visual direction: one dark "desk" theme.<br>- `[theme] base = "dark"`, a near-black neutral background, one low-chroma accent, and chart palettes from the theme;<br>- no `[theme.light]` or `[theme.dark]` sections;<br>- no logo, only the title text.<br>Streamlit's Settings menu can still switch a viewer to its stock light theme. That is accepted and checked in the manual check | **owner** (Showcase) |
+| D2 | Scope:<br>- a custom theme for the whole app;<br>- the approved layout for "Workload cost" and "Comparable groups", whose region-group, cross-region and marketplace views share the `_groups` code;<br>- the ladder.<br>Group browser and Data quality get the theme and the status line only.<br>**Acceptance:**<br>- AppTest flows on synthetic data, including known-answer ladder cells;<br>- every ladder cell passes the independent check, with the core modules still at 100% branch coverage;<br>- a local manual check with synthetic-only screenshots at 1920×1080 and 1440×900, compared with the approved mock;<br>- design-eval on the mock and on the build without the taste reviewer: no P0 open, and every P1 fixed or recorded with its reason;<br>- the market-review read-through of the ladder, and `/code-review`.<br>No diagram change | **owner** (Scope) |
+| D3 | Timebox: one session of about 3¾ h, including the mock. The mock rounds ran over (two quick mocks); the build session keeps the cut order.<br>**Cut in this order:**<br>1. restyling Group browser and Data quality beyond the theme and status line;<br>2. chart restyling beyond theme colours;<br>3. the Comparable groups key figures;<br>4. DESIGN.md (D12);<br>5. P1 fixes after the first pass, recorded for Phase 8. P0 fixes are always made.<br>**Never cut:**<br>- the data label, the as-of time and the compliance footer;<br>- the Sources section;<br>- the independent check on every shown figure, and no price before it passes;<br>- the D10 colour rules and no market costume;<br>- the three local-only config settings;<br>- the theme, the Workload layout and the ladder with its known-answer tests;<br>- AppTest flows, the manual check, the green gate, counts-only Git;<br>- the design-eval runs | **owner** (Scope, Value trade-off, Private knowledge) |
+| D4 | Visual direction: one dark "desk" theme.<br>- `[theme] base = "dark"`, a near-black neutral background, a second neutral for the sidebar and inputs, and chart palettes from the theme;<br>- no `[theme.light]` or `[theme.dark]` sections;<br>- no logo.<br>Streamlit's Settings menu can still switch a viewer to its stock light theme. That is accepted and checked in the manual check | **owner** (Showcase) |
 | D5 | Target screen: 1920×1080 first (Chrome maximised, 100% zoom), checked at 1440×900 | **owner** (Private knowledge, Showcase) |
-| D6 | Answer-first layout:<br>- **Tab order:** Workload cost, Comparable groups, Group browser, Data quality. The page opens on Workload cost.<br>- **Workload strip:** one line, drawn only after the independent check passes: "Total USD X for the hours entered (G GPUs = V VMs × H h) · starting USD p/GPU-hour, \<size\> · largest additional expense: \<scenario name\> +USD y · scenarios-v1 · Scenario calculation, not a forecast". "Largest" is the plain maximum over computed `scenarios-v1` rows; the custom and fallback rows are not in it.<br>- **Below the strip:** the inputs in one row, the ladder, the cost table, the scenario table, the chart and headroom.<br>- **Comparable groups strip:** group key · lowest listed USD/GPU-hour (size) · members N · labels · snapshot UTC · run ID · data label.<br>- The sidebar stays (Phase 4 D28).<br>- The starting price appears only with the checked figures, after the check passes; previously it sat "under the cost table's caption" | **owner** (Showcase, Scope) |
-| D7 | Scenario ladder `ladder-v1`, frozen in `scenarios.py`:<br>- **Rows:** −50, −25, −10, +10, +25, +50 and +100% of the starting price.<br>- **Columns:** 8, 16, 32, 64 and 128 GPUs, plus the entered count (marked) when it is not one of them, all at the hours entered.<br>- **Cells:** signed exposure in USD, "for the hours entered"; storage is unchanged.<br>- **Labels:** `ladder-v1`, "Scenario calculation, not a forecast" and the judgement note.<br>Percentages mean the same thing in every group, while a USD step does not (Measured facts). The rows include v1's −25, +25 and +100 as cross-checks. The steps are judgement, like `scenarios-v1` | **owner** (Methodology, Scope, Showcase) |
-| D8 | Keep `scenarios-v1` unchanged, including "PROJECT example +$0.50/GPU-hour". Its name, and any `scenarios-v2`, are decided at the start of Phase 8 with the demo copy | **owner** (Methodology, Showcase) |
-| D9 | Captions in a dense layout:<br>- **Caption line:** each figure gets one line: group key (or "crosses regions" with variant, count and rental type) · snapshot UTC · run ID · data label · "notes 1–n".<br>- **Scenario figures:** exposure and headroom figures also carry "Scenario calculation, not a forecast" and the set version on that line. The fallback row keeps "crosses rental types (Spot → pay-as-you-go)" and both keys inline.<br>- **Notes:** the full texts (exclusions, storage, billing assumptions, hours note, Spot line, judgement note, above-pay-as-you-go note) appear once per panel as numbered notes directly under it. They are always visible, never in an expander, and in text no smaller or fainter than a caption.<br>- No text is reworded | **owner** (Methodology, Conflict, Showcase) |
-| D10 | Colour:<br>- red marks additional expense and green marks lower expense, always with the sign and the effect words;<br>- the two shades also differ in lightness, checked with a colour-blindness simulation in the critique;<br>- no change, prices, price changes and statistics stay neutral;<br>- no tickers, bid/ask, flashing or animated values, or "live" badges | **owner** (Showcase) |
+| D6 | Layout, revised 2026-10-14 to the approved mock (Figma node 5:2):<br>- **Status line:** `COMPUTE COST & RISK MONITOR` · data label · `AS OF <d MON yyyy hh:mm> UTC`, plus STALE when it applies (D9).<br>- **Tabs:** Workload cost, Comparable groups, Group browser, Data quality. The page opens on Workload cost.<br>- **Workload key figures**, drawn only after the independent check passes: COST, USD · USD / GPU-HOUR · VMS (count × size) · +100%, USD · HEADROOM, USD / GPU-HOUR when a budget is entered.<br>- **Inputs**, one row under the key figures: Size (only when the group has several members), GPUs, Hours, Storage USD, Custom move, Budget USD.<br>- **Below the inputs:** the ladder, the compliance footer, then the COST table (USD / VM-h, VM-h, USD for compute, storage and total) beside a closed "Sources" section.<br>- **Comparable groups:** the same status line, key figures in the same style (LOWEST USD / GPU-HOUR, SIZE, MEMBERS and labels), the member and cross-region tables, the footer and Sources.<br>- No group line (the sidebar shows the selection), no `scenarios-v1` table, no exposure chart.<br>- The starting price appears only with the checked figures | **owner** (Showcase, Scope); revised after the owner's mock corrections |
+| D7 | Scenario ladder `ladder-v1`, frozen in `scenarios.py`, revised 2026-10-14 to be the single scenario grid:<br>- **Rows:** −50, −25, −10, +10, +25, +50 and +100% of the starting price, then a flat "+0.50 USD/GPU-h" row (PROJECT.md §1's worked example).<br>- **Extra rows:** a "Custom" row when a custom move is entered; a "Spot → pay-as-you-go" row for a Spot start, which crosses rental types and is marked.<br>- **Columns:** 8, 16, 32, 64 and 128 GPUs, plus the entered count when it is not one of them, all at the hours entered. The entered column is shaded and bold, with no label.<br>- **Cells:** the signed change in cost, in whole USD, for the hours entered. Storage is unchanged.<br>- A row whose price would be zero or below reads "not computed", as does a fallback row with no pay-as-you-go listing.<br>- `ladder-v1`, "Scenario calculation, not a forecast" and the judgement note are carried by the footer and Sources (D9) | **owner** (Methodology, Scope, Showcase) |
+| D8 | `scenarios-v1` stays frozen and computed in the calculator and its check, and in the end-to-end and property tests. The page no longer shows its table. Its moves appear as ladder rows labelled by the move itself, which meets the owner's "rename now" ("+0.50 USD/GPU-h" replaces "PROJECT example +$0.50/GPU-hour" on screen). No `scenarios-v2` | **owner** (Methodology, Showcase); revised 2026-10-14 |
+| D9 | Required labels, revised 2026-10-14:<br>- **Status line:** the data label (`SYNTHETIC DATA — NOT AZURE LIST PRICES`, or `AZURE PUBLISHED LIST PRICES`), `AS OF` the snapshot start in UTC, and `STALE — OLDER THAN 7 DAYS AS OF <UTC>` when stale.<br>- **Footer:** one line under the ladder, "Scenario calculation, not a forecast." followed by the exclusions sentence word for word.<br>- **Sources section,** closed, one click away:<br>&nbsp;&nbsp;- the group key and snapshot start (UTC);<br>&nbsp;&nbsp;- the run ID and data label code (`live`, `recorded`, `synthetic`);<br>&nbsp;&nbsp;- `ladder-v1` and `scenarios-v1`;<br>&nbsp;&nbsp;- the storage, billing assumptions, Spot, judgement and above-pay-as-you-go texts;<br>&nbsp;&nbsp;- the source records (item key, raw file, SHA-256).<br>- The owner's reading: one footer on a screen states the exclusions with every workload figure on that screen | **owner** (Methodology, Conflict, Showcase); approved with the mock |
+| D10 | Colour:<br>- red marks an added cost and green a saving, always with the sign;<br>- the two shades also differ in lightness, checked with a colour-blindness simulation in the critique;<br>- amber only for the data label and the stale warning;<br>- the steel-blue accent only for the active tab and the entered column;<br>- everything else neutral;<br>- no tickers, bid/ask, flashing or animated values, or "live" badges | **owner** (Showcase); amber and accent use approved with the mock |
 | D11 | Phase name: "Front-office interface" | **owner** (Showcase) |
-| D12 | DESIGN.md: written last (cut item 4) with impeccable's documenter, derived from the shipped `config.toml` and code. It says that `config.toml` holds the theme values and that PROJECT.md §5 outranks it. Rules that are requirements go into the dashboard spec | **owner** (Value trade-off, Showcase) |
-| D13 | Fonts: Streamlit's bundled Source Sans and Source Code. No font URL and no self-hosting. `st.dataframe` draws cells in the body font, so the whole app in monospace would be the costume D10 rules out. Whether Source Sans's default digits are tabular is measured in the manual check | **owner** (Showcase) |
-| D14 | Figma mock first:<br>- one frame of the Workload cost screen at 1920×1080, in a Figma Design file on the owner's Pro seat;<br>- the D4 theme values, real labels and synthetic figures;<br>- only elements Streamlit can build: sidebar, tabs, a one-column flow, inputs in a row, the strip, the ladder as a plain table, the cost and scenario tables, the chart and the numbered notes.<br>A design-eval critique (Figma target, no taste reviewer) runs on it, P0 findings are fixed, and the owner approves it before layout code. The owner reopened this from "settled (default): no mock": "that's a reason to constrain the mock, not skip it" | **owner** (Showcase, Value trade-off) |
-| D15 | 21st.dev:<br>- free search for references, such as dark data tables and dense summary lines;<br>- at most 2 code copies a day, only for components whose exact values are copied into the theme or the mock, never pasted React;<br>- each component's licence is checked before anything from it enters the repo;<br>- only synthetic figures go into any search.<br>The owner reopened this from "settled: search only", pointing to the free code copies | **owner** (Private knowledge) |
-| D16 | Styling uses only `config.toml` `[theme]`, `st.column_config`, pandas Styler colours on the ladder, and theme-driven Altair colours. No injected CSS. What would change it: a P0 or P1 finding that no theme key can fix. Then one CSS file loaded with `st.html`, targeting only documented `st-key-<key>` classes, with a test pinning Streamlit 1.65 | settled (default). Streamlit 1.65 `elements/html.py`: "Prefer native Streamlit features and theming over custom CSS or HTML"; Emotion class names change between versions; AppTest cannot see CSS |
-| D17 | Process: impeccable `shape` writes the brief, which the owner confirms; then the Figma mock (D14), the build, a design-eval critique without the taste reviewer, and an impeccable polish pass. The tasteskill is not used | recorded. `.agents/skills/next-phase/design-skills.md` (dashboards route to impeccable and design-eval; the tasteskill is not for app screens) |
-| D18 | Renumbering:<br>- **Phases:** Phase 7 is the interface and Phase 8 the demo.<br>- **Budget:** eight sessions, about 24–29 h.<br>- **Phase 7 references updated:** PROJECT.md §1, §2 and §6, AGENTS.md, `openspec/config.yaml` and the build-safety skill; HANDOFF's demo findings are relabelled Phase 8.<br>- **Archives:** not edited. Phase 1's acceptance row "7 Demo and brief" now applies to Phase 8 | recorded. D1; PROJECT.md:26 (seven sessions, about 20–25 h) plus about 3¾ h (D3) |
-| D19 | Not a constitution amendment. PROJECT.md §5 defines the constitution as the §5 rules plus the ⛔ gates in §6, and an amendment as changing a rule or adding, removing or loosening a gate. The milestone table and budget are neither, and the publishing gate's wording is unchanged | recorded. PROJECT.md § Amending the constitution; `tests/repo/test_constitution.py` checks only the §5 copies and the version line |
-| D20 | Ladder checks:<br>- `workload_check` re-derives every ladder cell from the VM-hour price, GPUs per VM, hours and `ladder-v1`, imported as data;<br>- for a Spot start, a ladder row priced above the size's pay-as-you-go price is marked and gets the above-pay-as-you-go note;<br>- nothing is shown unless every check passes | recorded. workload-calculator spec, "Independent check of workload figures" and "Spot price above pay-as-you-go" |
-| D21 | The ladder and strips say "for the hours entered", never "monthly" | recorded. workload-calculator spec, "Workload cost" ("never converted to a month"); Phase 5 D14 |
-| D22 | No PRODUCT.md (impeccable's product file) is committed. impeccable reads a scratch PRODUCT.md drawn from PROJECT.md §1 through `IMPECCABLE_CONTEXT_DIR`. `.impeccable/` stays out of Git, and the scored review goes to `docs/reviews/` with synthetic figures only | recorded. PROJECT.md owns scope (AGENTS.md); PR #6 kept the rules in PROJECT.md rather than adding files that drift |
+| D12 | DESIGN.md: written last (cut item 4) with impeccable's documenter, derived from the shipped `config.toml` and code. It says that `config.toml` holds the theme values and that PROJECT.md §5 outranks it | **owner** (Value trade-off, Showcase) |
+| D13 | Fonts: Streamlit's bundled Source Sans and Source Code. No font URL and no self-hosting. Whether Source Sans's default digits are tabular is measured in the manual check | **owner** (Showcase) |
+| D14 | Figma mock first, constrained to what Streamlit can build. It was drawn on the owner's Pro seat (Projects team) in "Compute Cost & Risk Monitor · Interface (Phase 7)": two quick rounds, and the second was approved on 2026-10-14. design-eval runs on it, without the taste reviewer, before layout code. The owner reopened this from "settled (default): no mock": "that's a reason to constrain the mock, not skip it" | **owner** (Showcase, Value trade-off) |
+| D15 | 21st.dev: free search and at most 2 code copies a day, values only, licences checked, synthetic figures only. Not used: the owner approved the mock without 21st.dev references | **owner** (Private knowledge) |
+| D16 | Styling uses only `config.toml` `[theme]`, `st.column_config`, pandas Styler colours on the ladder, Streamlit's coloured-text markdown for the status line, and theme-driven Altair colours. No injected CSS. What would change it: a P0 or P1 finding that no theme key can fix. Then one CSS file loaded with `st.html`, targeting only documented `st-key-<key>` classes, with a test pinning Streamlit 1.65 | settled (default). Streamlit 1.65 `elements/html.py`: "Prefer native Streamlit features and theming over custom CSS or HTML" |
+| D17 | Process: impeccable `shape` brief, then the Figma mock (D14), a design-eval critique of the mock, the build, a design-eval critique of the build, and an impeccable polish pass. The tasteskill is not used | recorded. `.agents/skills/next-phase/design-skills.md` |
+| D18 | Renumbering:<br>- Phase 7 is the interface, and Phase 8 the demo.<br>- The budget is eight sessions, about 24–29 h.<br>- Phase 7 references are updated in PROJECT.md §1, §2 and §6, AGENTS.md, `openspec/config.yaml` and the build-safety skill, and HANDOFF's demo findings are relabelled Phase 8.<br>- Archives are not edited. Phase 1's acceptance row "7 Demo and brief" now applies to Phase 8 | recorded. D1; PROJECT.md:26 plus about 3¾ h (D3) |
+| D19 | Not a constitution amendment. PROJECT.md §5 defines the constitution as the §5 rules plus the ⛔ gates in §6, and an amendment as changing a rule or adding, removing or loosening a gate. The milestone table and budget are neither, and the publishing gate's wording is unchanged | recorded. PROJECT.md § Amending the constitution |
+| D20 | Ladder checks:<br>- `workload_check` re-derives every ladder cell from plain values and `ladder-v1`, imported as data. That covers the % rows, the USD row, the custom row and the fallback row.<br>- For a Spot start, a row priced above the size's pay-as-you-go price is marked and gets the above-pay-as-you-go note in Sources.<br>- Nothing is shown unless every check passes | recorded. workload-calculator spec, "Independent check of workload figures" and "Spot price above pay-as-you-go" |
+| D21 | The ladder and key figures state the hours entered, never "monthly" | recorded. workload-calculator spec, "Workload cost"; Phase 5 D14 |
+| D22 | No PRODUCT.md (impeccable's product file) is committed. impeccable reads a scratch PRODUCT.md drawn from PROJECT.md §1 through `IMPECCABLE_CONTEXT_DIR`. `.impeccable/` stays out of Git, and the scored reviews go to `docs/reviews/` with synthetic figures only | recorded. PROJECT.md owns scope (AGENTS.md); PR #6 |
 | D23 | Records corrected: `design-skills.md` and HANDOFF now say the 21st plugin is installed, the key is in the user environment, and the account is free tier with AI generation off | fact. `installed_plugins.json`; `get_usage` on 2026-10-13 |
 | D24 | Chart colours come from the theme's values, replacing `POINT_COLOUR` and `RULE_COLOURS`, with their contrast checked on the dark background. One commit undoes it | settled (default) |
-| D25 | The ladder, about 7 × 6 cells, is drawn with `st.table` and Styler colours, not `st.dataframe`. An HTML table paints in a hidden Chrome window and reads as page text, and AppTest exposes it. The scenario tables keep `st.dataframe` and its CSV download. What would change it: the owner wants the ladder as CSV | settled (default). HANDOFF (the data grid's canvas does not paint in a hidden window) |
-| D26 | Contrast floor: `textColor`, `redColor` and `greenColor` each reach at least 4.5:1 against `backgroundColor` and `secondaryBackgroundColor`, checked by a repo test from the committed config | settled (default). WCAG 2.2 AA 1.4.3; D10 needs red and green readable as text |
+| D25 | The ladder is drawn with `st.table` and Styler colours, not `st.dataframe`. An HTML table paints in a hidden Chrome window and reads as page text, and AppTest exposes it | settled (default). HANDOFF (the data grid's canvas does not paint in a hidden window) |
+| D26 | Contrast floor: `textColor`, `redColor`, `greenColor` and the amber used for the data label each reach at least 4.5:1 against `backgroundColor` and `secondaryBackgroundColor`, checked by a repo test from the committed config | settled (default). WCAG 2.2 AA 1.4.3 |
+| D27 | No helper text: terse labels with units, no explanatory sentences, hints or "(optional)". Explanations live in Sources. Input placeholders are "—" | **owner**, 2026-10-14: "this needs to look official with no helpers like bloomberg terminal or quant analysis tool" |
+| D28 | The time label is "AS OF", not "snapshot". The owner asked for a plain date and time. "As of" was chosen over "last updated" because the time is when the prices were fetched, not when Microsoft changed them | **owner** (request and approved mock); wording by the main agent |
+| D29 | The exposure bar chart is removed from Workload cost | **owner**, 2026-10-13 |
+| D30 | Regions are shown by the source's stored `location` display name, falling back to the region code when it is missing. No hand-made name map | settled (default). Fact: `location` is stored (schema 001). What would change it: the owner wants different names |
+| D31 | Accent: steel blue, `#7AA2D6` in the mock, tuned only to meet D26 | **owner**, 2026-10-13 (mock A) |
+| D32 | Number format: ladder cells in whole USD with a sign and thousands separators; key figures and the cost table to 2 decimals; USD/GPU-hour to 4 decimals | **owner** (approved mock) |
 
 ### Figures shown
 
 - **Ladder cell:**
-  - formula: GPUs × hours × starting USD/GPU-hour × step ÷ 100, signed;
-  - group key: the starting member's region group (variant, GPU count, region, rental type);
-  - units: rows in % of the starting USD/GPU-hour; cells in USD for the hours entered;
-  - texts: the exclusions, storage, billing and, for Spot, the Spot line, as numbered notes,
-    plus `ladder-v1`, "Scenario calculation, not a forecast" and the judgement note.
+  - formula: column GPUs × hours × (scenario − starting USD/GPU-hour), signed. A % row's change
+    is starting price × step ÷ 100; the USD row's change is +0.50 exactly;
+  - the custom row uses the entered move, and the fallback row uses the same size's
+    pay-as-you-go USD/GPU-hour;
+  - group key: the starting member's region group (variant, GPU count, region, rental type),
+    shown by the sidebar and in Sources. The fallback row crosses rental types and is marked;
+  - units: rows as a % or a USD/GPU-hour move; cells in USD for the hours entered;
+  - texts: the footer and Sources.
 - **Known answers** (2.5 USD/GPU-hour, 720 h):
 
-  | GPUs | Step | Exposure (USD) |
+  | GPUs | Step | Change in cost (USD) |
   |---|---|---|
-  | 32 | +25% | 14,400.00 |
-  | 32 | −50% | −28,800.00 |
-  | 32 | +100% | 57,600.00 |
-  | 8 | +10% | 1,440.00 |
-- **Workload strip:** shows figures already computed and checked: the total, the starting price
-  and the largest `scenarios-v1` exposure. It adds no new figure.
-- **Comparable groups strip:** shows the group's existing lowest listed USD/GPU-hour and its
-  member count, with the group key. It adds no new figure.
+  | 32 | +25% | 14,400 |
+  | 32 | −50% | −28,800 |
+  | 32 | +100% | 57,600 |
+  | 8 | +10% | 1,440 |
+  | 32 | +0.50 USD | 11,520 |
+- **Key figures:** COST, USD is the total; +100%, USD is the entered column's +100% cell;
+  HEADROOM is the existing budget headroom. None is a new calculation.
+- **Comparable groups key figures:** the group's existing lowest listed USD/GPU-hour, its size
+  and member count.
 
 ### Non-negotiables check
 
@@ -137,30 +167,30 @@ The grilling ran one round on 2026-10-13:
 | Secrets never printed or committed | `API_KEY_21ST` stays in the user environment and is never read into output |
 | Never fabricate; label results; preserve failed runs | The mock and screenshots use synthetic figures, labelled. Critique results are recorded as found |
 | Operator resolves ⛔ gates | No gate is satisfied or waived |
-| Call the data published Azure list prices; label exposure as a scenario calculation | No market costume (D10). The framing line is unchanged. Every ladder, strip and scenario figure carries "Scenario calculation, not a forecast" and its set version on the caption line (D9) |
+| Call the data published Azure list prices; label exposure as a scenario calculation | The status line names the data on every tab (`AZURE PUBLISHED LIST PRICES` or `SYNTHETIC DATA — NOT AZURE LIST PRICES`). The ladder's footer says "Scenario calculation, not a forecast." No market costume (D10) |
 | Deterministic code computes every figure | Ladder cells come from the calculator, and the independent check re-derives each one (D20) |
-| Compare only within comparable groups; state exclusions | The ladder stays inside the starting member's group. Exclusions appear as always-visible notes under every panel with a workload figure (D9, owner reading) |
+| Compare only within comparable groups; state exclusions | The ladder stays inside the starting member's group, except the fallback row, which is marked as crossing rental types. The exclusions sentence is the footer on every screen with a workload figure (D9, owner reading) |
 | Collector only reads published prices | No network code |
-| Within terms; missing stays missing | No new data. "not computed" rows stay as they are. Live figures never reach Figma or 21st.dev (D14, D15) |
+| Within terms; missing stays missing | No new data. "not computed" rows stay. A missing `location` falls back to the code, not a guess (D30). Live figures never reach Figma or 21st.dev |
 | ⛔ live data | Honoured: no new reads |
-| ⛔ spend | Untouched: the 21st.dev free tier has AI generation off and 0 credits |
+| ⛔ spend | Untouched |
 | ⛔ scheduling / publishing | Not acted on. The Figma file is private to the owner's seat |
 
-The one reading that needed the owner: notes directly under a panel count as stated "with" each
-workload figure (D9).
+One reading needed the owner: a single footer per screen states the exclusions with every
+workload figure on it (D9).
 
 ## Risks / Trade-offs
 
-- [The numbered notes could read as fine print] → They are always visible and never fainter
-  than a caption (D9). Their contrast is checked in the critique.
-- [A dark-only theme can be switched to stock light by a viewer] → That is accepted (D4). Charts
-  take theme colours, and the manual check looks at the stock light theme once.
-- [Opening on Workload cost hides the group context] → The sidebar filters and the strip's group
-  key stay visible, and the caption line names the group.
-- [3¾ h is tight with a mock and a critique] → D3's cut order cuts polish before content and
-  never cuts a label.
-- [Styler colours could fall out of step with the theme] → Both read the same values in
-  `dashboard.py`, and D26's test checks the config values.
+- [A terse screen can hide a caveat a reviewer needs] → The constitution's labels stay on screen.
+  Everything else is one click away in Sources, and the code review checks that nothing was lost.
+- [Removing the scenario table removes the per-row effect words] → Sign and colour carry the
+  effect, colour is never the only cue, and the effect words stay in `scenarios-v1` and its
+  check.
+- [A dark-only theme can be switched to stock light by a viewer] → That is accepted (D4).
+- [Opening on Workload cost hides the group context] → The sidebar shows the selection, and
+  Sources shows the group key.
+- [The build may not match the mock exactly] → Streamlit's own spacing and title sizes differ.
+  The manual check compares the build with the mock, and differences go in the review record.
 
 ## Migration Plan
 
@@ -169,4 +199,5 @@ change. To roll back, revert the merge commit.
 
 ## Open Questions
 
-None. Every grilling question is owner-answered (D1–D15) or settled with its basis (D16–D26).
+None. Every grilling question is owner-answered (D1–D15, D27–D29, D31, D32) or settled with its
+basis (D16–D26, D30).

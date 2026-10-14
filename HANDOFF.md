@@ -7,12 +7,18 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 Phase 7 (front-office interface) is planned and specified, with no code yet:
 - The owner added the phase on 2026-10-13, ahead of the demo, which is now Phase 8.
 - Branch `phase-7-interface`, with a draft PR.
-- OpenSpec change `openspec/changes/phase-7-interface`: proposal, design D1–D26, tasks and delta
+- OpenSpec change `openspec/changes/phase-7-interface`: proposal, design D1–D32, tasks and delta
   specs for `dashboard` and `workload-calculator`.
-- The grilling is done: the owner accepted every recommendation on 2026-10-13. Owner decisions
-  are D1–D15; D16–D26 are settled with their basis.
-- The next task is 1.1: the impeccable `shape` brief, which the owner confirms. A Figma mock (1.3)
-  and the owner's approval of it (1.4) come before any layout code.
+- The grilling is done: the owner accepted every recommendation on 2026-10-13.
+- The owner rejected the first design brief as cluttered, asked for research on front-office
+  screens, corrected one quick mock, and approved the second on 2026-10-14:
+  https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=5-2 (Figma file "Compute Cost &
+  Risk Monitor · Interface (Phase 7)", Projects team).
+  - It has terse labels, no helper text and one status line, then key figures, inputs, one
+    scenario grid with a compliance footer, and a cost table beside a closed Sources section.
+  - Design D6–D10 and D14 were revised to it, and D27–D32 added.
+- Tasks 1.1–1.3 are done. The next task is 1.4: design-eval on the approved mock, without the
+  taste reviewer. Then come the ladder (2.x) and the layout (3.x).
 
 Phase 6 (tests for units, calculations, missing data and stale offers) is Done. It was delivered
 through PR #11 from branch `phase-6-tests` and archived as
@@ -237,14 +243,11 @@ in their archived designs and the main specs.
 
 ## Next action
 
-Continue Phase 7 on branch `phase-7-interface` at task 1.1. Run impeccable `shape` with a
-scratch PRODUCT.md (design D22), and have the owner confirm the brief. Then:
-- 1.2, the 21st.dev references;
-- 1.3, the Figma mock: load the Figma skills first, and re-authenticate Figma if its connection
-  dropped;
-- 1.4, design-eval on the mock and the owner's approval.
-
-Layout code waits for that approval. After Phase 7 merges, Phase 8 (public demo, methodology
+Continue Phase 7 on branch `phase-7-interface` at task 1.4: design-eval on the approved mock
+(Figma node 5:2), without the taste reviewer. Load the Figma skills first, and
+re-authenticate Figma if its connection dropped. Show the owner any change to the approved
+design. Then do 2.1–2.2 (the ladder and its check) and 3.1–3.5 (theme and layout), building
+to the mock. After Phase 7 merges, Phase 8 (public demo, methodology
 document, market brief, two-minute walkthrough, updated diagrams) starts in a fresh session. It
 is grilled with the Phase 1 acceptance row "7 Demo and brief" and the Phase 8 findings above. The
 publishing gate (§6) stays the owner's. Collecting more live data is the owner's choice: one

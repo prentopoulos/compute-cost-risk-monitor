@@ -108,10 +108,10 @@ user before each later phase. Evidence that counts in every phase:
   grilling decisions (gap tests in the four areas, an end-to-end known-answer test, Hypothesis,
   the coverage threshold, no mutation testing, two small fixes; owner answered every owner call
   on 2026-10-13) are cited in `openspec/changes/archive/2026-10-13-phase-6-tests/design.md` D1–D24. Phase 7
-  grilling decisions (front-office interface: dark desk theme, answer-first layout, scenario
-  ladder `ladder-v1`, one-line captions with numbered notes, a Figma mock first; owner
-  answered every owner call on 2026-10-13) are cited in
-  `openspec/changes/phase-7-interface/design.md` D1–D26. Vast.ai
+  grilling decisions (front-office interface: dark desk theme, a status line and key
+  figures, one scenario grid `ladder-v1`, no helper text, an approved Figma mock; owner
+  answered every owner call on 2026-10-13 and approved the mock on 2026-10-14) are cited in
+  `openspec/changes/phase-7-interface/design.md` D1–D32. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
