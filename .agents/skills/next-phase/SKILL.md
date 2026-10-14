@@ -36,8 +36,9 @@ cost or phase readiness. It routes to the full 17-workflow collection. Load only
 needed for the slice.
 Use [compute-cost-risk-monitor-market-review](../compute-cost-risk-monitor-market-review/SKILL.md)
 for offer data, comparable pricing, workload costs, budget exposure and the market brief.
-Use available UI/design skills when a user-facing interface is actually in scope; inspect
-project design context first. Architecture diagrams live in a Figma draft on the owner's
+When a user-facing interface is actually in scope, read [design-skills.md](design-skills.md):
+it routes to impeccable, ui-ux-pro-max, the tasteskill, 21st.dev and design-eval, and sets their
+limits here. Architecture diagrams live in a Figma draft on the owner's
 Pro seat, drawn to standard conventions: create them in Phase 1 and update them when a phase
 changes components, data flow or schema. Load the Figma skills before any Figma tool. Framework/API work uses current official docs or installed
 source. A skill recommendation does not justify adding its framework to the application.
