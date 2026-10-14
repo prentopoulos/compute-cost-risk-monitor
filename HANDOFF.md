@@ -17,8 +17,20 @@ Phase 7 (front-office interface) is planned and specified, with no code yet:
   - It has terse labels, no helper text and one status line, then key figures, inputs, one
     scenario grid with a compliance footer, and a cost table beside a closed Sources section.
   - Design D6–D10 and D14 were revised to it, and D27–D32 added.
-- Tasks 1.1–1.3 are done. The next task is 1.4: design-eval on the approved mock, without the
-  taste reviewer. Then come the ladder (2.x) and the layout (3.x).
+- A design-eval critique of v2 scored 25/40 (0 P0, 4 P1, 1 P2; local snapshot in
+  `.impeccable/critique/`). The owner chose the fixes. They became mock v3
+  (https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=7-2) and its state frames:
+  - refused input (8:2), check failed (8:115), Spot without a pay-as-you-go listing (8:228),
+    and storage and budget entered (8:519);
+  - live (8:799) and stale (8:806) headers.
+  A second grilling round settled the rest, and the owner approved v3 on 2026-10-14
+  (D33–D46). Where v3 and D34–D38 differ (custom unit switch, "n/a" cells, the † mark,
+  footnote wording), the decisions govern.
+- The scenario ladder `ladder-v1` and its independent check are built (tasks 2.1–2.2, commit
+  dc43f41). The page does not show them yet.
+- Tasks 1.1–1.4 and 2.1–2.2 are done. The next tasks are 3.1–3.6: the theme, sidebar, status
+  line, plain status words, the Workload tab, Sources, and the Comparable groups key figures,
+  all built to v3.
 
 Phase 6 (tests for units, calculations, missing data and stale offers) is Done. It was delivered
 through PR #11 from branch `phase-6-tests` and archived as
@@ -243,11 +255,10 @@ in their archived designs and the main specs.
 
 ## Next action
 
-Continue Phase 7 on branch `phase-7-interface` at task 1.4: design-eval on the approved mock
-(Figma node 5:2), without the taste reviewer. Load the Figma skills first, and
-re-authenticate Figma if its connection dropped. Show the owner any change to the approved
-design. Then do 2.1–2.2 (the ladder and its check) and 3.1–3.5 (theme and layout), building
-to the mock. After Phase 7 merges, Phase 8 (public demo, methodology
+Continue Phase 7 on branch `phase-7-interface` at task 3.1 and build to mock v3 (Figma node
+7:2 and its state frames) and design D33–D46. Load the Figma skills first if you need to read
+the mock, and re-authenticate Figma if its connection dropped. Then do the verification in
+section 4 and the records and review in section 5. After Phase 7 merges, Phase 8 (public demo, methodology
 document, market brief, two-minute walkthrough, updated diagrams) starts in a fresh session. It
 is grilled with the Phase 1 acceptance row "7 Demo and brief" and the Phase 8 findings above. The
 publishing gate (§6) stays the owner's. Collecting more live data is the owner's choice: one
