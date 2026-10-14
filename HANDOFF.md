@@ -161,6 +161,9 @@ in their archived designs and the main specs.
     "Creates tables" (from Phase 4). Fix it with the Phase 7 diagram update.
   - Custom theme and branding were deferred (Phase 4 D6). `azure_demo.json` is the likely
     public demo dataset, subject to the publishing gate.
+  - Design skills (2026-10-13): `.agents/skills/next-phase/design-skills.md` routes UI work to
+    impeccable, ui-ux-pro-max, the tasteskill, 21st.dev and design-eval, with their limits
+    here. The 21st.dev MCP plugin is not installed yet; it needs the owner's `API_KEY_21ST`.
   - The methodology document can cite the Phase 6 traceability table and the end-to-end
     fixture's worked answers.
   - Hours now start at 0.01 (D23). If the owner prefers one billed minute (1/60 h), that is a
