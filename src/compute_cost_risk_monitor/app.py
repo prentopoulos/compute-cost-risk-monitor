@@ -280,7 +280,12 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
         st.table(dashboard.grid(result.ladder), hide_index=True, border="horizontal")
         st.markdown(dashboard.footer_text(result))
         st.markdown(":gray[**COST**]")
-        st.table(dashboard.cost_styles(result), hide_index=True, border="horizontal")
+        st.table(
+            dashboard.cost_styles(result),
+            hide_index=True,
+            width="content",
+            border="horizontal",
+        )
         _sources(dashboard.workload_sources(group, result), group)
 
 

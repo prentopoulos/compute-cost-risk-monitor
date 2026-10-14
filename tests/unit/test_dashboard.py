@@ -301,6 +301,13 @@ def test_regions_show_their_stored_names_sorted_by_name(
     ]
 
 
+def test_tags_are_muted_text_not_inline_code() -> None:
+    # Inline code is fixed at 0.75em (10.5 px), below the 12 px floor (D49).
+    assert dashboard.labels_text([groups.THIN, groups.SYNTHETIC]) == (
+        ":gray[thin · synthetic]"
+    )
+
+
 # --- group views, captions and formats ---
 
 

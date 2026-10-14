@@ -6,7 +6,8 @@ The committed `src/compute_cost_risk_monitor/.streamlit/config.toml` SHALL set o
   `textColor`, `primaryColor` (the steel-blue accent), `borderColor`, `redColor`, `greenColor`,
   `orangeColor` (the amber for data labels and the stale warning) and chart colours;
 - `codeTextColor` set to the muted grey and `codeBackgroundColor` to `secondaryBackgroundColor`,
-  so tags, drawn as inline code, are neutral (Streamlit colours inline code green by default);
+  so inline code, such as a size name on Data quality, is neutral (Streamlit colours inline code
+  green by default);
 - no `[theme.light]` or `[theme.dark]` section, no `fontFaces`, and no
   `server.enableStaticServing`. Streamlit's bundled fonts are used and no font is fetched from
   elsewhere;
@@ -181,11 +182,14 @@ own line with its mark first:
 The Comparable groups tab SHALL show the exclusions text once, in the footer style, under its
 first price table; it states the exclusions for every price and statistic on that tab.
 
-Comparisons SHALL carry terse tags on the page: `crosses regions` on the cross-region summary,
+Comparisons SHALL carry terse tags on the page, as muted text at body size, joined by " · "
+(not inline code, which Streamlit draws at 0.75em, below 12 px): `crosses regions` on the
+cross-region summary,
 and `single list price`, `thin`, `lowest listed per region`, `synthetic` and `machine_duplicate`
 where they apply.
 
-A "Sources" section, closed by default, at full width under the tab's last table, and never
+A "Sources" section, closed by default, under the tab's last table (at full width, or in the
+Workload cost column), and never
 hidden by a failed state, SHALL hold, for the figures on its tab:
 - the group key (both keys for the fallback row, or the regions crossed), the snapshot's start
   time in UTC and run ID, and the data label code;

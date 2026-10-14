@@ -469,7 +469,9 @@ def short_size(name: str) -> str:
 
 
 def labels_text(labels: Sequence[str]) -> str:
-    return " · ".join(f"`{label}`" for label in labels)
+    """Tags as muted text at body size. Not inline code, which Streamlit fixes at
+    0.75em, 10.5 px here, below the 12 px floor (phase-7 D49)."""
+    return f":gray[{' · '.join(labels)}]"
 
 
 # --- tables (D10, D23) ---

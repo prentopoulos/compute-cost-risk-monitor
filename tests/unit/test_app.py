@@ -113,6 +113,17 @@ def source_text(tab: Any) -> str:
     return " ".join(texts(sources(tab)))
 
 
+def tags(block: Any) -> set[str]:
+    """The tags on a tab: each muted segment but section labels, split at "·"."""
+    found: set[str] = set()
+    for text in texts(block):
+        for segment in text.split(":gray[")[1:]:
+            inner = segment.split("]")[0]
+            if not inner.startswith("**"):
+                found.update(inner.split(" · "))
+    return found
+
+
 # --- datasets and states ---
 
 
@@ -354,7 +365,8 @@ def test_single_list_price_tagged(demo: list[tuple[str, Path]]) -> None:
     at = page(demo)
     choose(at, "T4 16GB", 1, "on_demand", "westeurope")
     show(at, "Comparable groups")
-    assert f"`{groups.SINGLE}`" in texts(at.tabs[1])
+    assert dashboard.labels_text([groups.SINGLE]) in texts(at.tabs[1])
+    assert groups.SINGLE in tags(at.tabs[1])
 
 
 def test_cross_region_view_and_chart(demo: list[tuple[str, Path]]) -> None:
@@ -374,7 +386,8 @@ def test_cross_region_view_and_chart(demo: list[tuple[str, Path]]) -> None:
     assert stats == [{"Regions": 5, "Minimum": 12.0, "Median": 13.0, "Maximum": 15.0}]
     assert dashboard.LOWEST in source_text(tab)
     assert len(tab.get("vega_lite_chart")) == 1
-    assert f"`{groups.THIN}`" not in " ".join(texts(tab))
+    assert groups.THIN not in tags(tab)
+    assert {groups.LOWEST, groups.CROSSES} <= tags(tab)
 
 
 def test_one_exclusions_footer_and_the_keys_in_sources(
@@ -391,7 +404,7 @@ def test_one_exclusions_footer_and_the_keys_in_sources(
     assert "Snapshot 2026-10-12 09:00 UTC, run synthetic-" in shown
     assert "data label: synthetic" in shown
     assert "Crosses regions: H100 NVLink 80GB · 8 GPUs · Spot" in shown
-    assert f"`{groups.THIN}`" in " ".join(texts(tab))
+    assert groups.THIN in tags(tab)
 
 
 def test_marketplace_view_marks_duplicates(tmp_path: Path) -> None:
@@ -420,7 +433,7 @@ def test_marketplace_view_marks_duplicates(tmp_path: Path) -> None:
     figures = dict((m.label, m.value) for m in tab.metric)
     assert figures["Machines"] == str(offers["Machine"].nunique())
     assert figures["Offers"] == str(len(offers))
-    assert f"`{groups.SYNTHETIC}`" in " ".join(texts(tab))
+    assert groups.SYNTHETIC in tags(tab)
     assert not tab.get("vega_lite_chart")
 
 
