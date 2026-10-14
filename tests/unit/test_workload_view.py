@@ -7,10 +7,8 @@ pay-as-you-go listing. Every expected figure below was worked out by hand.
 """
 
 import dataclasses
-import math
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import Any
 
 import duckdb
 import pytest
@@ -25,7 +23,7 @@ from compute_cost_risk_monitor import (
 )
 from compute_cost_risk_monitor.calculator import Custom, Workload
 from compute_cost_risk_monitor.groups import GroupKey, RegionGroup
-from compute_cost_risk_monitor.scenarios import JUDGEMENT, NOT_A_FORECAST, PERCENT, USD
+from compute_cost_risk_monitor.scenarios import JUDGEMENT, PERCENT, USD
 from seed import Price, azure_run, database
 from support import FIXTURES
 
@@ -181,118 +179,225 @@ def test_missing_published_price_fails_the_check(found: list[RegionGroup]) -> No
     assert failed == ["published price missing"]
 
 
-# --- known figures on the demo ---
+# --- known figures on the demo (phase-7 D6, D7, D9, D32-D39) ---
+
+EXCLUSIONS = (
+    "Excludes disks and storage, egress, public IPs, licences, taxes, negotiated"
+    " discounts, reservations and savings plans, Spot eviction risk, capacity and"
+    " quota."
+)
 
 
-def test_known_workload_on_the_demo(found: list[RegionGroup]) -> None:
+def test_key_figures_on_the_demo(found: list[RegionGroup]) -> None:
     shown = result(found)
-    cost = dashboard.cost_frame(shown)
-    assert list(cost.columns) == ["Item", "Basis", dashboard.AMOUNT]
-    assert list(cost["Item"]) == ["Compute", "Storage", "Total"]
-    assert cost[dashboard.AMOUNT][0] == 276_480.0  # 32 x 720 x 12.0
-    assert math.isnan(cost[dashboard.AMOUNT][1])
-    assert cost["Basis"][0] == ("32 GPUs (4 VMs) × 720 h × USD 12.0000/GPU-hour")
-    assert cost["Basis"][1] == "not included"
-    assert dashboard.vms_text(shown) == "32 GPUs = 4 VMs of 8 GPUs"
-    one = result(found, work=Workload(8, 10.0))
-    assert dashboard.vms_text(one) == "8 GPUs = 1 VM of 8 GPUs"
-    assert dashboard.cost_frame(one)["Basis"][0].startswith("8 GPUs (1 VM) × 10 h")
-    frame = dashboard.scenario_frame(shown)
-    assert list(frame.columns) == dashboard.SCENARIO_COLUMNS
-    assert list(frame.columns)[:3] == ["Scenario", "Effect", dashboard.EXPOSURE]
-    assert list(frame.columns)[-1] == "Narrative"
-    assert frame["Scenario"][0] == dashboard.STARTING
-    assert frame["Effect"][0] == dashboard.BASELINE
-    example = frame[frame["Scenario"] == "PROJECT example +$0.50/GPU-hour"].iloc[0]
-    assert example[dashboard.EXPOSURE] == 11_520.0
-    assert example["Effect"] == calc.ADDITIONAL
+    assert dashboard.workload_figures(shown.start, shown, False) == [
+        ("Cost, USD", "276,480.00"),  # 32 x 720 x 12.0
+        ("USD/GPU-h · PAYG", "12.0000"),
+        ("VMs", "4 × ND96isr H100 v5"),
+        ("GPUs × h", "32 × 720"),
+    ]
+    budgeted = result(found, limit=11_520.0)
+    assert dashboard.workload_figures(budgeted.start, budgeted, True)[-1] == (
+        "Headroom, USD/GPU-h",
+        "+0.5000 (4.2%)",
+    )
+    spot = result(found, "eastus", "spot", limit=11_520.0)
+    figures = dict(dashboard.workload_figures(spot.start, spot, True))
+    assert figures["USD/GPU-h · SPOT"] == "12.0000"
+    assert figures["Headroom, USD/GPU-h"] == "+0.5000 (4.2%) †"  # 12.5 > 12.0
 
 
-def test_storage_entered_is_added_and_labelled(found: list[RegionGroup]) -> None:
-    shown = result(found, work=Workload(8, 100.0, 150.0))
-    cost = dashboard.cost_frame(shown)
-    assert list(cost[dashboard.AMOUNT]) == [9_600.0, 150.0, 9_750.0]
-    assert cost["Basis"][1] == "entered by you, not an Azure list price"
-    caption = dashboard.workload_caption(shown)
-    assert "Storage: USD 150.00 entered by you for this period" in caption
-    assert dashboard.STORAGE_NONE not in caption
+def test_key_figures_withheld_show_only_labels(found: list[RegionGroup]) -> None:
+    begin = result(found).start
+    assert dashboard.workload_figures(begin, None, True) == [
+        ("Cost, USD", "—"),
+        ("USD/GPU-h · PAYG", "—"),
+        ("VMs", "—"),
+        ("GPUs × h", "—"),
+        ("Headroom, USD/GPU-h", "—"),
+    ]
+    assert len(dashboard.workload_figures(begin, None, False)) == 4
 
 
-def test_workload_caption_carries_key_snapshot_label_and_assumptions(
-    found: list[RegionGroup],
-) -> None:
-    caption = dashboard.workload_caption(result(found))
+def test_cost_table_on_the_demo(found: list[RegionGroup]) -> None:
+    table = dashboard.cost_table(result(found))
+    assert list(table.columns) == ["", "USD/VM-h", "VM-h", "USD"]
+    assert table.values.tolist() == [
+        ["Compute", "96", "2,880", "276,480.00"],
+        ["Storage", "", "", "—"],
+        ["Total", "", "", "276,480.00"],
+    ]
+    stored = dashboard.cost_table(result(found, work=Workload(8, 100.0, 150.0)))
+    assert stored.values.tolist() == [
+        ["Compute", "96", "100", "9,600.00"],
+        ["Storage", "", "", "150.00"],
+        ["Total", "", "", "9,750.00"],
+    ]
+    html = dashboard.cost_styles(result(found)).to_html()
+    assert "font-weight: 700" in html  # the total
+    assert "text-align: right !important" in html
+
+
+def test_grid_on_the_demo(found: list[RegionGroup]) -> None:
+    shown = result(found)
+    frame = dashboard.grid_frame(shown.ladder)
+    assert list(frame.columns) == ["Δ price \\ GPUs", "8", "16", "32", "64", "128"]
+    rows = {row[0]: row[1:] for row in frame.values.tolist()}
+    assert list(rows) == [
+        "−50%",
+        "−25%",
+        "−10%",
+        "+10%",
+        "+25%",
+        "+50%",
+        "+100%",
+        "+0.50 USD/GPU-h",
+    ]
+    assert rows["+25%"][2] == "+69,120"  # 32 x 720 x 3.0
+    assert rows["−50%"][2] == "−138,240"
+    assert rows["+0.50 USD/GPU-h"] == [
+        "+2,880",
+        "+5,760",
+        "+11,520",
+        "+23,040",
+        "+46,080",
+    ]
+    assert dashboard.grid_title(KNOWN) == (
+        ":gray[**SCENARIO GRID**] **Δ cost, USD · 720 h**"
+    )
+
+
+def test_grid_colours_rules_and_the_entered_column(found: list[RegionGroup]) -> None:
+    ladder = result(found).ladder
+    styles = dashboard.grid_styles(ladder)
+    by_row = {row.id: list(styles.iloc[i]) for i, row in enumerate(ladder.rows)}
+    colours = dashboard.COLOURS
+    assert f"color: {colours['green']}" in by_row["down-50"][1]
+    assert f"color: {colours['red']}" in by_row["up-25"][1]
+    assert f"border-top: 2px solid {colours['zero']}" in by_row["up-10"][0]
+    assert "border-top: 1px" in by_row["flat-050"][0]
+    assert "border-top" not in by_row["up-25"][0]
+    entered = by_row["up-25"][3]  # the 32-GPU column
+    assert f"background-color: {colours['shade']}" in entered
+    assert "font-weight: 700" in entered
+    assert "background-color" not in by_row["up-25"][2]
+    html = dashboard.grid(ladder).to_html()
+    assert "th.col3 {" in html  # the entered column's header
+    assert colours["accent"] in html
+
+
+def test_grid_cells() -> None:
+    assert dashboard.grid_cell(27_648.4) == "+27,648"
+    assert dashboard.grid_cell(-13_824.0) == "−13,824"
+    assert dashboard.grid_cell(0.0) == "0"
+    assert dashboard.grid_cell(-0.004) == "−0.004"  # never shown as 0
+
+
+def test_grid_rows_for_spot_groups(found: list[RegionGroup]) -> None:
+    priced = dashboard.grid_frame(result(found, "westeurope", "spot").ladder)
+    fallback = priced.values.tolist()[-1]
+    assert fallback[0] == "Spot → PAYG *"
+    assert fallback[3] == "+172,800"  # 32 x 720 x (12.5 - 5.0)
+    unlisted = dashboard.grid_frame(result(found, "uksouth", "spot").ladder)
+    assert unlisted.values.tolist()[-1] == ["Spot → PAYG *"] + ["n/a"] * 5
+    equal = result(found, "eastus", "spot")
+    labels = list(dashboard.grid_frame(equal.ladder)[dashboard.GRID_CORNER])
+    assert labels[:3] == ["−50%", "−25%", "−10%"]
+    assert labels[3:8] == [  # above 12.0, the same size's pay-as-you-go price
+        "+10% †",
+        "+25% †",
+        "+50% †",
+        "+100% †",
+        "+0.50 USD/GPU-h †",
+    ]
+    assert labels[-1] == "Spot → PAYG *"
+    styles = dashboard.grid_styles(result(found, "uksouth", "spot").ladder)
+    assert f"color: {dashboard.COLOURS['muted']}" in str(styles.iloc[-1, 3])
+
+
+def test_refused_custom_row_shows_na(found: list[RegionGroup]) -> None:
+    shown = result(found, "uksouth", "spot", change=Custom(USD, -6.0))
+    last = dashboard.grid_frame(shown.ladder).values.tolist()[-1]
+    assert last == ["Custom −6 USD/GPU-h"] + ["n/a"] * 5
+    assert dashboard.footer(shown).endswith(dashboard.ZERO_CLAUSE)
+
+
+def test_footer_clauses(found: list[RegionGroup]) -> None:
+    assert dashboard.footer(result(found)) == (
+        f"Scenario calculation, not a forecast. {EXCLUSIONS}"
+    )
+    stored = dashboard.footer(result(found, work=Workload(32, 720.0, 5_000.0)))
+    assert stored.endswith(" Total includes USD 5,000.00 storage entered by you.")
+    unlisted = dashboard.footer(result(found, "uksouth", "spot"))
+    assert unlisted.endswith(
+        " * Crosses rental types (Spot → pay-as-you-go): same size, same region."
+        " Not computed: no pay-as-you-go listing for this size in this region."
+    )
+    priced = dashboard.footer(result(found, "westeurope", "spot"))
+    assert dashboard.CROSSING_CLAUSE in priced
+    assert dashboard.NO_PAYG_CLAUSE not in priced
+    marked = dashboard.footer(result(found, "eastus", "spot"))
+    assert marked.endswith(
+        " † Above this size's pay-as-you-go list price (USD 12.0000/GPU-h): the"
+        " arithmetic, not what Azure would bill."
+    )
+    assert "†" not in priced  # 5.0 doubled stays below 12.5
+    # No grid row reaches 12.5 there, but a rise of USD 200,000 / (32 x 720) does.
+    roomy = result(found, "westeurope", "spot", limit=200_000.0)
+    assert roomy.headroom is not None and roomy.headroom.above_payg == 12.5
+    assert all(row.above_payg is None for row in roomy.ladder.rows)
+    assert dashboard.footer(roomy).endswith(
+        " Above this size's pay-as-you-go list price (USD 12.5000/GPU-h): the"
+        " arithmetic, not what Azure would bill."
+    )
+
+
+def test_workload_sources(found: list[RegionGroup]) -> None:
+    shown = result(found, limit=11_520.0)
+    lines = dashboard.workload_sources(shown.start.group, shown)
+    assert lines[0] == "Group: H100 NVLink 80GB · 8 GPUs · eastus · pay-as-you-go"
+    assert lines[1].startswith("Snapshot 2026-10-12 09:00 UTC, run ")
+    assert lines[1].endswith(" · data label: synthetic")
+    assert lines[2] == f"ladder-v1 and scenarios-v1: {JUDGEMENT}"
     for text in (
-        "Group: H100 NVLink 80GB · 8 GPUs · eastus · pay-as-you-go",
-        "snapshot 2026-10-12 09:00 UTC",
-        "data label: synthetic",
-        "Excludes disks and storage",
         dashboard.STORAGE_NONE,
         dashboard.BILLING,
         dashboard.HOURS_NOTE,
+        dashboard.WORKLOAD_INTRO,
+        dashboard.BUDGET_HINT,
+        dashboard.headroom_text(shown),
     ):
-        assert text in caption
-    assert dashboard.SPOT_LINE not in caption
+        assert text in lines
+    assert any(
+        line.startswith("Starting price: USD 12.0000/GPU-hour") for line in lines
+    )
+    assert dashboard.SPOT_LINE not in lines
+    withheld = dashboard.workload_sources(shown.start.group, None)
+    assert not any(
+        "Starting price" in line or "USD 0.5000" in line for line in withheld
+    )
+    assert dashboard.BILLING in withheld
 
 
-def test_spot_captions_add_the_spot_line_and_the_crossing(
+def test_spot_sources_name_both_keys_and_the_full_note(
     found: list[RegionGroup],
 ) -> None:
-    shown = result(found, "westeurope", "spot")
-    assert dashboard.SPOT_LINE in dashboard.workload_caption(shown)
-    caption = dashboard.scenario_caption(shown)
-    for text in ("scenarios-v1", NOT_A_FORECAST, JUDGEMENT, dashboard.CROSSES_RENTAL):
-        assert text in caption
+    westeurope = result(found, "westeurope", "spot")
+    lines = dashboard.workload_sources(westeurope.start.group, westeurope)
+    assert dashboard.SPOT_LINE in lines
     payg = pick(found, H100, 8, "westeurope", "on_demand").members[0]
-    assert caption.endswith(
-        "H100 NVLink 80GB · 8 GPUs · westeurope · Spot →"
+    assert (
+        "Spot → PAYG row crosses rental types (Spot → pay-as-you-go):"
+        " H100 NVLink 80GB · 8 GPUs · westeurope · Spot →"
         " H100 NVLink 80GB · 8 GPUs · westeurope · pay-as-you-go"
         f" (Standard_ND96isr_H100_v5, item key {payg.item_key})"
-    )
-    assert "(not listed in this snapshot)" not in caption
-    unlisted = dashboard.scenario_caption(result(found, "uksouth", "spot"))
-    assert unlisted.endswith(
-        "H100 NVLink 80GB · 8 GPUs · uksouth · pay-as-you-go"
-        " (not listed in this snapshot)"
-    )
-    plain = dashboard.scenario_caption(result(found))
-    assert dashboard.CROSSES_RENTAL not in plain
-    assert NOT_A_FORECAST in plain
-
-
-def test_fallback_rows_on_the_demo(found: list[RegionGroup]) -> None:
-    priced = dashboard.scenario_frame(result(found, "westeurope", "spot"))
-    fallback = priced.iloc[-1]
-    assert fallback["Scenario"] == calc.FALLBACK_NAME
-    assert fallback[dashboard.EXPOSURE] == pytest.approx(32 * 720 * 7.5)
-    assert fallback["Note"] == dashboard.CROSSES_RENTAL
-    equal = dashboard.scenario_frame(result(found, "eastus", "spot")).iloc[-1]
-    assert (equal[dashboard.EXPOSURE], equal["Effect"]) == (0.0, calc.NO_CHANGE)
-    unlisted = dashboard.scenario_frame(result(found, "uksouth", "spot")).iloc[-1]
-    assert unlisted["Effect"] == calc.NO_PAYG
-    assert math.isnan(unlisted[dashboard.EXPOSURE])
-    assert math.isnan(unlisted[dashboard.SCENARIO_USD])
-
-
-def test_note_above_pay_as_you_go_on_the_demo(found: list[RegionGroup]) -> None:
-    frame = dashboard.scenario_frame(result(found, "eastus", "spot"))
-    increase = frame[frame["Scenario"] == "Increase +25%"].iloc[0]
-    assert increase["Note"] == dashboard.ABOVE_PAYG.format(price="12.0000")
-    assert increase[dashboard.EXPOSURE] == pytest.approx(32 * 720 * 3.0)
-    decline = frame[frame["Scenario"] == "Decline −25%"].iloc[0]
-    assert decline["Note"] == ""
-    below = dashboard.scenario_frame(result(found, "westeurope", "spot"))
-    assert set(below["Note"][1:5]) == {""}  # 5.0 doubled stays below 12.5
-
-
-def test_refused_custom_row_shows_no_figure(found: list[RegionGroup]) -> None:
-    frame = dashboard.scenario_frame(
-        result(found, "uksouth", "spot", change=Custom(USD, -6.0))
-    )
-    custom = frame.iloc[-1]
-    assert custom["Effect"] == calc.ZERO_OR_BELOW
-    assert math.isnan(custom[dashboard.EXPOSURE])
-    assert custom["Scenario"].startswith("Custom: −6 USD/GPU-hour")
+    ) in lines
+    uksouth = result(found, "uksouth", "spot")
+    lines = dashboard.workload_sources(uksouth.start.group, uksouth)
+    assert any(line.endswith("(not listed in this snapshot)") for line in lines)
+    eastus = result(found, "eastus", "spot")
+    lines = dashboard.workload_sources(eastus.start.group, eastus)
+    assert dashboard.ABOVE_PAYG.format(price="12.0000") in lines
 
 
 def test_headroom_text(found: list[RegionGroup]) -> None:
@@ -326,29 +431,6 @@ def test_start_text_names_the_lowest_member_only_when_it_is(
     picked = dashboard.start_text(calc.start(t4, "Standard_NC8as_T4_v3"))
     assert dashboard.LOWEST_MEMBER not in picked
     assert "item key" in picked and "run " in picked
-
-
-def test_exposure_chart_draws_computed_rows_and_a_zero_rule(
-    found: list[RegionGroup],
-) -> None:
-    shown = result(found, "uksouth", "spot", change=Custom(USD, -6.0))
-    spec = dashboard.exposure_chart(shown).to_dict()
-    layers: list[tuple[str, list[dict[str, Any]]]] = []
-    for layer in spec["layer"]:
-        mark = layer["mark"]
-        kind = mark if isinstance(mark, str) else mark["type"]
-        layers.append((kind, spec["datasets"][layer["data"]["name"]]))
-    (bar_kind, bars), (rule_kind, rules) = layers
-    assert (bar_kind, rule_kind) == ("bar", "rule")
-    assert [b["Scenario"] for b in bars] == [
-        "Decline −25%",
-        "Increase +25%",
-        "PROJECT example +$0.50/GPU-hour",
-        "Spike +100% (price doubles)",
-    ]  # the unlisted fallback and the refused custom row are absent
-    assert bars[2][dashboard.EXPOSURE] == 11_520.0  # 32 GPUs x 720 h x 0.50
-    assert rules == [{dashboard.EXPOSURE: 0.0}]
-    assert "line" not in str(spec["layer"])
 
 
 @pytest.mark.parametrize(
@@ -392,8 +474,7 @@ def test_check_and_calculator_agree_on_effect_words() -> None:
 
 
 def test_marketplace_note_points_to_azure() -> None:
-    assert "Azure list-price groups" in dashboard.MARKETPLACE_NOTE
-    assert "data-quality rules" in dashboard.MARKETPLACE_NOTE
+    assert dashboard.MARKETPLACE_NOTE == "Workload cost uses the Azure VMs catalogue."
 
 
 def test_spot_size_missing_from_its_pay_as_you_go_group_is_not_computed() -> None:

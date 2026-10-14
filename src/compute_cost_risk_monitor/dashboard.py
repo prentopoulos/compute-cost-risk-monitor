@@ -14,10 +14,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import altair as alt
 import duckdb
 import pandas as pd
+from pandas.io.formats.style import Styler
 
 from compute_cost_risk_monitor import (
     azure_retail,
@@ -30,7 +32,10 @@ from compute_cost_risk_monitor import (
     synthetic,
     workload_check,
 )
-from compute_cost_risk_monitor.calculator import Custom, Result, Row, Start, Workload
+from compute_cost_risk_monitor.calculator import Custom, Result, Start, Workload
+
+if TYPE_CHECKING:
+    from pandas.io.formats.style_render import CSSDict
 from compute_cost_risk_monitor.collect import DEFAULT_DB as MONITOR_DB
 from compute_cost_risk_monitor.groups import (
     CrossRegionSummary,
@@ -41,16 +46,34 @@ from compute_cost_risk_monitor.groups import (
 )
 
 TITLE = "Compute Cost & Risk Monitor"
-LIVE_DATASET = "Live Azure list prices (local only)"
-SYNTHETIC_DATASET = "Synthetic (invented prices)"
+TITLE_LINE = "COMPUTE COST & RISK MONITOR"
+# Dataset and catalogue names (phase-7 D33, D37): never the word "live".
+LIVE_DATASET = "Azure list prices (local only)"
+SYNTHETIC_DATASET = "Synthetic demo"
 KNOWN: tuple[tuple[str, Path], ...] = (
     (LIVE_DATASET, MONITOR_DB),
     (SYNTHETIC_DATASET, synthetic.DEFAULT_DB),
 )
 AZURE = azure_retail.SOURCE
 MARKETPLACE = synthetic.SOURCE
-SOURCE_NAMES = {AZURE: "Azure retail list prices", MARKETPLACE: "Synthetic marketplace"}
-RENTAL_NAMES = {"on_demand": "pay-as-you-go", "spot": "Spot"}
+CATALOGUE = {AZURE: "Azure VMs", MARKETPLACE: "Marketplace"}
+RENTAL_NAMES = {"on_demand": "pay-as-you-go", "spot": "Spot"}  # in running text
+PRICING_NAMES = {"on_demand": "Pay-as-you-go", "spot": "Spot"}  # the Pricing choice
+PRICING_SHORT = {"on_demand": "PAYG", "spot": "SPOT"}  # key-figure labels
+# The status line (phase-7 D6, D9, D28, D42).
+DATA_SYNTHETIC = "SYNTHETIC DATA — NOT AZURE LIST PRICES"
+DATA_PUBLISHED = "AZURE PUBLISHED LIST PRICES"
+STALE_LINE = "STALE — OLDER THAN {days} DAYS AS OF {when}"
+# Status words for states, drawn in text colour and never as alert boxes (D40, D41).
+REFUSED = "REFUSED"
+CHECK_FAILED_WORD = "CHECK FAILED"
+NO_SNAPSHOT_WORD = "NO SNAPSHOT"
+NO_DATABASE_WORD = "NO DATABASE"
+WITHHELD_WORD = "WITHHELD"
+NO_GROUPS_WORD = "NO GROUPS"
+NO_GROUPS = "This snapshot holds no comparable groups."
+DASH = "—"  # an empty input, a value not entered, or a figure withheld
+NA = "n/a"  # a grid cell that is not computed (D38)
 
 NO_DATABASE = (
     "No database yet. Collect live Azure list prices with"
@@ -151,7 +174,12 @@ FORMATS = {
 
 
 class Problem(Exception):
-    """The page cannot show figures; the message says why and what to run."""
+    """The page cannot show figures; the message says why and what to run, under a
+    status word (phase-7 D41)."""
+
+    def __init__(self, message: str, word: str) -> None:
+        super().__init__(message)
+        self.word = word
 
 
 @dataclass(frozen=True)
@@ -168,15 +196,15 @@ def datasets(known: Sequence[tuple[str, Path]] = KNOWN) -> list[Dataset]:
 def open_read_only(path: Path) -> duckdb.DuckDBPyConnection:
     """A read-only connection; Problem when the file is missing or held by a writer."""
     if not path.is_file():
-        raise Problem(NO_DATABASE)
+        raise Problem(NO_DATABASE, NO_DATABASE_WORD)
     try:
         return db.connect(path, read_only=True)
     except duckdb.IOException as error:
         if any(text in str(error) for text in LOCK_ERRORS):
-            raise Problem(IN_USE) from error
-        raise Problem(f"Cannot open {path}: {error}") from error
+            raise Problem(IN_USE, "IN USE") from error
+        raise Problem(f"Cannot open {path}: {error}", "CANNOT OPEN") from error
     except duckdb.Error as error:
-        raise Problem(f"Cannot open {path}: {error}") from error
+        raise Problem(f"Cannot open {path}: {error}", "CANNOT OPEN") from error
 
 
 @dataclass
@@ -189,6 +217,7 @@ class SourceView:
     stale_after_days: int | None = None
     region_groups: list[RegionGroup] = field(default_factory=list)
     summaries: list[CrossRegionSummary] = field(default_factory=list)
+    region_names: dict[str, str] = field(default_factory=dict)  # code -> stored name
 
     @property
     def snapshot(self) -> Snapshot | None:
@@ -219,7 +248,7 @@ def load(
     try:
         ordered = groups.snapshots(connection, source)
     except duckdb.CatalogException as error:  # a database file with no tables yet
-        raise Problem(EMPTY.format(path=path)) from error
+        raise Problem(EMPTY.format(path=path), "NO TABLES") from error
     labels = tuple(sorted({s.data_label for s in ordered}))
     if not ordered:
         report = quality.build(connection, source, as_of, rule_version)
@@ -227,7 +256,7 @@ def load(
     try:
         params = rules.stored(connection, rule_version)
     except KeyError as error:  # no rule set stored yet
-        raise Problem(NO_RULES.format(path=path)) from error
+        raise Problem(NO_RULES.format(path=path), "NO RULE SET") from error
     found = (
         groups.region_groups(connection, ordered[-1], rule_version)
         if with_groups
@@ -240,7 +269,18 @@ def load(
     view.region_groups = found
     if source == AZURE:
         view.summaries = groups.cross_region(found, params["thin_below_regions"])
+        view.region_names = region_names(connection)
     return view
+
+
+def region_names(connection: duckdb.DuckDBPyConnection) -> dict[str, str]:
+    """Each Azure region code's stored `location` name; codes without one are absent,
+    so the page shows the code (phase-7 D30). Nothing is filled in."""
+    rows = connection.execute(
+        "SELECT arm_region_name, min(location) FROM azure_retail_price"
+        " WHERE location IS NOT NULL GROUP BY arm_region_name"
+    ).fetchall()
+    return {str(code): str(name) for code, name in rows}
 
 
 def load_all(
@@ -258,8 +298,18 @@ def load_all(
             as_of,
             with_groups=selected is None or source == selected,
         )
-        for source in SOURCE_NAMES
+        for source in CATALOGUE
     }
+
+
+def catalogue_name(source: str, view: SourceView | None) -> str:
+    """The catalogue's name, with " (synthetic)" when its latest succeeded snapshot is
+    labelled synthetic. Read from the run, never the file, and never "(live)" (D33)."""
+    name = CATALOGUE[source]
+    snapshot = None if view is None else view.snapshot
+    if snapshot is not None and snapshot.data_label == synthetic.LABEL:
+        return f"{name} (synthetic)"
+    return name
 
 
 # --- filters (D1): cascading, offering only groups that exist ---
@@ -342,44 +392,88 @@ def snapshot_text(snapshot: Snapshot) -> str:
     )
 
 
-def group_caption(group: RegionGroup) -> str:
-    return (
-        f"Group: {key_text(group.key)} · {snapshot_text(group.snapshot)}"
-        f" · {group.exclusions}"
-    )
-
-
-def summary_caption(summary: CrossRegionSummary) -> str:
-    where = (
-        f"Crosses regions: {summary.variant} · {gpus(summary.gpu_count)}"
-        f" · {rental_name(summary.rental_type)}"
-    )
-    return f"{where} · {snapshot_text(summary.snapshot)} · {summary.exclusions}"
-
-
 def plain_caption(snapshot: Snapshot) -> str:
-    """For tables with no price: the snapshot and its label only."""
+    """The snapshot, its run and its label, as a sentence."""
     return snapshot_text(snapshot)[0].upper() + snapshot_text(snapshot)[1:]
 
 
-def framing(
-    snapshot: Snapshot, stale: bool | None, as_of: datetime, stale_after_days: int
-) -> str:
-    """The line under the title saying what the data is (D6)."""
-    when = utc(snapshot.started_at)
+def crosses_regions(summary: CrossRegionSummary) -> str:
+    return (
+        f"Crosses regions: {summary.variant} · {gpus(summary.gpu_count)}"
+        f" · {rental_name(summary.rental_type)}"
+    )
+
+
+def group_sources(
+    view: SourceView, group: RegionGroup, summary: CrossRegionSummary | None
+) -> list[str]:
+    """What the Comparable groups tab's Sources section says, before its source
+    records (phase-7 D9, D27): the keys, the snapshot and the explanatory notes."""
+    lines = [f"Group: {key_text(group.key)}", plain_caption(group.snapshot)]
+    if view.source == AZURE and len(group.members) > 1:
+        lines.append(MULTI_SIZE)
+    if summary is not None:
+        lines += [crosses_regions(summary), LOWEST]
+    return lines
+
+
+def browser_sources(snapshot: Snapshot) -> list[str]:
+    return [plain_caption(snapshot), BROWSER]
+
+
+def stamp(moment: datetime) -> str:
+    """A time for the status line: "12 OCT 2026 09:00 UTC"."""
+    return moment.astimezone(UTC).strftime("%d %b %Y %H:%M").upper() + " UTC"
+
+
+def data_label(snapshot: Snapshot) -> str:
+    """What the data is, from the run's label: synthetic, or published list prices."""
     if snapshot.data_label == synthetic.LABEL:
-        text = (
-            "Synthetic data: invented prices for demonstration, not Azure list prices"
-            f" · snapshot {when}"
-        )
-    else:
-        text = (
-            f"Published Azure retail list prices for GPU VMs · {snapshot.data_label}"
-            f" · snapshot {when} · local analysis only"
-        )
+        return DATA_SYNTHETIC
+    return DATA_PUBLISHED
+
+
+def status_line(
+    snapshot: Snapshot | None,
+    stale: bool | None,
+    as_of: datetime,
+    stale_after_days: int | None,
+) -> str:
+    """The one line over every tab, as markdown: the title, the data label in amber,
+    the snapshot's time, and STALE in amber when it applies (phase-7 D6, D9, D42)."""
+    parts = [f"**{TITLE_LINE}**"]
+    if snapshot is None:
+        return parts[0]
+    parts += [
+        f":orange[**{data_label(snapshot)}**]",
+        f"AS OF {stamp(snapshot.started_at)}",
+    ]
     if stale:
-        text += f" · STALE (older than {stale_after_days} days as of {utc(as_of)})"
-    return text
+        when = STALE_LINE.format(days=stale_after_days, when=stamp(as_of))
+        parts.append(f":orange[**{when}**]")
+    return " · ".join(parts)
+
+
+def pricing_name(rental: str) -> str:
+    return PRICING_NAMES.get(rental, rental)
+
+
+def region_name(view: SourceView, code: str) -> str:
+    """A region's stored name, or its code when none is stored (phase-7 D30)."""
+    return view.region_names.get(code, code)
+
+
+def region_choices(
+    view: SourceView, variant: str, count: int, rental: str
+) -> list[str]:
+    """The region codes the filters offer, sorted by the name shown for each."""
+    codes = regions(view.region_groups, variant, count, rental)
+    return sorted(codes, key=lambda code: (region_name(view, code), code))
+
+
+def short_size(name: str) -> str:
+    """A size for a key figure: no `Standard_` prefix, underscores as spaces (D46)."""
+    return name.removeprefix("Standard_").replace("_", " ")
 
 
 def labels_text(labels: Sequence[str]) -> str:
@@ -563,7 +657,7 @@ def _table(rows: list[tuple[str, object]]) -> pd.DataFrame:
 def panel(view: SourceView, as_of: datetime) -> Panel:
     """Counts only, from the quality report as of the injected time."""
     report = view.report
-    name = SOURCE_NAMES[view.source]
+    name = catalogue_name(view.source, view)
     if report.snapshot is None:
         empty = _table([])
         return Panel(view.source, None, f"{name} · {NO_SNAPSHOT}", empty, [], empty)
@@ -637,17 +731,15 @@ def panel(view: SourceView, as_of: datetime) -> Panel:
     )
 
 
-# --- workload cost (phase-5-calculator D3, D8, D10, D16, D18, D19, D21, D27) ---
+# --- workload cost (phase-5-calculator D3, D8, D10, D16, D18, D19, D21, D27;
+# phase-7 D6, D7, D9, D27, D32-D39) ---
 
 WORKLOAD_INTRO = (
     "How the cost of one workload would change under labelled price changes. These are"
     " scenario calculations from published list prices, not forecasts, market prices or"
     " what a customer would pay."
 )
-MARKETPLACE_NOTE = (
-    "The workload calculator uses Azure list-price groups: choose the Azure retail list"
-    " prices source. The synthetic marketplace data exercises the data-quality rules."
-)
+MARKETPLACE_NOTE = "Workload cost uses the Azure VMs catalogue."
 WITHHELD_WORKLOAD = (
     "The workload figures are withheld until this snapshot is normalized."
 )
@@ -684,12 +776,31 @@ BUDGET_HINT = (
     " scenario calculation)."
 )
 LOWEST_MEMBER = "lowest listed in this group"
-STARTING = "Starting price (listed)"
-BASELINE = "baseline"
-CUSTOM_KINDS = {
-    "% of starting price": scenarios.PERCENT,
-    "USD per GPU-hour": scenarios.USD,
-}
+# The custom move's unit switch and the input label each unit gets (D34).
+CUSTOM_KINDS = {"%": scenarios.PERCENT, "USD/GPU-h": scenarios.USD}
+CUSTOM_LABELS = {scenarios.PERCENT: "Custom, %", scenarios.USD: "Custom, USD/GPU-h"}
+# Key-figure labels (D6, D33).
+COST_LABEL = "Cost, USD"
+VMS_LABEL = "VMs"
+GPU_HOURS_LABEL = "GPUs × h"
+HEADROOM_LABEL = "Headroom, USD/GPU-h"
+# The scenario grid (D7, D25, D35, D36, D38).
+GRID_TITLE = "SCENARIO GRID"
+GRID_CORNER = "Δ price \\ GPUs"
+FALLBACK_LABEL = "Spot → PAYG *"
+CROSSED = " *"
+MARKED = " †"
+# Footer clauses, each only when it applies (D9, D35, D36, D44).
+STORAGE_CLAUSE = "Total includes USD {amount} storage entered by you."
+CROSSING_CLAUSE = (
+    "* Crosses rental types (Spot → pay-as-you-go): same size, same region."
+)
+NO_PAYG_CLAUSE = "Not computed: no pay-as-you-go listing for this size in this region."
+ZERO_CLAUSE = "Not computed: the price would be zero or below."
+MARK_CLAUSE = (
+    "† Above this size's pay-as-you-go list price (USD {price}/GPU-h): the"
+    " arithmetic, not what Azure would bill."
+)
 
 
 def money(value: float) -> str:
@@ -755,136 +866,211 @@ def start_text(begin: Start) -> str:
     )
 
 
-def vm_count(vms: int) -> str:
-    return f"{vms:,} {'VM' if vms == 1 else 'VMs'}"
-
-
-def vms_text(result: Result) -> str:
-    """The checked VM count beside the GPUs entered."""
-    return (
-        f"{result.workload.gpus:,} GPUs = {vm_count(result.cost.vms)}"
-        f" of {gpus(result.start.gpus_per_vm)}"
-    )
-
-
 def storage_line(work: Workload) -> str:
     if work.storage is None:
         return STORAGE_NONE
     return STORAGE_ENTERED.format(amount=f"{work.storage:,.2f}")
 
 
-def workload_caption(result: Result) -> str:
-    """Every workload figure: key, snapshot, label, exclusions and assumptions (D10)."""
-    begin = result.start
-    parts = [
-        group_caption(begin.group),
-        storage_line(result.workload),
-        BILLING,
-        HOURS_NOTE,
+def price_label(rental: str) -> str:
+    """The starting price's label, naming the rental type: "USD/GPU-h · PAYG"."""
+    return f"USD/GPU-h · {PRICING_SHORT.get(rental, rental.upper())}"
+
+
+KeyFigure = tuple[str, str]  # label, value
+
+
+def workload_figures(
+    begin: Start, result: Result | None, budget_entered: bool
+) -> list[KeyFigure]:
+    """The Workload key figures; each shows "—" until the check passes (D6, D33)."""
+    labels = [
+        COST_LABEL,
+        price_label(begin.key.rental_type),
+        VMS_LABEL,
+        GPU_HOURS_LABEL,
     ]
-    if begin.spot:
-        parts.append(SPOT_LINE)
-    return " · ".join(parts)
-
-
-def scenario_caption(result: Result) -> str:
-    """The workload caption plus the scenario set, its label and any crossing."""
-    parts = [
-        workload_caption(result),
-        result.version,
-        scenarios.NOT_A_FORECAST,
-        scenarios.JUDGEMENT,
+    if result is None:
+        if budget_entered:
+            labels.append(HEADROOM_LABEL)
+        return [(label, DASH) for label in labels]
+    work, cost = result.workload, result.cost
+    values = [
+        f"{cost.total:,.2f}",
+        fixed(begin.usd_per_gpu_hour, 4),
+        f"{cost.vms:,} × {short_size(begin.member.name)}",
+        f"{work.gpus:,} × {plain(work.hours, 4)}",
     ]
-    if result.payg_key is not None:
-        if result.payg is None:
-            where = " (not listed in this snapshot)"
-        else:
-            where = f" ({result.payg.name}, item key {result.payg.item_key})"
-        parts.append(
-            f"Fallback row {CROSSES_RENTAL}: {key_text(result.start.key)}"
-            f" → {key_text(result.payg_key)}{where}"
-        )
-    return " · ".join(parts)
+    room = result.headroom
+    if room is not None:
+        labels.append(HEADROOM_LABEL)
+        mark = MARKED if room.above_payg is not None else ""
+        values.append(f"+{fixed(room.rise, 4)} ({fixed(room.rise_pct, 1)}%){mark}")
+    return list(zip(labels, values, strict=True))
 
 
-def cost_frame(result: Result) -> pd.DataFrame:
-    """Compute, storage and total for the hours entered."""
-    begin, work, cost = result.start, result.workload, result.cost
-    entered = work.storage is not None
-    compute = (
-        f"{work.gpus:,} GPUs ({vm_count(cost.vms)}) × {hours_text(work.hours)}"
-        f" × {per_gpu_hour(begin.usd_per_gpu_hour)}"
-    )
-    storage = "entered by you, not an Azure list price" if entered else "not included"
-    total = "compute plus storage entered" if entered else "compute only"
-    return pd.DataFrame(
+def grid_cell(value: float) -> str:
+    """A change in cost in whole USD with its sign, or 3 significant digits when a
+    non-zero value would round to 0 (D32)."""
+    if value == 0:
+        return "0"
+    whole = round(abs(value))
+    text = f"{whole:,}" if whole else f"{abs(value):.3g}"
+    return ("+" if value > 0 else "−") + text
+
+
+def grid_label(row: calculator.LadderRow) -> str:
+    label = FALLBACK_LABEL if row.id == calculator.FALLBACK else row.label
+    return label + (MARKED if row.above_payg is not None else "")
+
+
+def grid_frame(ladder: calculator.Ladder) -> pd.DataFrame:
+    """The scenario grid as display text: one row per ladder row, one column per GPU
+    count; a refused row shows "n/a" in every cell (D7, D38)."""
+    columns = [GRID_CORNER, *(str(n) for n in ladder.columns)]
+    rows = [
         [
-            {"Item": "Compute", "Basis": compute, AMOUNT: cost.compute},
-            {"Item": "Storage", "Basis": storage, AMOUNT: cost.storage},
-            {"Item": "Total", "Basis": total, AMOUNT: cost.total},
-        ],
-        columns=["Item", "Basis", AMOUNT],
-    )
+            grid_label(row),
+            *(
+                [grid_cell(c) for c in row.cells]
+                if row.cells is not None
+                else [NA] * len(ladder.columns)
+            ),
+        ]
+        for row in ladder.rows
+    ]
+    return pd.DataFrame(rows, columns=columns)
 
 
-def note(row: Row) -> str:
-    if row.id == calculator.FALLBACK:
-        return CROSSES_RENTAL
-    if row.above_payg is not None:
-        return ABOVE_PAYG.format(price=f"{row.above_payg:.4f}")
-    return ""
+def _cell_colour(row: calculator.LadderRow, index: int) -> str:
+    if row.cells is None:
+        return COLOURS["muted"]
+    value = row.cells[index]
+    if value > 0:
+        return COLOURS["red"]
+    if value < 0:
+        return COLOURS["green"]
+    return COLOURS["text"]
 
 
-# The outcome first and the long narrative last, so a wide table never hides the
-# effect or a note off-screen (manual check, task 4.1).
-SCENARIO_COLUMNS = [
-    "Scenario",
-    "Effect",
-    EXPOSURE,
-    SCENARIO_COST,
-    SCENARIO_USD,
-    CHANGE_USD,
-    CHANGE_PCT,
-    "Note",
-    "Narrative",
+def grid_styles(ladder: calculator.Ladder) -> pd.DataFrame:
+    """CSS for each grid cell: colour by sign, the entered column shaded and bold, a
+    rule above price rises and above the flat and extra rows (D7, D10, D16)."""
+    styles = []
+    ids = [row.id for row in ladder.rows]
+    extra = ids.index("flat-050") + 1  # the first fallback or custom row, if any
+    for position, row in enumerate(ladder.rows):
+        border = ""
+        if row.id == "up-10":
+            border = f"border-top: 2px solid {COLOURS['zero']};"
+        elif row.id == "flat-050" or position == extra:
+            border = f"border-top: 1px solid {COLOURS['border']};"
+        line = [f"color: {COLOURS['muted']}; {LABEL_CELL} {border}"]
+        for index, column in enumerate(ladder.columns):
+            css = f"color: {_cell_colour(row, index)}; {NUMBER_CELL} {border}"
+            if column == ladder.entered:
+                css += f" background-color: {COLOURS['shade']}; font-weight: 700;"
+            line.append(css)
+        styles.append(line)
+    return pd.DataFrame(styles, columns=grid_frame(ladder).columns)
+
+
+# Numbers right-aligned in columns wide enough to scan; labels left (phase-7 D7).
+LABEL_CELL = "text-align: left !important; min-width: 10rem;"
+NUMBER_CELL = "text-align: right !important; min-width: 7.5rem;"
+_HEADERS: list[CSSDict] = [
+    {"selector": "th", "props": [("text-align", "right !important")]},
+    {"selector": "th.col0", "props": [("text-align", "left !important")]},
 ]
 
 
-def scenario_frame(result: Result) -> pd.DataFrame:
-    """The starting price first, then each scenario; a refused row shows no figure."""
-    begin = result.start
-    rows: list[dict[str, object]] = [
-        {
-            "Scenario": STARTING,
-            "Narrative": f"The listed price of {begin.member.name}.",
-            CHANGE_USD: None,
-            CHANGE_PCT: None,
-            SCENARIO_USD: begin.usd_per_gpu_hour,
-            SCENARIO_COST: result.cost.total,
-            EXPOSURE: None,
-            "Effect": BASELINE,
-            "Note": "",
-        }
-    ]
-    rows += [
-        {
-            "Scenario": row.name,
-            "Narrative": row.narrative,
-            CHANGE_USD: row.change,
-            CHANGE_PCT: row.change_pct,
-            SCENARIO_USD: row.price,
-            SCENARIO_COST: row.cost,
-            EXPOSURE: row.exposure,
-            "Effect": row.effect,
-            "Note": note(row),
-        }
-        for row in result.rows
-    ]
-    return pd.DataFrame(rows, columns=SCENARIO_COLUMNS)
+def grid(ladder: calculator.Ladder) -> Styler:
+    """The grid for `st.table`; Styler styles stay scoped to the table (D16)."""
+    frame = grid_frame(ladder)
+    styles = grid_styles(ladder)
+    entered = 1 + ladder.columns.index(ladder.entered)
+    return frame.style.apply(lambda _: styles, axis=None).set_table_styles(
+        [
+            *_HEADERS,
+            {
+                "selector": f"th.col{entered}",
+                "props": [
+                    ("color", COLOURS["accent"]),
+                    ("font-weight", "700"),
+                    ("background-color", COLOURS["shade"]),
+                ],
+            },
+        ]
+    )
+
+
+def grid_title(work: Workload) -> str:
+    return f":gray[**{GRID_TITLE}**] **Δ cost, USD · {hours_text(work.hours)}**"
+
+
+def footer(result: Result) -> str:
+    """Under the grid: the scenario label and the exclusions word for word, then each
+    clause that applies (D9, D35, D36, D39, D44)."""
+    parts = [f"{scenarios.NOT_A_FORECAST}. {result.start.group.exclusions}"]
+    if result.workload.storage is not None:
+        parts.append(STORAGE_CLAUSE.format(amount=f"{result.workload.storage:,.2f}"))
+    rows = {row.id: row for row in result.ladder.rows}
+    fallback = rows.get(calculator.FALLBACK)
+    if fallback is not None:
+        parts.append(CROSSING_CLAUSE)
+        if not fallback.computed:
+            parts.append(NO_PAYG_CLAUSE)
+    marks = [row.above_payg for row in result.ladder.rows if row.above_payg is not None]
+    if result.headroom is not None and result.headroom.above_payg is not None:
+        marks.append(result.headroom.above_payg)
+    if marks:
+        parts.append(MARK_CLAUSE.format(price=f"{marks[0]:.4f}"))
+    custom = rows.get(calculator.CUSTOM)
+    if custom is not None and not custom.computed:
+        parts.append(ZERO_CLAUSE)
+    return " ".join(parts)
+
+
+def cost_table(result: Result) -> pd.DataFrame:
+    """Compute, storage and total for the hours entered, as display text (D6)."""
+    begin, work, cost = result.start, result.workload, result.cost
+    price = begin.member.price
+    published = "" if price is None else plain(price, 10)
+    storage = DASH if cost.storage is None else f"{cost.storage:,.2f}"
+    return pd.DataFrame(
+        [
+            [
+                "Compute",
+                published,
+                plain(cost.vms * work.hours, 4),
+                f"{cost.compute:,.2f}",
+            ],
+            ["Storage", "", "", storage],
+            ["Total", "", "", f"{cost.total:,.2f}"],
+        ],
+        columns=["", "USD/VM-h", "VM-h", "USD"],
+    )
+
+
+def cost_styles(result: Result) -> Styler:
+    frame = cost_table(result)
+    total = f"font-weight: 700; border-top: 1px solid {COLOURS['border']};"
+    empty = f"color: {COLOURS['muted']};"
+    storage = empty if result.cost.storage is None else ""
+    rows = [[""] * 4, ["", "", "", storage], [total] * 4]
+    styles = pd.DataFrame(
+        [
+            [LABEL_CELL + row[0], *(NUMBER_CELL + css for css in row[1:])]
+            for row in rows
+        ],
+        columns=frame.columns,
+    )
+    return frame.style.apply(lambda _: styles, axis=None).set_table_styles(_HEADERS)
 
 
 def headroom_text(result: Result) -> str | None:
-    """The reverse calculation in words (D9), or None without a budget."""
+    """The reverse calculation in words (phase-5 D9), or None without a budget. The
+    page shows it in Sources (phase-7 D39)."""
     room = result.headroom
     if room is None:
         return None
@@ -899,39 +1085,43 @@ def headroom_text(result: Result) -> str | None:
     return text
 
 
-def exposure_chart(result: Result) -> alt.LayerChart:
-    """One bar per computed scenario row, with a rule at zero (D8)."""
-    computed = [row for row in result.rows if row.computed]
-    bars = pd.DataFrame(
-        {
-            "Scenario": [row.name for row in computed],
-            EXPOSURE: [row.exposure for row in computed],
-            "Effect": [row.effect for row in computed],
-        }
-    )
-    drawn = (
-        alt.Chart(bars)
-        .mark_bar(color=POINT_COLOUR)
-        .encode(
-            x=alt.X(
-                f"{EXPOSURE}:Q",
-                title="Exposure in USD (scenario calculation, not a forecast)",
-                axis=alt.Axis(format=",.0f"),
-            ),
-            y=alt.Y("Scenario:N", sort=None, title=None, axis=alt.Axis(labelLimit=0)),
-            tooltip=[
-                "Scenario:N",
-                alt.Tooltip(f"{EXPOSURE}:Q", format=",.2f"),
-                "Effect:N",
-            ],
+def workload_sources(group: RegionGroup, result: Result | None) -> list[str]:
+    """What the Workload tab's Sources section says, before its source records (D9).
+
+    Without a checked result it names the group, snapshot and terms, and no price.
+    """
+    lines = [f"Group: {key_text(group.key)}"]
+    if result is not None and result.payg_key is not None:
+        where = (
+            " (not listed in this snapshot)"
+            if result.payg is None
+            else f" ({result.payg.name}, item key {result.payg.item_key})"
         )
+        lines.append(
+            f"Spot → PAYG row {CROSSES_RENTAL}: {key_text(group.key)}"
+            f" → {key_text(result.payg_key)}{where}"
+        )
+    lines.append(
+        snapshot_text(group.snapshot)[0].upper() + snapshot_text(group.snapshot)[1:]
     )
-    zero = (
-        alt.Chart(pd.DataFrame({EXPOSURE: [0.0]}))
-        .mark_rule(color=RULE_COLOURS[0], strokeWidth=2)
-        .encode(x=f"{EXPOSURE}:Q")
+    lines.append(
+        f"{scenarios.LADDER_VERSION} and {scenarios.VERSION}: {scenarios.JUDGEMENT}"
     )
-    return alt.LayerChart(layer=[drawn, zero])
+    if result is not None:
+        lines.append(start_text(result.start))
+        lines.append(storage_line(result.workload))
+    lines += [BILLING, HOURS_NOTE, HOURS_HELP]
+    if group.key.rental_type == calculator.SPOT:
+        lines.append(SPOT_LINE)
+    if result is not None:
+        marks = [r.above_payg for r in result.ladder.rows if r.above_payg is not None]
+        if marks:
+            lines.append(ABOVE_PAYG.format(price=f"{marks[0]:.4f}"))
+        room = headroom_text(result)
+        if room is not None:
+            lines.append(room)
+    lines += [WORKLOAD_INTRO, BUDGET_HINT]
+    return lines
 
 
 def _listed_payg(begin: Start, found: Sequence[RegionGroup]) -> float | None:
@@ -1014,3 +1204,27 @@ def check(
         ),
     )
     return workload_check.check(inputs, figures)
+
+
+def group_figures(group: RegionGroup) -> list[KeyFigure]:
+    """The Comparable groups key figures: the lowest listed price with its size, and
+    the member count (for marketplace groups, machines and offers) (phase-7 D6)."""
+    low = groups.lowest(group.members)
+    figures = [
+        (
+            f"Lowest, {price_label(group.key.rental_type)}",
+            fixed(low.usd_per_gpu_hour, 4),
+        ),
+        (
+            "Offer" if group.snapshot.source == MARKETPLACE else "Size",
+            short_size(low.name),
+        ),
+    ]
+    if group.stats is not None:  # marketplace: one price per machine
+        figures += [
+            ("Machines", str(group.stats.count)),
+            ("Offers", str(len(group.members))),
+        ]
+    else:
+        figures.append(("Members", str(len(group.members))))
+    return figures

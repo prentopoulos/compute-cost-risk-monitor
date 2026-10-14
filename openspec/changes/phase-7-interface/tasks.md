@@ -43,13 +43,13 @@
   - the 4.5:1 floor for text, red, green, accent and amber on both backgrounds and the shade;
   - the 3:1 floor for the border;
   - no `<style>` in the source
-- [ ] 3.2 Sidebar and status line (MODIFIED "Dataset and source choice", "Comparable-group filters"; ADDED "Status line and key figures"; D28, D30, D33, D37, D42, D45):
+- [x] 3.2 Sidebar and status line (MODIFIED "Dataset and source choice", "Comparable-group filters"; ADDED "Status line and key figures"; D28, D30, D33, D37, D42, D45):
   - "Dataset" and "Catalogue" dropdowns, with the "(synthetic)" suffix read from the run;
   - the "GPU", "GPUs per VM", "Pricing" and "Region" dropdowns;
   - regions by their stored `location` name;
   - the status line on every tab, with the data label in amber, AS OF in text colour, and STALE
-- [ ] 3.3 State messages as plain status words (D40, D41): REFUSED, CHECK FAILED, NOT NORMALIZED, NO SNAPSHOT, IN USE and open errors. Keep every existing message word for word and use no alert boxes
-- [ ] 3.4 Rework the Workload cost tab to v3 (MODIFIED "Workload cost view"; D6, D7, D25, D27, D29, D32, D34, D38, D46):
+- [x] 3.3 State messages as plain status words (D40, D41): REFUSED, CHECK FAILED, NOT NORMALIZED, NO SNAPSHOT, IN USE and open errors. Keep every existing message word for word and use no alert boxes
+- [x] 3.4 Rework the Workload cost tab to v3 (MODIFIED "Workload cost view"; D6, D7, D25, D27, D29, D32, D34, D38, D46):
   - first tab, and no group line;
   - key figures (Cost, USD · USD/GPU-h · PAYG|SPOT · VMs · GPUs × h · Headroom), with "—" before the check;
   - the inputs row, including the custom unit switch;
@@ -57,15 +57,15 @@
   - the footer and its clauses (D9, D35, D36, D39);
   - the COST table, then Sources at full width;
   - remove the `scenarios-v1` table, the exposure chart, the workload introduction and the budget hint
-- [ ] 3.5 Sources everywhere (MODIFIED "Figure captions and framing line", "Region-group view", "Cross-region summary view", "Group browser"; D9, D27):
+- [x] 3.5 Sources everywhere (MODIFIED "Figure captions and framing line", "Region-group view", "Cross-region summary view", "Group browser"; D9, D27):
   - move every explanatory sentence and provenance field into Sources, word for word;
   - keep the terse tags on the page;
   - one exclusions footer per tab
-- [ ] 3.6 Apply the Comparable groups key figures in v3's grammar (cut item 3), and check Group browser and Data quality under the theme (cut item 1)
+- [x] 3.6 Apply the Comparable groups key figures in v3's grammar (cut item 3), and check Group browser and Data quality under the theme (cut item 1)
 
 ## 4. Verification
 
-- [ ] 4.1 AppTest flows on synthetic data:
+- [x] 4.1 AppTest flows on synthetic data:
   - the page opens on Workload cost;
   - the status line text: synthetic and live in amber, and STALE at an injected time;
   - the dataset and catalogue names;

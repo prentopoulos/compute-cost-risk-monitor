@@ -34,6 +34,8 @@ showWidgetBorder = true
 dataframeBorderColor = "#2A313C"
 dataframeHeaderBackgroundColor = "#161B22"
 baseFontSize = 14
+# Key figures at about 22 px, not the default hero size.
+metricValueFontSize = "1.6rem"
 baseRadius = "4px"
 # Red marks an added cost and green a saving, always with the sign. Amber marks
 # data labels and the stale warning. The text variants match, so markdown and
