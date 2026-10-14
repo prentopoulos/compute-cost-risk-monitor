@@ -1,9 +1,11 @@
-"""Scenario set scenarios-v1: frozen hypothetical price changes (phase-5 D5, D6).
+"""Frozen hypothetical price changes: scenarios-v1 (phase-5 D5, D6) and the scenario
+ladder ladder-v1 (phase-7 D7).
 
 Data only, so the calculator and its independent check (`workload_check`) read the same
 definitions without either importing the other. The magnitudes are round sensitivities
 chosen by judgement: one snapshot holds no history to calibrate them, and no model's
-numbers are used. A changed scenario needs a new set version, never an edit in place.
+numbers are used. A changed scenario or step needs a new set version, never an edit in
+place.
 """
 
 from __future__ import annotations
@@ -65,3 +67,29 @@ SCENARIOS_V1: Final[tuple[Scenario, ...]] = (
         " any model.",
     ),
 )
+
+LADDER_VERSION: Final = "ladder-v1"
+
+
+@dataclass(frozen=True)
+class Step:
+    """One ladder row: a change of the starting price, labelled by the change itself."""
+
+    id: str
+    label: str
+    kind: Kind
+    magnitude: float
+
+
+LADDER_V1: Final[tuple[Step, ...]] = (
+    Step("down-50", "−50%", PERCENT, -50.0),
+    Step("down-25", "−25%", PERCENT, -25.0),
+    Step("down-10", "−10%", PERCENT, -10.0),
+    Step("up-10", "+10%", PERCENT, 10.0),
+    Step("up-25", "+25%", PERCENT, 25.0),
+    Step("up-50", "+50%", PERCENT, 50.0),
+    Step("up-100", "+100%", PERCENT, 100.0),
+    Step("flat-050", "+0.50 USD/GPU-h", USD, 0.50),  # PROJECT.md's worked example
+)
+# The ladder's GPU columns; whole VMs at 1, 2, 4 and 8 GPUs per VM.
+LADDER_GPUS: Final[tuple[int, ...]] = (8, 16, 32, 64, 128)

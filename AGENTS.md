@@ -13,8 +13,9 @@ pricing, workload costs, budget exposure and the market brief.
 
 ## Boundaries
 
-- Seven phases after Phase 0 (PROJECT.md §6): schema, collector, normalization and quality
-  checks, Streamlit dashboard, workload costs and exposure scenarios, tests, public demo.
+- Eight phases after Phase 0 (PROJECT.md §6): schema, collector, normalization and quality
+  checks, Streamlit dashboard, workload costs and exposure scenarios, tests, front-office
+  interface, public demo.
 - One source (Azure Retail Prices API) until a second source's access, terms and comparable
   fields are verified. No GPU marketplace qualifies (terms checked 2026-10-11).
 - Data is published list prices, read-only. Never create or change cloud resources.

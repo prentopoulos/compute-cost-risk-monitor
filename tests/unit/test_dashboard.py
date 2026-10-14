@@ -4,6 +4,7 @@ All data is synthetic: the Azure demo snapshot and the marketplace snapshots und
 tests/fixtures/synthetic, plus seeded Azure runs with invented round prices.
 """
 
+import dataclasses
 import hashlib
 import subprocess
 import sys
@@ -271,6 +272,62 @@ def test_browser_has_keys_counts_and_labels_but_no_prices(
     ]
 
 
+def test_regions_show_their_stored_names_sorted_by_name(
+    views: dict[str, dashboard.SourceView],
+) -> None:
+    # Phase 7 D48: the same names as the Region filter, wherever a region is shown.
+    view = azure(views)
+    summary = dashboard.find_summary(view.summaries, H100, 8, "on_demand")
+    assert summary is not None
+    named = ["EU West", "Sweden Central", "US East", "US South Central", "US West 3"]
+    assert (
+        dashboard.summary_frame(summary, view.region_names)["Region"].tolist() == named
+    )
+    (_, points), _ = _layers(dashboard.summary_chart(summary, view.region_names))
+    assert [row["Region"] for row in points] == named
+    t4 = dashboard.browser_frame(view.region_groups, "T4 16GB", view.region_names)
+    assert t4[["Region", "Members", "Labels"]].values.tolist() == [
+        ["EU West", 1, groups.SINGLE],
+        ["US East", 2, ""],
+    ]
+    # A region without a stored name keeps its code.
+    partial = {"eastus": "US East"}
+    assert dashboard.summary_frame(summary, partial)["Region"].tolist() == [
+        "southcentralus",
+        "swedencentral",
+        "US East",
+        "westeurope",
+        "westus3",
+    ]
+
+
+def test_region_names_come_from_the_shown_run() -> None:
+    connection = database()
+    azure_run(connection, "early", [Price()])
+    azure_run(connection, "later", [Price()], started=DAY + timedelta(days=1))
+    connection.execute(
+        "UPDATE azure_retail_price SET location = 'AAA Old Name'"
+        " WHERE retrieved_at < ?",
+        [DAY + timedelta(hours=1)],
+    )
+    # min() over every run would pick the older 'AAA Old Name' (D50).
+    assert dashboard.region_names(connection, "later") == {"westeurope": "Synthetic"}
+    assert dashboard.region_names(connection, "early") == {"westeurope": "AAA Old Name"}
+    connection.execute(
+        "UPDATE azure_retail_price SET location = '  ' WHERE retrieved_at > ?",
+        [DAY + timedelta(hours=1)],
+    )
+    assert dashboard.region_names(connection, "later") == {}  # blank: the code shows
+    connection.close()
+
+
+def test_tags_are_muted_text_not_inline_code() -> None:
+    # Inline code is fixed at 0.75em (10.5 px), below the 12 px floor (D49).
+    assert dashboard.labels_text([groups.THIN, groups.SYNTHETIC]) == (
+        ":gray[thin · synthetic]"
+    )
+
+
 # --- group views, captions and formats ---
 
 
@@ -319,17 +376,36 @@ def test_source_records_trace_to_the_file(
     assert row["Retrieved (UTC)"] == "2026-10-12T09:00:00+00:00"
 
 
-def test_group_caption_carries_key_snapshot_label_and_exclusions(
+def test_group_sources_carry_key_snapshot_label_and_notes(
     views: dict[str, dashboard.SourceView],
 ) -> None:
+    view = azure(views)
+    t4 = group(view, "T4 16GB", 1, "eastus", "on_demand")
+    lines = dashboard.group_sources(view, t4, None)
+    assert lines[0] == "Group: T4 16GB · 1 GPU · eastus · pay-as-you-go"
+    assert lines[1].startswith("Snapshot 2026-10-12 09:00 UTC, run ")
+    assert t4.snapshot.run_id in lines[1]
+    assert lines[1].endswith("data label: synthetic")
+    assert dashboard.MULTI_SIZE in lines  # T4 lists two sizes here
+    summary = dashboard.find_summary(view.summaries, "T4 16GB", 1, "on_demand")
+    assert summary is not None
+    with_summary = dashboard.group_sources(view, t4, summary)
+    assert with_summary[-2:] == [dashboard.crosses_regions(summary), dashboard.LOWEST]
+    h100 = group(view, H100, 8, "eastus", "on_demand")
+    assert dashboard.MULTI_SIZE not in dashboard.group_sources(view, h100, None)
+    assert dashboard.browser_sources(t4.snapshot) == [
+        dashboard.plain_caption(t4.snapshot),
+        dashboard.BROWSER,
+    ]
+
+
+def test_group_key_figures(views: dict[str, dashboard.SourceView]) -> None:
     t4 = group(azure(views), "T4 16GB", 1, "eastus", "on_demand")
-    text = dashboard.group_caption(t4)
-    assert "Group: T4 16GB · 1 GPU · eastus · pay-as-you-go" in text
-    assert "snapshot 2026-10-12 09:00 UTC" in text
-    assert t4.snapshot.run_id in text
-    assert "data label: synthetic" in text
-    assert text.endswith(t4.exclusions)
-    assert t4.exclusions.startswith("Excludes disks")
+    assert dashboard.group_figures(t4) == [
+        ("Lowest, USD/GPU-h · PAYG", "0.6000"),
+        ("Size", "NC4as T4 v3"),
+        ("Members", "2"),
+    ]
 
 
 def test_known_answer_summary() -> None:
@@ -348,10 +424,9 @@ def test_known_answer_summary() -> None:
     assert groups.THIN not in summary.labels
     frame = dashboard.summary_frame(summary)
     assert frame["Region"].tolist() == ["r1", "r2", "r3", "r4", "r5"]
-    text = dashboard.summary_caption(summary)
-    assert text.startswith("Crosses regions: H100 NVLink 80GB · 8 GPUs · pay-as-you-go")
-    assert "data label: synthetic" in text
-    assert text.endswith(summary.exclusions)
+    assert dashboard.crosses_regions(summary) == (
+        "Crosses regions: H100 NVLink 80GB · 8 GPUs · pay-as-you-go"
+    )
 
 
 def test_thin_summary_labelled(views: dict[str, dashboard.SourceView]) -> None:
@@ -433,21 +508,55 @@ def test_panels_compare_by_identity(views: dict[str, dashboard.SourceView]) -> N
     assert first in [first]
 
 
-def test_framing_lines() -> None:
+def test_status_lines() -> None:
     live = Snapshot("azure-retail", "run-1", DAY, "live")
     fake = Snapshot("azure-retail", "run-2", DAY, "synthetic")
-    assert dashboard.framing(live, False, AS_OF, 7) == (
-        "Published Azure retail list prices for GPU VMs · live · snapshot"
-        " 2026-10-12 09:00 UTC · local analysis only"
+    assert dashboard.status_line(live, False, AS_OF, 7) == (
+        "**COMPUTE COST & RISK MONITOR** · :orange[**AZURE PUBLISHED LIST PRICES**]"
+        " · AS OF 12 OCT 2026 09:00 UTC"
     )
-    assert dashboard.framing(fake, False, AS_OF, 7) == (
-        "Synthetic data: invented prices for demonstration, not Azure list prices"
-        " · snapshot 2026-10-12 09:00 UTC"
+    assert dashboard.status_line(fake, False, AS_OF, 7) == (
+        "**COMPUTE COST & RISK MONITOR**"
+        " · :orange[**SYNTHETIC DATA — NOT AZURE LIST PRICES**]"
+        " · AS OF 12 OCT 2026 09:00 UTC"
+    )
+    recorded = Snapshot("azure-retail", "run-3", DAY, "recorded")
+    assert "AZURE PUBLISHED LIST PRICES" in dashboard.status_line(
+        recorded, False, AS_OF, 7
     )
     later = DAY + timedelta(days=8)
-    assert dashboard.framing(fake, True, later, 7).endswith(
-        " · STALE (older than 7 days as of 2026-10-20 09:00 UTC)"
+    assert dashboard.status_line(fake, True, later, 7).endswith(
+        " · :orange[**STALE — OLDER THAN 7 DAYS AS OF 20 OCT 2026 09:00 UTC**]"
     )
+    assert dashboard.status_line(None, None, AS_OF, None) == (
+        "**COMPUTE COST & RISK MONITOR**"
+    )
+    for line in (
+        dashboard.status_line(live, True, later, 7),
+        dashboard.status_line(fake, True, later, 7),
+    ):
+        assert "live" not in line.lower()
+
+
+def test_names_for_the_sidebar_and_key_figures(
+    views: dict[str, dashboard.SourceView],
+) -> None:
+    assert dashboard.pricing_name("on_demand") == "Pay-as-you-go"
+    assert dashboard.pricing_name("spot") == "Spot"
+    assert dashboard.price_label("spot") == "USD/GPU-h · SPOT"
+    assert dashboard.short_size("Standard_ND96isr_H100_v5") == "ND96isr H100 v5"
+    assert dashboard.short_size("offer-17") == "offer-17"
+    assert dashboard.short_size("gpu_offer_17") == "gpu_offer_17"  # as stored (D50)
+    assert dashboard.LIVE_DATASET == "Azure list prices (local only)"
+    assert dashboard.SYNTHETIC_DATASET == "Synthetic demo"
+    view = azure(views)  # the demo's runs are labelled synthetic
+    assert dashboard.catalogue_name(dashboard.AZURE, view) == "Azure VMs (synthetic)"
+    real = Snapshot("azure-retail", "run-1", DAY, "live")
+    live = dataclasses.replace(
+        view, report=dataclasses.replace(view.report, snapshot=real)
+    )
+    assert dashboard.catalogue_name(dashboard.AZURE, live) == "Azure VMs"
+    assert dashboard.catalogue_name(dashboard.MARKETPLACE, None) == "Marketplace"
 
 
 def test_display_formats() -> None:
@@ -480,6 +589,9 @@ def test_chart_plots_only_listed_regions(
     assert [m[dashboard.USD] for m in marks] == [5.0, 6.0, 12.0]
     assert [m["Statistic"] for m in marks] == ["minimum", dashboard.MEDIAN, "maximum"]
     assert "line" not in str(dashboard.summary_chart(spot).to_dict()["layer"])
+    x = dashboard.summary_chart(spot).to_dict()["layer"][0]["encoding"]["x"]
+    assert x["title"] == "USD/GPU-h"  # the spec's unit spelling (D49)
+    assert x["axis"]["tickCount"] == 8
 
 
 # --- quality panel ---

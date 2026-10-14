@@ -16,6 +16,9 @@ from dataclasses import dataclass
 from compute_cost_risk_monitor import groups
 from compute_cost_risk_monitor.groups import GroupKey, Member, RegionGroup, Snapshot
 from compute_cost_risk_monitor.scenarios import (
+    LADDER_GPUS,
+    LADDER_V1,
+    LADDER_VERSION,
     PERCENT,
     SCENARIOS_V1,
     USD,
@@ -54,6 +57,7 @@ FALLBACK_NARRATIVE = (
     " away after an eviction."
 )
 CUSTOM_NARRATIVE = "A change entered by you."
+FALLBACK_LABEL = "Spot → pay-as-you-go"  # the ladder row; it crosses rental types
 
 
 class Refused(ValueError):
@@ -141,12 +145,40 @@ class Headroom:
 
 
 @dataclass(frozen=True)
+class LadderRow:
+    """One ladder row: a change in cost per column, or no cells with the reason."""
+
+    id: str
+    label: str
+    kind: str  # PERCENT, USD or FALLBACK
+    magnitude: float | None  # None for the fallback, which is priced from a listing
+    price: float | None = None  # scenario USD/GPU-hour
+    change: float | None = None  # USD/GPU-hour
+    cells: tuple[float, ...] | None = None  # one per column, for the hours entered
+    refusal: str = ""
+    above_payg: float | None = None  # the pay-as-you-go USD/GPU-hour a Spot row exceeds
+
+    @property
+    def computed(self) -> bool:
+        return self.cells is not None
+
+
+@dataclass(frozen=True)
+class Ladder:
+    version: str
+    columns: tuple[int, ...]  # GPU counts, ascending
+    entered: int  # the column for the GPUs entered
+    rows: tuple[LadderRow, ...]
+
+
+@dataclass(frozen=True)
 class Result:
     start: Start
     workload: Workload
     cost: Cost
     rows: tuple[Row, ...]
     version: str
+    ladder: Ladder
     payg_key: GroupKey | None = (
         None  # for a Spot start, the key the fallback crosses to
     )
@@ -163,9 +195,15 @@ def _finite(value: float) -> bool:
 
 
 def _amount(value: float) -> str:
-    """Up to 4 decimals, or 3 significant digits when that would read as zero."""
+    """Up to 4 decimals; 3 significant digits when that would read as zero; up to 8
+    when 4 decimals would round the value, so a label never shows a refused boundary
+    such as −100% for a move that is computed (phase-7 D50)."""
     text = f"{value:,.4f}".rstrip("0").rstrip(".")
-    return f"{value:.3g}" if text == "0" and value != 0 else text
+    if text == "0" and value != 0:
+        return f"{value:.3g}"
+    if float(text.replace(",", "")) != value:
+        return f"{value:,.8g}"
+    return text
 
 
 def nearest(gpus: int, gpus_per_vm: int) -> list[int]:
@@ -224,17 +262,18 @@ def custom(kind: str, magnitude: float | None) -> Custom | None:
 
 
 def budget(value: float | None) -> float | None:
-    """A budget for headroom, None when empty, or Refused."""
+    """A budget for headroom, None when empty, or Refused. The page labels it
+    "Contingency, USD": money set aside for price rises (phase-7 D49)."""
     if value is None:
         return None
     if not _finite(value):
-        raise Refused("Budget must be a number.")
+        raise Refused("Contingency must be a number.")
     if value <= 0:
-        raise Refused("Budget: enter an amount above zero.")
+        raise Refused("Contingency: enter an amount above zero.")
     if value < MIN_BUDGET:
-        raise Refused(f"Budget must be at least USD {MIN_BUDGET}.")
+        raise Refused(f"Contingency must be at least USD {MIN_BUDGET}.")
     if value > MAX_BUDGET:
-        raise Refused(f"Budget must be at most USD {MAX_BUDGET:,.0f}.")
+        raise Refused(f"Contingency must be at most USD {MAX_BUDGET:,.0f}.")
     return float(value)
 
 
@@ -321,11 +360,15 @@ def _row(
     )
 
 
-def custom_name(change: Custom) -> str:
+def _signed(change: Custom) -> str:
+    """The custom move's magnitude with its sign, as both of its names show it."""
     sign = "+" if change.magnitude >= 0 else "−"
-    amount = _amount(abs(change.magnitude))
+    return f"{sign}{_amount(abs(change.magnitude))}"
+
+
+def custom_name(change: Custom) -> str:
     unit = "%" if change.kind == PERCENT else " USD/GPU-hour"
-    return f"Custom: {sign}{amount}{unit} (entered by you, not part of {VERSION})"
+    return f"Custom: {_signed(change)}{unit} (entered by you, not part of {VERSION})"
 
 
 def pay_as_you_go(
@@ -346,6 +389,111 @@ def pay_as_you_go(
     return key, next((m for m in group.members if m.name == begin.member.name), None)
 
 
+# --- scenario ladder (phase-7 D7, D20) ---
+
+
+def ladder_columns(gpus: int, gpus_per_vm: int) -> tuple[int, ...]:
+    """The defined GPU counts that are whole VMs here, plus the GPUs entered."""
+    defined = {n for n in LADDER_GPUS if n % gpus_per_vm == 0}
+    return tuple(sorted(defined | {gpus}))
+
+
+def custom_label(change: Custom) -> str:
+    unit = "%" if change.kind == PERCENT else " USD/GPU-h"
+    return f"Custom {_signed(change)}{unit}"
+
+
+def _ladder_row(
+    begin: Start,
+    work: Workload,
+    columns: tuple[int, ...],
+    *,
+    ident: str,
+    label: str,
+    kind: str,
+    magnitude: float | None,
+    price: float,
+    change: float,
+    payg: float | None,
+) -> LadderRow:
+    """One row's change in cost per column, or a refusal when its price is at or
+    below zero. Storage is unchanged, so it is not in the cells."""
+    if not price > 0:
+        return LadderRow(ident, label, kind, magnitude, refusal=ZERO_OR_BELOW)
+    cells = tuple(n * work.hours * change for n in columns)
+    above = payg if begin.spot and payg is not None and price > payg else None
+    return LadderRow(
+        ident, label, kind, magnitude, price, change, cells, above_payg=above
+    )
+
+
+def ladder(
+    begin: Start, work: Workload, payg: float | None, change: Custom | None = None
+) -> Ladder:
+    """ladder-v1 by GPU count for the hours entered, then, in `calculate`'s order, the
+    fallback row for a Spot start and the custom row.
+
+    `payg` is the same size's pay-as-you-go USD/GPU-hour, when listed. Each cell uses
+    `priced`, the formulas `workload_check` re-derives.
+    """
+    columns = ladder_columns(work.gpus, begin.gpus_per_vm)
+    start_price = begin.usd_per_gpu_hour
+    rows: list[LadderRow] = []
+    for step in LADDER_V1:
+        price, delta = priced(start_price, step.kind, step.magnitude)
+        rows.append(
+            _ladder_row(
+                begin,
+                work,
+                columns,
+                ident=step.id,
+                label=step.label,
+                kind=step.kind,
+                magnitude=step.magnitude,
+                price=price,
+                change=delta,
+                payg=payg,
+            )
+        )
+    if begin.spot:
+        if payg is None:
+            rows.append(
+                LadderRow(FALLBACK, FALLBACK_LABEL, FALLBACK, None, refusal=NO_PAYG)
+            )
+        else:
+            rows.append(
+                _ladder_row(
+                    begin,
+                    work,
+                    columns,
+                    ident=FALLBACK,
+                    label=FALLBACK_LABEL,
+                    kind=FALLBACK,
+                    magnitude=None,
+                    price=payg,
+                    change=payg - start_price,
+                    payg=None,
+                )
+            )
+    if change is not None:
+        price, delta = priced(start_price, change.kind, change.magnitude)
+        rows.append(
+            _ladder_row(
+                begin,
+                work,
+                columns,
+                ident=CUSTOM,
+                label=custom_label(change),
+                kind=change.kind,
+                magnitude=change.magnitude,
+                price=price,
+                change=delta,
+                payg=payg,
+            )
+        )
+    return Ladder(LADDER_VERSION, columns, work.gpus, tuple(rows))
+
+
 def calculate(
     begin: Start,
     work: Workload,
@@ -353,7 +501,8 @@ def calculate(
     change: Custom | None = None,
     limit: float | None = None,
 ) -> Result:
-    """Cost, every scenario row and headroom for one workload at one starting price.
+    """Cost, every scenario row, the ladder and headroom for one workload at one
+    starting price.
 
     `found` holds the snapshot's region groups, where a Spot start finds its size on
     pay-as-you-go. The fallback row follows the presets, and the custom row comes last.
@@ -443,6 +592,7 @@ def calculate(
         cost(begin, work),
         tuple(rows),
         VERSION,
+        ladder(begin, work, payg_price, change),
         payg_key,
         payg,
         change,

@@ -23,8 +23,9 @@ observed published prices, without depending on compute futures launching.
   io.net, Akash) forbids automated collection into a database without a written agreement,
   and the owner chose not to seek one. Labelled synthetic marketplace-style offers exercise
   the marketplace-only rules (duplicates, re-listing, thin samples).
-- Budget: seven focused sessions, roughly 20–25 hours, built alongside exams by replacing
-  some study blocks rather than adding a full workload.
+- Budget: eight focused sessions, roughly 24–29 hours, built alongside exams by replacing
+  some study blocks rather than adding a full workload. The owner added the eighth, Phase 7
+  (front-office interface), on 2026-10-13.
 
 ## 2. Current scope boundary
 
@@ -52,11 +53,11 @@ Deferred or out of scope:
 - The optional AI agent, which may only draft the market brief from validated numbers (⛔ spend).
   Before proposing it, install the setup kit's AI-ops skill and AI_OPS.md (deferred 2026-10-11).
 - Renting, creating or modifying instances, or any account action beyond reading offers.
-- Accounts, logins or multiple users. Hosting before Phase 7 (⛔ publishing).
+- Accounts, logins or multiple users. Hosting before Phase 8 (⛔ publishing).
 
 Data: real public Azure list prices once the live-data ⛔ gate is resolved. Tests use
 synthetic fixtures, labelled as such; no real source data is committed to Git. Runs
-single-user and local until the Phase 7 demo.
+single-user and local until the Phase 8 demo.
 
 ## 3. Acceptance and evidence
 
@@ -106,7 +107,11 @@ user before each later phase. Evidence that counts in every phase:
   `openspec/changes/archive/2026-10-13-phase-5-calculator/design.md` D1–D29. Phase 6
   grilling decisions (gap tests in the four areas, an end-to-end known-answer test, Hypothesis,
   the coverage threshold, no mutation testing, two small fixes; owner answered every owner call
-  on 2026-10-13) are cited in `openspec/changes/archive/2026-10-13-phase-6-tests/design.md` D1–D24. Vast.ai
+  on 2026-10-13) are cited in `openspec/changes/archive/2026-10-13-phase-6-tests/design.md` D1–D24. Phase 7
+  grilling decisions (front-office interface: dark desk theme, a status line and key
+  figures, one scenario grid `ladder-v1`, no helper text, an approved Figma mock; owner
+  answered every owner call on 2026-10-13 and approved mock v3 on 2026-10-14) are cited in
+  `openspec/changes/archive/2026-10-14-phase-7-interface/design.md` D1–D50. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -172,8 +177,10 @@ and recorded gate decisions come before them.
 
 ## 6. Milestones and gates
 
-Milestones are ordered by dependency. Phases 1–7 are the brief's seven sessions. Every phase
-tests what it builds; Phase 6 closes the gaps the brief lists.
+Milestones are ordered by dependency. Phases 1–6 and 8 are the brief's seven sessions; the
+owner added Phase 7 before the demo on 2026-10-13, and Phase 1's acceptance row "7 Demo and
+brief" now applies to Phase 8. Every phase tests what it builds; Phase 6 closes the gaps the
+brief lists.
 
 | Phase | Deliverable | Status |
 |---|---|---|
@@ -184,7 +191,8 @@ tests what it builds; Phase 6 closes the gaps the brief lists.
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Done |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
-| 7 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
+| 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Done |
+| 8 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
 ### ⛔ Before reading live data from any source
 

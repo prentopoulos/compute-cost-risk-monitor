@@ -204,3 +204,33 @@ def test_lowest_and_statistics_do_not_depend_on_row_order(
     assert groups.stats([m.usd_per_gpu_hour for m in shuffled]) == groups.stats(values)
     low = groups.lowest(members)
     assert all(groups.price_order(low) <= groups.price_order(m) for m in members)
+
+
+# --- the scenario ladder (Phase 7 design D7, D20) ---
+
+
+@given(per_vm=gpus_per_vm, vm_price=vm_prices, data=st.data())
+def test_ladder_entered_column_matches_scenarios_v1(
+    per_vm: int, vm_price: float, data: st.DataObject
+) -> None:
+    """The ladder's entered column repeats the scenario rows it shares, and every column
+    scales the entered one by its GPU count."""
+    found = [group(per_vm, calc.ON_DEMAND, vm_price)]
+    work = data.draw(workloads(per_vm))
+    result = calc.calculate(calc.start(found[0]), work, found)
+    ladder = {row.id: row.cells for row in result.ladder.rows}
+    exposure = {row.id: row.exposure for row in result.rows}
+    entered = result.ladder.columns.index(work.gpus)
+    shared = {
+        "down-25": "decline-25",
+        "up-25": "increase-25",
+        "up-100": "spike-100",
+        "flat-050": "example-050",
+    }
+    for step, scenario in shared.items():
+        cells = ladder[step]
+        assert cells is not None
+        assert math.isclose(cells[entered], exposure[scenario] or 0.0, rel_tol=1e-12)
+        for column, value in zip(result.ladder.columns, cells, strict=True):
+            expected = cells[entered] * column / work.gpus
+            assert math.isclose(value, expected, rel_tol=1e-9, abs_tol=1e-9)

@@ -17,7 +17,13 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, fields
 
-from compute_cost_risk_monitor.scenarios import PERCENT, SCENARIOS_V1, USD
+from compute_cost_risk_monitor.scenarios import (
+    LADDER_GPUS,
+    LADDER_V1,
+    PERCENT,
+    SCENARIOS_V1,
+    USD,
+)
 
 REL_TOL = 1e-9
 FALLBACK = "fallback"
@@ -57,6 +63,21 @@ class RowFigures:
 
 
 @dataclass(frozen=True)
+class LadderRowFigures:
+    id: str
+    cells: tuple[float, ...] | None  # one per column; None when the row is refused
+    refusal: str = ""
+    above_payg: float | None = None
+
+
+@dataclass(frozen=True)
+class LadderFigures:
+    columns: tuple[int, ...]
+    entered: int
+    rows: tuple[LadderRowFigures, ...]
+
+
+@dataclass(frozen=True)
 class Figures:
     item_key: str  # the member the figures were priced from
     start: float  # USD/GPU-hour
@@ -68,6 +89,7 @@ class Figures:
     headroom: float | None
     headroom_pct: float | None
     headroom_above_payg: float | None
+    ladder: LadderFigures
 
 
 def _close(
@@ -104,6 +126,11 @@ def _numbers(figures: Figures) -> list[tuple[str, float]]:
             value = getattr(row, each.name)
             if each.name not in ("id", "effect") and value is not None:
                 found.append((f"{row.id} {each.name}", value))
+    for step in figures.ladder.rows:
+        for column, cell in zip(figures.ladder.columns, step.cells or (), strict=False):
+            found.append((f"ladder {step.id} {column}", cell))
+        if step.above_payg is not None:
+            found.append((f"ladder {step.id} note", step.above_payg))
     return found
 
 
@@ -267,6 +294,79 @@ def _headroom(
     )
 
 
+def _ladder(failed: list[str], inputs: Inputs, ladder: LadderFigures) -> None:
+    """Every ladder row, column, cell, refusal and mark, from VM-hour prices.
+
+    A cell is VMs x hours x the change in VM-hour price: a percentage of the published
+    VM-hour price, or a USD step's magnitude per GPU-hour times GPUs per VM.
+    """
+    per_vm = inputs.gpus_per_vm
+    columns = tuple(sorted({n for n in LADDER_GPUS if n % per_vm == 0} | {inputs.gpus}))
+    if ladder.columns != columns or ladder.entered != inputs.gpus:
+        failed.append("ladder columns")
+        return
+    expected = [s.id for s in LADDER_V1]
+    definitions: dict[str, tuple[str, float]] = {
+        s.id: (s.kind, s.magnitude) for s in LADDER_V1
+    }
+    if inputs.spot:
+        expected.append(FALLBACK)
+    if inputs.custom is not None:
+        expected.append(CUSTOM)
+        definitions[CUSTOM] = inputs.custom
+    if [row.id for row in ladder.rows] != expected:
+        failed.append("ladder rows")
+        return
+    vm = inputs.vm_price
+    payg_vm = inputs.payg_vm_price
+    payg = None if payg_vm is None else payg_vm / per_vm
+    for row in ladder.rows:
+        name = f"ladder {row.id}"
+        found: tuple[float, float] | None  # VM-hour price and its change
+        if row.id == FALLBACK:
+            found = None if payg_vm is None else (payg_vm, payg_vm - vm)
+        else:
+            kind, magnitude = definitions[row.id]
+            delta = vm * magnitude / 100 if kind == PERCENT else magnitude * per_vm
+            found = (vm + delta, delta)
+        # A price within rounding of zero may be refused or shown; any other may not.
+        near_zero = found is not None and abs(found[0]) <= REL_TOL * vm
+        priceable = found is not None and found[0] > 0 and not near_zero
+        if row.cells is None:
+            if priceable:
+                failed.append(f"{name} missing")
+            if not row.refusal.startswith(NOT_COMPUTED):
+                failed.append(f"{name} refusal")
+            if row.above_payg is not None:
+                failed.append(f"{name} note")
+            continue
+        if found is None or (found[0] <= 0 and not near_zero) or row.refusal:
+            failed.append(f"{name} refused")
+            continue
+        if len(row.cells) != len(columns):
+            failed.append(f"{name} cells")
+            continue
+        price, delta = found
+        larger = max(abs(price), vm)
+        for column, cell in zip(columns, row.cells, strict=True):
+            vms = column / per_vm
+            scale = vms * inputs.hours * larger
+            if not _close(cell, vms * inputs.hours * delta, scale):
+                failed.append(f"{name} {column}")
+        if row.id == FALLBACK:
+            if row.above_payg is not None:
+                failed.append(f"{name} note")
+        else:
+            _note(
+                failed,
+                f"{name} note",
+                price / per_vm,
+                row.above_payg,
+                payg,
+                inputs.spot,
+            )
+
+
 def check(inputs: Inputs, figures: Figures) -> list[str]:
     """The names of the checks that fail; an empty list means every figure holds."""
     failed = [f"finite: {n}" for n, v in _numbers(figures) if not math.isfinite(v)]
@@ -292,4 +392,5 @@ def check(inputs: Inputs, figures: Figures) -> list[str]:
     for row in figures.rows:
         _row(failed, inputs, row, figures)
     _headroom(failed, inputs, figures, start)
+    _ladder(failed, inputs, figures.ladder)
     return failed

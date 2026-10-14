@@ -13,5 +13,49 @@ gatherUsageStats = false
 address = "127.0.0.1"
 
 [client]
-# Hide developer options, including the Deploy button.
-toolbarMode = "viewer"
+# Hide Streamlit's menu entirely: no developer options or Deploy button, and no
+# theme switch, since the scenario grid's colours are tuned for the dark theme
+# (Phase 7 design D47).
+toolbarMode = "minimal"
+
+[theme]
+# One dark desk theme (Phase 7 design D4, D10, D13, D26, D31). The colours are
+# mirrored in `dashboard.COLOURS`, which tests/repo/test_streamlit_config.py checks
+# against this table, so the charts and the scenario grid use the same values.
+# Streamlit's bundled fonts only: no fontFaces and no static serving.
+base = "dark"
+backgroundColor = "#0E1116"
+secondaryBackgroundColor = "#161B22"
+textColor = "#E6E8EB"
+# The steel-blue accent: the active tab and the entered grid column only.
+primaryColor = "#7AA2D6"
+linkColor = "#7AA2D6"
+# Control borders at 3:1 or more against both backgrounds; table rules stay quiet.
+borderColor = "#646E7C"
+showWidgetBorder = true
+dataframeBorderColor = "#2A313C"
+dataframeHeaderBackgroundColor = "#161B22"
+baseFontSize = 14
+# Key figures at about 22 px, not the default hero size.
+metricValueFontSize = "1.6rem"
+baseRadius = "4px"
+# Red marks an added cost and green a saving, always with the sign. Amber marks
+# data labels and the stale warning. The text variants match, so markdown and
+# table colours agree.
+redColor = "#EF6B63"
+redTextColor = "#EF6B63"
+greenColor = "#5CC98A"
+greenTextColor = "#5CC98A"
+orangeColor = "#F2CC60"
+orangeTextColor = "#F2CC60"
+yellowColor = "#F2CC60"
+yellowTextColor = "#F2CC60"
+blueColor = "#7AA2D6"
+blueTextColor = "#7AA2D6"
+grayColor = "#9AA3AE"
+grayTextColor = "#9AA3AE"
+# Inline code (the group tags) is neutral: Streamlit would colour it green, which
+# marks a saving here (Phase 7 design D10, D48).
+codeTextColor = "#9AA3AE"
+codeBackgroundColor = "#161B22"
+chartCategoricalColors = ["#E6E8EB", "#9AA3AE", "#7AA2D6"]
