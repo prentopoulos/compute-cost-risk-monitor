@@ -83,8 +83,8 @@
   - the stock light theme from the Settings menu, viewed once (D4)
 
   Screenshots show synthetic data only
-- [ ] 4.3 Run design-eval on the built page (no taste reviewer). Fix every P0, and fix each P1 or record it with its reason (D2, D3)
-- [ ] 4.4 Run the compute-cost-risk-monitor-market-review read-through of the ladder, the key figures and the moved labels (PROJECT.md §3). Then run the gate and `uv audit`
+- [x] 4.3 Run design-eval on the built page (no taste reviewer). Fix every P0, and fix each P1 or record it with its reason (D2, D3)
+- [x] 4.4 Run the compute-cost-risk-monitor-market-review read-through of the ladder, the key figures and the moved labels (PROJECT.md §3). Then run the gate and `uv audit`
 - [ ] 4.5 Derive DESIGN.md from the shipped build with impeccable's documenter (D12; cut item 4)
 
 ## 5. Records and review

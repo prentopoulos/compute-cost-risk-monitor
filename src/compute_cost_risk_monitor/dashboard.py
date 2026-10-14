@@ -146,17 +146,10 @@ COLOURS = {
 POINT_COLOUR = COLOURS["text"]
 RULE_COLOURS = [COLOURS["muted"], COLOURS["text"], COLOURS["muted"]]  # min, median, max
 
-USD = "USD/GPU-hour"
+USD = "USD/GPU-h"
 PUBLISHED = "Published price"
 OFFER = "Offer price"
-AMOUNT = "Amount (USD)"
-CHANGE_USD = "Change (USD/GPU-hour)"
-CHANGE_PCT = "Change (% of starting price)"
-SCENARIO_USD = "Scenario USD/GPU-hour"
-SCENARIO_COST = "Scenario cost (USD)"
-EXPOSURE = "Exposure (USD)"
-# Display formats (D9; phase-5-calculator D21): Streamlit NumberColumn formats, by
-# column name. USD amounts carry thousands separators.
+# Display formats (D9): Streamlit NumberColumn formats, by column name.
 FORMATS = {
     USD: "%.4f",
     PUBLISHED: "plain",  # the full stored number, as published
@@ -164,12 +157,6 @@ FORMATS = {
     "Minimum": "%.4f",
     "Median": "%.4f",
     "Maximum": "%.4f",
-    AMOUNT: "%,.2f",
-    CHANGE_USD: "%.4f",
-    CHANGE_PCT: "%.1f",
-    SCENARIO_USD: "%.4f",
-    SCENARIO_COST: "%,.2f",
-    EXPOSURE: "%,.2f",
 }
 
 
@@ -625,9 +612,9 @@ def summary_chart(
     )
     x = alt.X(
         f"{USD}:Q",
-        title="USD per GPU-hour",
+        title=USD,
         scale=alt.Scale(zero=False),
-        axis=alt.Axis(format=".4~f"),
+        axis=alt.Axis(format=".4~f", tickCount=8),
     )
     dots = (
         alt.Chart(points)
@@ -797,8 +784,8 @@ ABOVE_PAYG = (
 CROSSES_RENTAL = "crosses rental types (Spot → pay-as-you-go)"
 CHECK_FAILED = "The independent check failed: {checks}. No figures are shown."
 BUDGET_HINT = (
-    "Enter a budget to see the price rise per GPU-hour that would use it up (a reverse"
-    " scenario calculation)."
+    "Enter a contingency to see the price rise per GPU-hour that would use it up (a"
+    " reverse scenario calculation)."
 )
 LOWEST_MEMBER = "lowest listed in this group"
 # The custom move's unit switch and the input label each unit gets (D34).
@@ -845,6 +832,15 @@ def plain(value: float, places: int) -> str:
     if text in ("0", "-0") and value != 0:
         return f"{value:.3g}"
     return text
+
+
+def at_least_cents(value: float) -> str:
+    """A published price with every stored decimal, and never fewer than two (D32)."""
+    text = plain(value, 10)
+    if "e" in text:
+        return text
+    whole, _, cents = text.partition(".")
+    return f"{whole}.{cents.ljust(2, '0')}"
 
 
 def fixed(value: float, places: int) -> str:
@@ -992,7 +988,7 @@ def grid_styles(ladder: calculator.Ladder) -> pd.DataFrame:
             border = f"border-top: 1px solid {COLOURS['border']};"
         line = [f"color: {COLOURS['muted']}; {LABEL_CELL} {border}"]
         for index, column in enumerate(ladder.columns):
-            css = f"color: {_cell_colour(row, index)}; {NUMBER_CELL} {border}"
+            css = f"color: {_cell_colour(row, index)}; {GRID_CELL} {border}"
             if column == ladder.entered:
                 css += f" background-color: {COLOURS['shade']}; font-weight: 700;"
             line.append(css)
@@ -1000,9 +996,11 @@ def grid_styles(ladder: calculator.Ladder) -> pd.DataFrame:
     return pd.DataFrame(styles, columns=grid_frame(ladder).columns)
 
 
-# Numbers right-aligned in columns wide enough to scan; labels left (phase-7 D7).
+# Numbers right-aligned, labels left (phase-7 D7). The minimum widths set each table's
+# width: the grid fills mock v3's 950 px column and COST its 540 px (14 px rem, D49).
 LABEL_CELL = "text-align: left !important; min-width: 10rem;"
-NUMBER_CELL = "text-align: right !important; min-width: 7.5rem;"
+GRID_CELL = "text-align: right !important; min-width: 11.5rem;"
+COST_CELL = "text-align: right !important; min-width: 9.5rem;"
 _HEADERS: list[CSSDict] = [
     {"selector": "th", "props": [("text-align", "right !important")]},
     {"selector": "th.col0", "props": [("text-align", "left !important")]},
@@ -1033,34 +1031,41 @@ def grid_title(work: Workload) -> str:
     return f":gray[**{GRID_TITLE}**] **Δ cost, USD · {hours_text(work.hours)}**"
 
 
-def footer(result: Result) -> str:
-    """Under the grid: the scenario label and the exclusions word for word, then each
-    clause that applies (D9, D35, D36, D39, D44)."""
-    parts = [f"{scenarios.NOT_A_FORECAST}. {result.start.group.exclusions}"]
+def footer(result: Result) -> list[str]:
+    """Under the grid, one line each: the scenario label and the exclusions word for
+    word, then each clause that applies, its mark first (D9, D35, D36, D39, D44,
+    D49)."""
+    lines = [f"{scenarios.NOT_A_FORECAST}. {result.start.group.exclusions}"]
     if result.workload.storage is not None:
-        parts.append(STORAGE_CLAUSE.format(amount=f"{result.workload.storage:,.2f}"))
+        lines.append(STORAGE_CLAUSE.format(amount=f"{result.workload.storage:,.2f}"))
     rows = {row.id: row for row in result.ladder.rows}
     fallback = rows.get(calculator.FALLBACK)
     if fallback is not None:
-        parts.append(CROSSING_CLAUSE)
+        crossing = CROSSING_CLAUSE
         if not fallback.computed:
-            parts.append(NO_PAYG_CLAUSE)
+            crossing += f" {NO_PAYG_CLAUSE}"
+        lines.append(crossing)
     marks = [row.above_payg for row in result.ladder.rows if row.above_payg is not None]
     if result.headroom is not None and result.headroom.above_payg is not None:
         marks.append(result.headroom.above_payg)
     if marks:
-        parts.append(MARK_CLAUSE.format(price=f"{marks[0]:.4f}"))
+        lines.append(MARK_CLAUSE.format(price=f"{marks[0]:.4f}"))
     custom = rows.get(calculator.CUSTOM)
     if custom is not None and not custom.computed:
-        parts.append(ZERO_CLAUSE)
-    return " ".join(parts)
+        lines.append(ZERO_CLAUSE)
+    return lines
+
+
+def footer_text(result: Result) -> str:
+    """The footer as markdown: muted lines joined by hard line breaks."""
+    return "  \n".join(f":gray[{line}]" for line in footer(result))
 
 
 def cost_table(result: Result) -> pd.DataFrame:
     """Compute, storage and total for the hours entered, as display text (D6)."""
     begin, work, cost = result.start, result.workload, result.cost
     price = begin.member.price
-    published = "" if price is None else plain(price, 10)
+    published = "" if price is None else at_least_cents(price)
     storage = DASH if cost.storage is None else f"{cost.storage:,.2f}"
     return pd.DataFrame(
         [
@@ -1084,10 +1089,7 @@ def cost_styles(result: Result) -> Styler:
     storage = empty if result.cost.storage is None else ""
     rows = [[""] * 4, ["", "", "", storage], [total] * 4]
     styles = pd.DataFrame(
-        [
-            [LABEL_CELL + row[0], *(NUMBER_CELL + css for css in row[1:])]
-            for row in rows
-        ],
+        [[LABEL_CELL + row[0], *(COST_CELL + css for css in row[1:])] for row in rows],
         columns=frame.columns,
     )
     return frame.style.apply(lambda _: styles, axis=None).set_table_styles(_HEADERS)

@@ -561,7 +561,7 @@ def test_known_workload_on_the_demo(demo: list[tuple[str, Path]]) -> None:
         ":gray[Scenario calculation, not a forecast. Excludes disks"
     )
     assert cost(tab) == [
-        ["Compute", "96", "2,880", "276,480.00"],
+        ["Compute", "96.00", "2,880", "276,480.00"],
         ["Storage", "", "", "—"],
         ["Total", "", "", "276,480.00"],
     ]
@@ -655,6 +655,8 @@ def test_custom_move_and_headroom(demo: list[tuple[str, Path]]) -> None:
     choose(at, H100, 8, "on_demand", "eastus")
     workload_tab(at)
     assert at.number_input(key="custom_percent").label == "Custom, %"
+    # Money set aside for price rises, not the total budget (D49).
+    assert at.number_input(key="budget").label == "Contingency, USD"
     at.number_input(key="custom_percent").set_value(10.0)
     at.number_input(key="budget").set_value(11_520.0)
     tab = workload_tab(at)
@@ -679,9 +681,9 @@ def test_custom_move_and_headroom(demo: list[tuple[str, Path]]) -> None:
     assert at.number_input(key="custom_percent").value == 10.0
     at.number_input(key="budget").set_value(0.0)
     tab = workload_tab(at)
-    assert status(dashboard.REFUSED, "Budget: enter an amount above zero.") in texts(
-        tab
-    )
+    assert status(
+        dashboard.REFUSED, "Contingency: enter an amount above zero."
+    ) in texts(tab)
     assert figures(tab) == [*DASHES, ("Headroom, USD/GPU-h", "—")]
     assert "Starting price" not in source_text(tab)  # no price, not even the start
     assert not tab.table
@@ -697,7 +699,9 @@ def test_storage_entered(demo: list[tuple[str, Path]]) -> None:
         ["Storage", "", "", "150.00"],
         ["Total", "", "", "276,630.00"],
     ]
-    assert footer(tab).endswith(" Total includes USD 150.00 storage entered by you.]")
+    assert footer(tab).endswith(
+        "  \n:gray[Total includes USD 150.00 storage entered by you.]"
+    )
     assert "Storage: USD 150.00 entered by you" in source_text(tab)
 
 
@@ -725,8 +729,8 @@ def test_spot_rows_above_pay_as_you_go_are_marked(
     assert "+25% †" in grid(tab)
     assert "−25%" in grid(tab)
     assert footer(tab).endswith(
-        "† Above this size's pay-as-you-go list price (USD 12.0000/GPU-h): the"
-        " arithmetic, not what Azure would bill.]"
+        "  \n:gray[† Above this size's pay-as-you-go list price (USD 12.0000/GPU-h):"
+        " the arithmetic, not what Azure would bill.]"
     )
     assert dashboard.ABOVE_PAYG.format(price="12.0000") in source_text(tab)
 

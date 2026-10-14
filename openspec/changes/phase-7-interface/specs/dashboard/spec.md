@@ -18,8 +18,9 @@ The committed `src/compute_cost_risk_monitor/.streamlit/config.toml` SHALL set o
 The page SHALL:
 - show no ticker, bid/ask label, animated or flashing value, or "live" badge;
 - colour red only for an added cost and green only for a saving, each always with its sign;
-- use amber only for data labels and the stale warning, and the accent only for the active tab
-  and the entered grid column. Prices, price changes, statistics and zero changes stay neutral;
+- use amber only for data labels and the stale warning, and the accent only for the current or
+  selected state (the active tab, the chosen unit, a toggle that is on, keyboard focus) and the
+  entered grid column. Prices, price changes, statistics and zero changes stay neutral;
 - show every state message (refused input, failed check, not normalized, no snapshot, in use,
   open errors) as a plain status word in text colour with its message, never in a coloured
   alert box. The mixed-labels warning may use amber;
@@ -166,14 +167,16 @@ it replaces the framing line.
 Every tab that shows a workload figure SHALL show a footer directly under the scenario grid:
 "Scenario calculation, not a forecast." followed by the group's exclusions text, word for word.
 It states the exclusions for every workload figure on that tab, and labels every scenario figure
-on it, the Headroom key figure included. Only when they apply, the footer then adds:
+on it, the Headroom key figure included. Only when they apply, the footer then adds, each on its
+own line with its mark first:
 - "Total includes USD X storage entered by you.";
 - "* Crosses rental types (Spot → pay-as-you-go): same size, same region.", for the fallback row
   labelled "Spot → PAYG *";
 - "† Above this size's pay-as-you-go list price (USD x/GPU-h): the arithmetic, not what Azure
   would bill.", for rows and a headroom marked "†";
 - each not-computed reason: "Not computed: no pay-as-you-go listing for this size in this
-  region." or "Not computed: the price would be zero or below." (for the Custom row).
+  region." (on the "*" line) or "Not computed: the price would be zero or below." (for the
+  Custom row).
 
 The Comparable groups tab SHALL show the exclusions text once, in the footer style, under its
 first price table; it states the exclusions for every price and statistic on that tab.
@@ -235,13 +238,18 @@ filters. It SHALL NOT repeat the chosen group as a line of text. It SHALL show, 
   - "GPUs", with minimum and step equal to GPUs per VM, default 32;
   - "Hours", default 720;
   - "Storage, USD";
-  - "Custom, %" or "Custom, USD/GPU-h", following a horizontal unit switch "%" / "USD/GPU-h";
-  - "Budget, USD".
+  - "Custom, %" or "Custom, USD/GPU-h", with a horizontal unit switch "%" / "USD/GPU-h" above
+    it in the same column;
+  - "Contingency, USD": money set aside for price rises, which the headroom uses up. Not the
+    total budget.
 
   An empty optional input shows "—" as its placeholder. As in Phase 5, each custom unit has its
   own keyed input, so switching unit never reinterprets a value;
 - after the independent check passes: the scenario grid, its footer, the COST table (USD/VM-h,
-  VM-h and USD for compute, storage and total), then the Sources section at full width.
+  VM-h and USD for compute, storage and total), then the Sources section. Everything under the
+  inputs, a status message included, sits in one column 960 px wide, as in mock v3: the grid
+  about 945 px and COST about 540 px. COST shows the published USD/VM-h with every stored
+  decimal and never fewer than two.
 
 It SHALL show no `scenarios-v1` table and no exposure chart.
 

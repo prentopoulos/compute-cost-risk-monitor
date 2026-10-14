@@ -29,8 +29,9 @@ from compute_cost_risk_monitor.groups import GroupKey, RegionGroup
 
 Choice = tuple[str, int, str, str]  # variant, GPU count, rental type, region
 VIEWS = ("Workload cost", "Comparable groups", "Group browser", "Data quality")
-GRID_WIDTH = 960  # the scenario grid and the COST table keep their mock widths
-COST_WIDTH = 540
+# Everything under the inputs keeps mock v3's single column; the Styler cell widths
+# size the grid and COST tables to it (phase-7 D49).
+COLUMN_WIDTH = 960
 
 
 def _status(word: str | None, message: str) -> None:
@@ -151,7 +152,7 @@ def _workload_inputs(
     """The inputs row, kept across tabs (phase-5 D17, D24-D26; phase-7 D6, D34)."""
     per_vm = key.gpu_count
     widths = [1.4] if size_options else []
-    widths += [1, 1, 1, 0.9, 1, 1, 1.5]
+    widths += [1, 1, 1, 1.2, 1, 1.5]
     columns = iter(st.columns(widths, vertical_alignment="bottom"))
     size = None
     if size_options:
@@ -190,7 +191,8 @@ def _workload_inputs(
         placeholder=dashboard.DASH,
         persist_state="session",
     )
-    unit = next(columns).radio(
+    column = next(columns)  # the custom move, its unit switch above it (D34, D49)
+    unit = column.radio(
         "Unit",
         list(dashboard.CUSTOM_KINDS),
         horizontal=True,
@@ -199,7 +201,6 @@ def _workload_inputs(
         persist_state="session",
     )
     kind = dashboard.CUSTOM_KINDS[unit]
-    column = next(columns)
     if kind == scenarios.PERCENT:
         change = column.number_input(
             dashboard.CUSTOM_LABELS[kind],
@@ -224,7 +225,7 @@ def _workload_inputs(
             persist_state="session",
         )
     budget = next(columns).number_input(
-        "Budget, USD",
+        "Contingency, USD",
         min_value=0.0,
         max_value=calculator.MAX_BUDGET,
         value=None,
@@ -249,46 +250,38 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
         options, group.key
     )
     begin = calculator.start(group, size)
-    try:
-        work = calculator.workload(gpus, hours, storage, group.key.gpu_count)
-        change = calculator.custom(kind, entered)
-        limit = calculator.budget(budget)
-    except calculator.Refused as refused:
+    # Everything under the inputs stays in one column (D6, D49).
+    with st.container(width=COLUMN_WIDTH):
+        try:
+            work = calculator.workload(gpus, hours, storage, group.key.gpu_count)
+            change = calculator.custom(kind, entered)
+            limit = calculator.budget(budget)
+        except calculator.Refused as refused:
+            with figures:
+                _figures(dashboard.workload_figures(begin, None, budget is not None))
+            _status(dashboard.REFUSED, str(refused))
+            _sources(dashboard.workload_sources(group, None), group)
+            return
+        result = calculator.calculate(begin, work, view.region_groups, change, limit)
+        failed = dashboard.check(begin, result, work, change, limit, view.region_groups)
+        if failed:
+            with figures:
+                _figures(dashboard.workload_figures(begin, None, limit is not None))
+            _status(
+                dashboard.CHECK_FAILED_WORD,
+                dashboard.CHECK_FAILED.format(checks=", ".join(failed)),
+            )
+            _sources(dashboard.workload_sources(group, None), group)
+            return
+        # Every price, the starting one included, appears only after the check passes.
         with figures:
-            _figures(dashboard.workload_figures(begin, None, budget is not None))
-        _status(dashboard.REFUSED, str(refused))
-        _sources(dashboard.workload_sources(group, None), group)
-        return
-    result = calculator.calculate(begin, work, view.region_groups, change, limit)
-    failed = dashboard.check(begin, result, work, change, limit, view.region_groups)
-    if failed:
-        with figures:
-            _figures(dashboard.workload_figures(begin, None, limit is not None))
-        _status(
-            dashboard.CHECK_FAILED_WORD,
-            dashboard.CHECK_FAILED.format(checks=", ".join(failed)),
-        )
-        _sources(dashboard.workload_sources(group, None), group)
-        return
-    # Every price, the starting one included, appears only after the check passes.
-    with figures:
-        _figures(dashboard.workload_figures(begin, result, limit is not None))
-    st.markdown(dashboard.grid_title(work))
-    st.table(
-        dashboard.grid(result.ladder),
-        hide_index=True,
-        width=GRID_WIDTH,
-        border="horizontal",
-    )
-    st.markdown(f":gray[{dashboard.footer(result)}]")
-    st.markdown(":gray[**COST**]")
-    st.table(
-        dashboard.cost_styles(result),
-        hide_index=True,
-        width=COST_WIDTH,
-        border="horizontal",
-    )
-    _sources(dashboard.workload_sources(group, result), group)
+            _figures(dashboard.workload_figures(begin, result, limit is not None))
+        st.markdown(dashboard.grid_title(work))
+        st.table(dashboard.grid(result.ladder), hide_index=True, border="horizontal")
+        st.markdown(dashboard.footer_text(result))
+        st.markdown(":gray[**COST**]")
+        st.table(dashboard.cost_styles(result), hide_index=True, border="horizontal")
+        _sources(dashboard.workload_sources(group, result), group)
 
 
 def _browser(view: SourceView, choice: Choice | None) -> None:

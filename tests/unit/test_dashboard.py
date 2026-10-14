@@ -561,6 +561,9 @@ def test_chart_plots_only_listed_regions(
     assert [m[dashboard.USD] for m in marks] == [5.0, 6.0, 12.0]
     assert [m["Statistic"] for m in marks] == ["minimum", dashboard.MEDIAN, "maximum"]
     assert "line" not in str(dashboard.summary_chart(spot).to_dict()["layer"])
+    x = dashboard.summary_chart(spot).to_dict()["layer"][0]["encoding"]["x"]
+    assert x["title"] == "USD/GPU-h"  # the spec's unit spelling (D49)
+    assert x["axis"]["tickCount"] == 8
 
 
 # --- quality panel ---

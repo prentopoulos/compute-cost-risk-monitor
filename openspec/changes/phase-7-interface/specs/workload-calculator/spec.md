@@ -144,9 +144,10 @@ Given a budget B in USD, from 0.01 to 10,000,000,000, and a valid workload, the 
 SHALL be c = B ÷ (GPUs × hours), the rise in USD per GPU-hour that would use up B. It SHALL also be
 given as % of the starting price, and worded "A rise of USD c per GPU-hour (p% of starting price)
 would use up USD B over G GPUs × H h. Storage unchanged. Scenario calculation, not a forecast".
-The page shows the figure as its "Headroom, USD/GPU-h" key figure and the sentence in its Sources
-section. An empty budget SHALL give no figure, 0 SHALL be refused, and a budget below 0.01 SHALL
-be refused.
+The page labels the budget input "Contingency, USD" (money set aside for price rises, not the
+total budget), and its refusal messages name it "Contingency". The page shows the figure as its
+"Headroom, USD/GPU-h" key figure and the sentence in its Sources section. An empty budget SHALL
+give no figure, 0 SHALL be refused, and a budget below 0.01 SHALL be refused.
 
 #### Scenario: Known headroom
 - **WHEN** the budget is USD 11,520 for 32 GPUs over 720 hours
@@ -158,4 +159,4 @@ be refused.
 
 #### Scenario: Budget below a cent
 - **WHEN** the budget is USD 5e-324
-- **THEN** it is refused with "Budget must be at least USD 0.01.", because its headroom would underflow to zero
+- **THEN** it is refused with "Contingency must be at least USD 0.01.", because its headroom would underflow to zero

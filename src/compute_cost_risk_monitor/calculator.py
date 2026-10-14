@@ -256,17 +256,18 @@ def custom(kind: str, magnitude: float | None) -> Custom | None:
 
 
 def budget(value: float | None) -> float | None:
-    """A budget for headroom, None when empty, or Refused."""
+    """A budget for headroom, None when empty, or Refused. The page labels it
+    "Contingency, USD": money set aside for price rises (phase-7 D49)."""
     if value is None:
         return None
     if not _finite(value):
-        raise Refused("Budget must be a number.")
+        raise Refused("Contingency must be a number.")
     if value <= 0:
-        raise Refused("Budget: enter an amount above zero.")
+        raise Refused("Contingency: enter an amount above zero.")
     if value < MIN_BUDGET:
-        raise Refused(f"Budget must be at least USD {MIN_BUDGET}.")
+        raise Refused(f"Contingency must be at least USD {MIN_BUDGET}.")
     if value > MAX_BUDGET:
-        raise Refused(f"Budget must be at most USD {MAX_BUDGET:,.0f}.")
+        raise Refused(f"Contingency must be at most USD {MAX_BUDGET:,.0f}.")
     return float(value)
 
 

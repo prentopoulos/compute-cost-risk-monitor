@@ -223,13 +223,13 @@ def test_cost_table_on_the_demo(found: list[RegionGroup]) -> None:
     table = dashboard.cost_table(result(found))
     assert list(table.columns) == ["", "USD/VM-h", "VM-h", "USD"]
     assert table.values.tolist() == [
-        ["Compute", "96", "2,880", "276,480.00"],
+        ["Compute", "96.00", "2,880", "276,480.00"],
         ["Storage", "", "", "—"],
         ["Total", "", "", "276,480.00"],
     ]
     stored = dashboard.cost_table(result(found, work=Workload(8, 100.0, 150.0)))
     assert stored.values.tolist() == [
-        ["Compute", "96", "100", "9,600.00"],
+        ["Compute", "96.00", "100", "9,600.00"],
         ["Storage", "", "", "150.00"],
         ["Total", "", "", "9,750.00"],
     ]
@@ -265,6 +265,19 @@ def test_grid_on_the_demo(found: list[RegionGroup]) -> None:
     assert dashboard.grid_title(KNOWN) == (
         ":gray[**SCENARIO GRID**] **Δ cost, USD · 720 h**"
     )
+
+
+def _rem(css: str) -> float:
+    return float(css.split("min-width: ")[1].split("rem")[0])
+
+
+def test_tables_fill_the_mock_column() -> None:
+    # Mock v3: one column about 950 px wide, COST 540 px; the rem is 14 px (D49).
+    label = _rem(dashboard.LABEL_CELL)
+    grid_px = (label + 5 * _rem(dashboard.GRID_CELL)) * 14
+    cost_px = (label + 3 * _rem(dashboard.COST_CELL)) * 14
+    assert 940 <= grid_px <= 960
+    assert 535 <= cost_px <= 545
 
 
 def test_grid_colours_rules_and_the_entered_column(found: list[RegionGroup]) -> None:
@@ -319,36 +332,40 @@ def test_refused_custom_row_shows_na(found: list[RegionGroup]) -> None:
     shown = result(found, "uksouth", "spot", change=Custom(USD, -6.0))
     last = dashboard.grid_frame(shown.ladder).values.tolist()[-1]
     assert last == ["Custom −6 USD/GPU-h"] + ["n/a"] * 5
-    assert dashboard.footer(shown).endswith(dashboard.ZERO_CLAUSE)
+    assert dashboard.footer(shown)[-1] == dashboard.ZERO_CLAUSE
 
 
 def test_footer_clauses(found: list[RegionGroup]) -> None:
-    assert dashboard.footer(result(found)) == (
+    # One line per clause, each starting with its mark (D49).
+    assert dashboard.footer(result(found)) == [
         f"Scenario calculation, not a forecast. {EXCLUSIONS}"
-    )
+    ]
     stored = dashboard.footer(result(found, work=Workload(32, 720.0, 5_000.0)))
-    assert stored.endswith(" Total includes USD 5,000.00 storage entered by you.")
+    assert stored[1:] == ["Total includes USD 5,000.00 storage entered by you."]
     unlisted = dashboard.footer(result(found, "uksouth", "spot"))
-    assert unlisted.endswith(
-        " * Crosses rental types (Spot → pay-as-you-go): same size, same region."
+    assert unlisted[1:] == [
+        "* Crosses rental types (Spot → pay-as-you-go): same size, same region."
         " Not computed: no pay-as-you-go listing for this size in this region."
-    )
+    ]
     priced = dashboard.footer(result(found, "westeurope", "spot"))
-    assert dashboard.CROSSING_CLAUSE in priced
-    assert dashboard.NO_PAYG_CLAUSE not in priced
+    assert priced[1:] == [dashboard.CROSSING_CLAUSE]  # computed, and no † row
     marked = dashboard.footer(result(found, "eastus", "spot"))
-    assert marked.endswith(
-        " † Above this size's pay-as-you-go list price (USD 12.0000/GPU-h): the"
-        " arithmetic, not what Azure would bill."
-    )
-    assert "†" not in priced  # 5.0 doubled stays below 12.5
+    assert marked[1:] == [
+        dashboard.CROSSING_CLAUSE,
+        "† Above this size's pay-as-you-go list price (USD 12.0000/GPU-h): the"
+        " arithmetic, not what Azure would bill.",
+    ]
     # No grid row reaches 12.5 there, but a rise of USD 200,000 / (32 x 720) does.
     roomy = result(found, "westeurope", "spot", limit=200_000.0)
     assert roomy.headroom is not None and roomy.headroom.above_payg == 12.5
     assert all(row.above_payg is None for row in roomy.ladder.rows)
-    assert dashboard.footer(roomy).endswith(
+    assert dashboard.footer(roomy)[-1].endswith(
         " Above this size's pay-as-you-go list price (USD 12.5000/GPU-h): the"
         " arithmetic, not what Azure would bill."
+    )
+    # On the page: muted lines with hard breaks between them.
+    assert dashboard.footer_text(result(found, "eastus", "spot")) == "  \n".join(
+        f":gray[{line}]" for line in marked
     )
 
 
@@ -446,12 +463,13 @@ def test_size_keys_differ_per_group(found: list[RegionGroup]) -> None:
 
 
 def test_display_formats_and_text() -> None:
-    assert dashboard.FORMATS[dashboard.EXPOSURE] == "%,.2f"
-    assert dashboard.FORMATS[dashboard.SCENARIO_COST] == "%,.2f"
-    assert dashboard.FORMATS[dashboard.AMOUNT] == "%,.2f"
-    assert dashboard.FORMATS[dashboard.CHANGE_PCT] == "%.1f"
-    assert dashboard.FORMATS[dashboard.CHANGE_USD] == "%.4f"
-    assert dashboard.FORMATS[dashboard.SCENARIO_USD] == "%.4f"
+    # Published prices keep every stored decimal, never fewer than two (D32, D49).
+    assert [dashboard.at_least_cents(v) for v in (96.0, 0.6, 27.197, 1e-12)] == [
+        "96.00",
+        "0.60",
+        "27.197",
+        "1e-12",
+    ]
     assert dashboard.money(11_520) == "USD 11,520.00"
     assert [dashboard.hours_text(h) for h in (720.0, 0.5, 8_784.0, 0.004)] == [
         "720 h",
