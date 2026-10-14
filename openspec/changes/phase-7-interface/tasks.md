@@ -89,7 +89,7 @@
 
 ## 5. Records and review
 
-- [ ] 5.1 Write `docs/reviews/<date>-phase-7-interface.md`:
+- [x] 5.1 Write `docs/reviews/<date>-phase-7-interface.md`:
   - the brief, the research sources and the two mock rounds;
   - the mock and build critiques;
   - the manual check with its screenshots, synthetic only;
