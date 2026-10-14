@@ -102,12 +102,15 @@ def _header(view: SourceView, path: Path, as_of: datetime) -> None:
         )
 
 
-def _group(view: SourceView, choice: Choice | None) -> RegionGroup | None:
-    """The chosen group, or None after drawing why there is none to show."""
+def _group(
+    view: SourceView, choice: Choice | None, withheld: str
+) -> RegionGroup | None:
+    """The chosen group, or None after drawing why there is none to show. `withheld`
+    names the tab's view when the snapshot is not normalized (D50)."""
     if view.snapshot is None:
         return None  # the header already says no snapshot
     if view.withheld:
-        _status(dashboard.WITHHELD_WORD, dashboard.WITHHELD_WORKLOAD)
+        _status(dashboard.WITHHELD_WORD, withheld)
         return None
     if choice is None:
         _status(dashboard.NO_GROUPS_WORD, dashboard.NO_GROUPS)
@@ -120,7 +123,7 @@ def _group(view: SourceView, choice: Choice | None) -> RegionGroup | None:
 
 
 def _groups(view: SourceView, choice: Choice | None) -> None:
-    group = _group(view, choice)
+    group = _group(view, choice, dashboard.WITHHELD_GROUPS)
     if group is None or choice is None:
         return
     variant, count, rental, _ = choice
@@ -241,7 +244,7 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
     if view.source != dashboard.AZURE:
         st.markdown(dashboard.MARKETPLACE_NOTE)
         return
-    group = _group(view, choice)
+    group = _group(view, choice, dashboard.WITHHELD_WORKLOAD)
     if group is None:
         return
     figures = st.container()  # drawn once the inputs are read and the check runs
@@ -291,6 +294,9 @@ def _workload(view: SourceView, choice: Choice | None) -> None:
 
 def _browser(view: SourceView, choice: Choice | None) -> None:
     snapshot = view.snapshot
+    if snapshot is not None and view.withheld:
+        _status(dashboard.WITHHELD_WORD, dashboard.WITHHELD_GROUPS)
+        return
     if snapshot is None or not view.region_groups:
         _status(dashboard.NO_GROUPS_WORD, "No groups to list.")
         return
@@ -365,6 +371,8 @@ def main(known: Sequence[tuple[str, Path]], as_of: datetime) -> None:
         list(dashboard.CATALOGUE),
         key="catalogue",
         format_func=lambda each: dashboard.catalogue_name(each, views[each]),
+        # Kept through a run that stops before drawing it, such as IN USE (D50).
+        persist_state="session",
     )
     view = views[source]
     _header(view, dataset.path, as_of)

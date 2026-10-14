@@ -195,9 +195,15 @@ def _finite(value: float) -> bool:
 
 
 def _amount(value: float) -> str:
-    """Up to 4 decimals, or 3 significant digits when that would read as zero."""
+    """Up to 4 decimals; 3 significant digits when that would read as zero; up to 8
+    when 4 decimals would round the value, so a label never shows a refused boundary
+    such as −100% for a move that is computed (phase-7 D50)."""
     text = f"{value:,.4f}".rstrip("0").rstrip(".")
-    return f"{value:.3g}" if text == "0" and value != 0 else text
+    if text == "0" and value != 0:
+        return f"{value:.3g}"
+    if float(text.replace(",", "")) != value:
+        return f"{value:,.8g}"
+    return text
 
 
 def nearest(gpus: int, gpus_per_vm: int) -> list[int]:
@@ -354,11 +360,15 @@ def _row(
     )
 
 
-def custom_name(change: Custom) -> str:
+def _signed(change: Custom) -> str:
+    """The custom move's magnitude with its sign, as both of its names show it."""
     sign = "+" if change.magnitude >= 0 else "−"
-    amount = _amount(abs(change.magnitude))
+    return f"{sign}{_amount(abs(change.magnitude))}"
+
+
+def custom_name(change: Custom) -> str:
     unit = "%" if change.kind == PERCENT else " USD/GPU-hour"
-    return f"Custom: {sign}{amount}{unit} (entered by you, not part of {VERSION})"
+    return f"Custom: {_signed(change)}{unit} (entered by you, not part of {VERSION})"
 
 
 def pay_as_you_go(
@@ -389,9 +399,8 @@ def ladder_columns(gpus: int, gpus_per_vm: int) -> tuple[int, ...]:
 
 
 def custom_label(change: Custom) -> str:
-    sign = "+" if change.magnitude >= 0 else "−"
     unit = "%" if change.kind == PERCENT else " USD/GPU-h"
-    return f"Custom {sign}{_amount(abs(change.magnitude))}{unit}"
+    return f"Custom {_signed(change)}{unit}"
 
 
 def _ladder_row(

@@ -263,7 +263,7 @@ def test_grid_on_the_demo(found: list[RegionGroup]) -> None:
         "+46,080",
     ]
     assert dashboard.grid_title(KNOWN) == (
-        ":gray[**SCENARIO GRID**] **Δ cost, USD · 720 h**"
+        ":gray[**SCENARIO GRID** ·] **Δ cost, USD · 720 h**"  # D7's title
     )
 
 
@@ -272,12 +272,25 @@ def _rem(css: str) -> float:
 
 
 def test_tables_fill_the_mock_column() -> None:
-    # Mock v3: one column about 950 px wide, COST 540 px; the rem is 14 px (D49).
+    # Mock v3: one column about 950 px wide, COST 540 px; the rem is 14 px (D49). A
+    # sixth column for an entered count shares the same width (D50).
     label = _rem(dashboard.LABEL_CELL)
-    grid_px = (label + 5 * _rem(dashboard.GRID_CELL)) * 14
+    grid_px = (label + 5 * _rem(dashboard.grid_cell_css(5))) * 14
+    six_px = (label + 6 * _rem(dashboard.grid_cell_css(6))) * 14
     cost_px = (label + 3 * _rem(dashboard.COST_CELL)) * 14
     assert 940 <= grid_px <= 960
+    assert six_px <= 960
     assert 535 <= cost_px <= 545
+
+
+def test_six_columns_keep_the_rules_and_the_width(found: list[RegionGroup]) -> None:
+    ladder = result(found, work=Workload(24, 720.0)).ladder
+    assert ladder.columns == (8, 16, 24, 32, 64, 128)
+    styles = dashboard.grid_styles(ladder)
+    by_row = {row.id: list(styles.iloc[i]) for i, row in enumerate(ladder.rows)}
+    assert "border-top: 2px" in by_row["up-10"][0]
+    assert "border-top: 1px" in by_row["flat-050"][0]
+    assert "min-width: 9.58rem" in by_row["up-25"][1]
 
 
 def test_grid_colours_rules_and_the_entered_column(found: list[RegionGroup]) -> None:
@@ -304,6 +317,14 @@ def test_grid_cells() -> None:
     assert dashboard.grid_cell(-13_824.0) == "−13,824"
     assert dashboard.grid_cell(0.0) == "0"
     assert dashboard.grid_cell(-0.004) == "−0.004"  # never shown as 0
+    # Whole USD round half up, not to even (D50).
+    assert [dashboard.grid_cell(v) for v in (0.5, 2.5, 3.5, -2.5, 27_648.5)] == [
+        "+1",
+        "+3",
+        "+4",
+        "−3",
+        "+27,649",
+    ]
 
 
 def test_grid_rows_for_spot_groups(found: list[RegionGroup]) -> None:
@@ -389,6 +410,9 @@ def test_workload_sources(found: list[RegionGroup]) -> None:
         line.startswith("Starting price: USD 12.0000/GPU-hour") for line in lines
     )
     assert dashboard.SPOT_LINE not in lines
+    assert dashboard.MULTI_SIZE not in lines  # one member: no Size choice
+    t4 = pick(found, "T4 16GB", 1, "eastus", "on_demand")
+    assert dashboard.MULTI_SIZE in dashboard.workload_sources(t4, None)  # D50
     withheld = dashboard.workload_sources(shown.start.group, None)
     assert not any(
         "Starting price" in line or "USD 0.5000" in line for line in withheld
@@ -415,6 +439,7 @@ def test_spot_sources_name_both_keys_and_the_full_note(
     eastus = result(found, "eastus", "spot")
     lines = dashboard.workload_sources(eastus.start.group, eastus)
     assert dashboard.ABOVE_PAYG.format(price="12.0000") in lines
+    assert dashboard.ABOVE_PAYG.endswith(" See the 'Spot → PAYG *' row.")  # D50
 
 
 def test_headroom_text(found: list[RegionGroup]) -> None:

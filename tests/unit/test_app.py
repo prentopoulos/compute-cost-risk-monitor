@@ -207,6 +207,10 @@ def test_not_normalized_banner_withholds_groups(tmp_path: Path) -> None:
     assert texts(at.tabs[0]) == [
         status(dashboard.WITHHELD_WORD, dashboard.WITHHELD_WORKLOAD)
     ]
+    show(at, "Comparable groups")  # each tab names its own view (D50)
+    assert texts(at.tabs[1]) == [
+        status(dashboard.WITHHELD_WORD, dashboard.WITHHELD_GROUPS)
+    ]
     no_alerts(at)
 
 
@@ -261,7 +265,10 @@ def test_withheld_snapshot_lists_no_groups_and_flags_the_panel(
     connection.close()
     at = page([(dashboard.SYNTHETIC_DATASET, path)])
     show(at, "Group browser")
-    assert texts(at.tabs[2]) == [status(dashboard.NO_GROUPS_WORD, "No groups to list.")]
+    # The groups are withheld, not missing (D50).
+    assert texts(at.tabs[2]) == [
+        status(dashboard.WITHHELD_WORD, dashboard.WITHHELD_GROUPS)
+    ]
     assert not at.tabs[2].dataframe
     show(at, "Data quality")
     banners = texts(at.tabs[3])
@@ -303,6 +310,26 @@ def test_choice_naming_no_group_draws_nothing(
     assert not at.tabs[0].metric and not at.tabs[0].table
     show(at, "Comparable groups")
     assert not at.tabs[1].metric and not at.tabs[1].dataframe
+
+
+def test_catalogue_choice_survives_a_run_that_stops_early(
+    demo: list[tuple[str, Path]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    at = page(demo)
+    at.selectbox(key="catalogue").set_value(dashboard.MARKETPLACE)
+    at.run()
+
+    def in_use(*_: object, **__: object) -> None:
+        raise dashboard.Problem("Another program holds the database.", "IN USE")
+
+    loader = dashboard.load_all
+    monkeypatch.setattr(dashboard, "load_all", in_use)
+    at.run()
+    assert any(text.startswith("**IN USE**") for text in texts(at))  # no catalogue
+    monkeypatch.setattr(dashboard, "load_all", loader)
+    at.run()
+    # Kept through the IN USE run, which never drew the widget (D50).
+    assert at.selectbox(key="catalogue").value == dashboard.MARKETPLACE
 
 
 def test_connection_closed_after_the_run(demo: list[tuple[str, Path]]) -> None:
@@ -556,7 +583,7 @@ def test_known_workload_on_the_demo(demo: list[tuple[str, Path]]) -> None:
         ("VMs", "4 × ND96isr H100 v5"),
         ("GPUs × h", "32 × 720"),
     ]
-    assert ":gray[**SCENARIO GRID**] **Δ cost, USD · 720 h**" in texts(tab)
+    assert ":gray[**SCENARIO GRID** ·] **Δ cost, USD · 720 h**" in texts(tab)
     cells = grid(tab)
     assert list(cells) == [
         "−50%",
@@ -801,6 +828,9 @@ def test_workload_without_comparable_groups(tmp_path: Path) -> None:
     azure_run(connection, "unmapped-only", [unmapped])
     normalize.normalize_pending(connection, AS_OF)
     connection.close()
-    tab = workload_tab(page([(dashboard.SYNTHETIC_DATASET, path)]))
+    at = page([(dashboard.SYNTHETIC_DATASET, path)])
+    tab = workload_tab(at)
     assert texts(tab) == [status(dashboard.NO_GROUPS_WORD, dashboard.NO_GROUPS)]
     assert not tab.table
+    show(at, "Group browser")  # normalized, but nothing to compare: not withheld
+    assert texts(at.tabs[2]) == [status(dashboard.NO_GROUPS_WORD, "No groups to list.")]

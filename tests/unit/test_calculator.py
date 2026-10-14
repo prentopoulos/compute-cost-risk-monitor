@@ -306,6 +306,9 @@ def test_custom_percent_name() -> None:
         (Custom(PERCENT, 0.00001), "Custom: +1e-05%"),
         (Custom(USD, -0.00004), "Custom: −4e-05 USD/GPU-hour"),
         (Custom(USD, 1_000.0), "Custom: +1,000 USD/GPU-hour"),
+        # Four decimals would round these to a boundary the move is not at (D50).
+        (Custom(PERCENT, -99.99999), "Custom: −99.99999%"),
+        (Custom(USD, -11.99999), "Custom: −11.99999 USD/GPU-hour"),
     ],
 )
 def test_a_small_custom_change_is_never_named_zero(change: Custom, shown: str) -> None:
@@ -521,6 +524,7 @@ def test_custom_percent_ladder_row() -> None:
     )
     custom = ladder_rows(result)[calc.CUSTOM]
     assert custom.label == "Custom +15%"
+    assert calc.custom_label(Custom(PERCENT, -99.99999)) == "Custom −99.99999%"
     assert cell(result, calc.CUSTOM, 8) == pytest.approx(8 * 10 * 2.5 * 0.15)
 
 

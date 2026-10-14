@@ -11,8 +11,10 @@ A changed step SHALL need a new set version, never an edit in place.
 For a valid workload, the ladder SHALL have:
 - **rows:** one per step. Then, for a Spot starting member, a "Spot → pay-as-you-go" row priced
   from the same size's pay-as-you-go listing in the same region, marked as crossing rental types.
-  Then, when a custom move is entered, a "Custom" row priced like the custom scenario. This is
-  the order of the `scenarios-v1` rows;
+  Then, when a custom move is entered, a "Custom" row priced like the custom scenario, labelled
+  with its signed magnitude to up to 4 decimals, or more when 4 would round it, so a computed
+  move never reads as a refused boundary such as −100%. This is the order of the `scenarios-v1`
+  rows;
 - **columns:** 8, 16, 32, 64 and 128 GPUs, plus the entered GPU count when it is not one of
   them, in ascending order. The column for the entered count is marked as entered, whether or not
   it is one of the defined counts. A defined column whose GPU count is not a whole multiple of the
@@ -67,6 +69,26 @@ sensitivities chosen by judgement, not calibrated to history (one snapshot) or t
 - **THEN** only the +100% row (120% of pay-as-you-go) is marked among the percentage rows, it keeps its computed cells, and the above-pay-as-you-go note accompanies the ladder
 
 ## MODIFIED Requirements
+
+### Requirement: Spot price above pay-as-you-go
+When a Spot scenario price, custom price or headroom price is above the same size's pay-as-you-go
+list price in the same region, the row SHALL keep its arithmetic and carry the note "Above this
+size's pay-as-you-go list price (USD x/GPU-hour). With max price −1 Azure charges at most the
+pay-as-you-go price; with a lower max price the VM is evicted. This row shows the scenario's
+arithmetic, not what Azure would bill. See the 'Spot → PAYG *' row." No row SHALL be capped or
+refused for this reason. A size with no pay-as-you-go listing SHALL get no note.
+
+#### Scenario: Note on a crossing row
+- **WHEN** a Spot size equal to its pay-as-you-go price applies `increase-25`
+- **THEN** the row keeps its computed exposure and carries the note
+
+#### Scenario: No note below pay-as-you-go
+- **WHEN** a Spot size at 30% of its pay-as-you-go price applies `spike-100`
+- **THEN** the row carries no note
+
+#### Scenario: Note names the row on the page
+- **WHEN** the note is shown in the Workload cost tab's Sources
+- **THEN** it ends "See the 'Spot → PAYG *' row.", the label the grid gives that row
 
 ### Requirement: Independent check of workload figures
 A check module that imports no calculator code SHALL re-derive every workload figure from

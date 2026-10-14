@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -256,16 +257,22 @@ def load(
     view.region_groups = found
     if source == AZURE:
         view.summaries = groups.cross_region(found, params["thin_below_regions"])
-        view.region_names = region_names(connection)
+        view.region_names = region_names(connection, ordered[-1].run_id)
     return view
 
 
-def region_names(connection: duckdb.DuckDBPyConnection) -> dict[str, str]:
-    """Each Azure region code's stored `location` name; codes without one are absent,
-    so the page shows the code (phase-7 D30). Nothing is filled in."""
+def region_names(connection: duckdb.DuckDBPyConnection, run_id: str) -> dict[str, str]:
+    """Each Azure region code's stored `location` name in the shown snapshot's run.
+    Codes without one, or with a blank one, are absent, so the page shows the code
+    (phase-7 D30, D50). Nothing is filled in."""
     rows = connection.execute(
-        "SELECT arm_region_name, min(location) FROM azure_retail_price"
-        " WHERE location IS NOT NULL GROUP BY arm_region_name"
+        "SELECT a.arm_region_name, min(a.location) FROM azure_retail_price a"
+        " JOIN price_observation p ON p.source = a.source AND p.item_key = a.item_key"
+        " AND p.retrieved_at = a.retrieved_at"
+        " JOIN raw_response rr ON rr.response_id = p.response_id"
+        " WHERE rr.run_id = ? AND trim(a.location) <> ''"
+        " GROUP BY a.arm_region_name",
+        [run_id],
     ).fetchall()
     return {str(code): str(name) for code, name in rows}
 
@@ -464,7 +471,10 @@ def placed(name: str) -> str:
 
 
 def short_size(name: str) -> str:
-    """A size for a key figure: no `Standard_` prefix, underscores as spaces (D46)."""
+    """An Azure size for a key figure: no `Standard_` prefix, underscores as spaces
+    (D46). Any other name, such as a marketplace offer ID, is shown as stored (D50)."""
+    if not name.startswith("Standard_"):
+        return name
     return name.removeprefix("Standard_").replace("_", " ")
 
 
@@ -757,6 +767,7 @@ MARKETPLACE_NOTE = "Workload cost uses the Azure VMs catalogue."
 WITHHELD_WORKLOAD = (
     "The workload figures are withheld until this snapshot is normalized."
 )
+WITHHELD_GROUPS = "The group views are withheld until this snapshot is normalized."
 HOURS_HELP = "720 h = 30 days; Microsoft's pricing calculator uses 730 h for a month."
 HOURS_NOTE = "Costs are for the hours entered, never converted to a month."
 STORAGE_ENTERED = (
@@ -781,7 +792,7 @@ ABOVE_PAYG = (
     "Above this size's pay-as-you-go list price (USD {price}/GPU-hour). With max price"
     " −1 Azure charges at most the pay-as-you-go price; with a lower max price the VM"
     " is evicted. This row shows the scenario's arithmetic, not what Azure would bill."
-    " See 'Spot to pay-as-you-go fallback'."
+    " See the 'Spot → PAYG *' row."
 )
 CROSSES_RENTAL = "crosses rental types (Spot → pay-as-you-go)"
 CHECK_FAILED = "The independent check failed: {checks}. No figures are shown."
@@ -802,7 +813,6 @@ HEADROOM_LABEL = "Headroom, USD/GPU-h"
 GRID_TITLE = "SCENARIO GRID"
 GRID_CORNER = "Δ price \\ GPUs"
 FALLBACK_LABEL = "Spot → PAYG *"
-CROSSED = " *"
 MARKED = " †"
 # Footer clauses, each only when it applies (D9, D35, D36, D44).
 STORAGE_CLAUSE = "Total includes USD {amount} storage entered by you."
@@ -937,7 +947,8 @@ def grid_cell(value: float) -> str:
     non-zero value would round to 0 (D32)."""
     if value == 0:
         return "0"
-    whole = round(abs(value))
+    # Half up, so 2.5 shows 3 as 3.5 shows 4 (Python's round() goes to even, D50).
+    whole = int(Decimal(repr(abs(value))).quantize(Decimal(1), ROUND_HALF_UP))
     text = f"{whole:,}" if whole else f"{abs(value):.3g}"
     return ("+" if value > 0 else "−") + text
 
@@ -976,33 +987,56 @@ def _cell_colour(row: calculator.LadderRow, index: int) -> str:
     return COLOURS["text"]
 
 
-def grid_styles(ladder: calculator.Ladder) -> pd.DataFrame:
+def grid_styles(
+    ladder: calculator.Ladder, columns: pd.Index[str] | None = None
+) -> pd.DataFrame:
     """CSS for each grid cell: colour by sign, the entered column shaded and bold, a
-    rule above price rises and above the flat and extra rows (D7, D10, D16)."""
+    rule above price rises and above the flat and extra rows (D7, D10, D16). The rules
+    follow each row's kind and sign, not one ladder's step IDs (D50)."""
+    extras = (calculator.FALLBACK, calculator.CUSTOM)
+    presets = [row for row in ladder.rows if row.id not in extras]
+    rise = next(
+        (
+            r.id
+            for r in presets
+            if r.kind == scenarios.PERCENT and (r.magnitude or 0) > 0
+        ),
+        None,
+    )
+    flat = next((r.id for r in presets if r.kind == scenarios.USD), None)
+    extra = next((r.id for r in ladder.rows if r.id in extras), None)
+    cell = grid_cell_css(len(ladder.columns))
     styles = []
-    ids = [row.id for row in ladder.rows]
-    extra = ids.index("flat-050") + 1  # the first fallback or custom row, if any
-    for position, row in enumerate(ladder.rows):
+    for row in ladder.rows:
         border = ""
-        if row.id == "up-10":
+        if row.id == rise:
             border = f"border-top: 2px solid {COLOURS['zero']};"
-        elif row.id == "flat-050" or position == extra:
+        elif row.id in (flat, extra):
             border = f"border-top: 1px solid {COLOURS['border']};"
         line = [f"color: {COLOURS['muted']}; {LABEL_CELL} {border}"]
         for index, column in enumerate(ladder.columns):
-            css = f"color: {_cell_colour(row, index)}; {GRID_CELL} {border}"
+            css = f"color: {_cell_colour(row, index)}; {cell} {border}"
             if column == ladder.entered:
                 css += f" background-color: {COLOURS['shade']}; font-weight: 700;"
             line.append(css)
         styles.append(line)
-    return pd.DataFrame(styles, columns=grid_frame(ladder).columns)
+    shown = grid_frame(ladder).columns if columns is None else columns
+    return pd.DataFrame(styles, columns=shown)
 
 
 # Numbers right-aligned, labels left (phase-7 D7). The minimum widths set each table's
 # width: the grid fills mock v3's 950 px column and COST its 540 px (14 px rem, D49).
 LABEL_CELL = "text-align: left !important; min-width: 10rem;"
-GRID_CELL = "text-align: right !important; min-width: 11.5rem;"
+GRID_NUMBERS = 57.5  # rem the GPU columns share: 10rem + 57.5rem is 945 px (D49, D50)
 COST_CELL = "text-align: right !important; min-width: 9.5rem;"
+
+
+def grid_cell_css(count: int) -> str:
+    """A grid number cell's CSS: the GPU columns share one width, so a sixth column for
+    an entered count keeps the grid inside its column (D50)."""
+    return f"text-align: right !important; min-width: {GRID_NUMBERS / count:.2f}rem;"
+
+
 _HEADERS: list[CSSDict] = [
     {"selector": "th", "props": [("text-align", "right !important")]},
     {"selector": "th.col0", "props": [("text-align", "left !important")]},
@@ -1012,7 +1046,7 @@ _HEADERS: list[CSSDict] = [
 def grid(ladder: calculator.Ladder) -> Styler:
     """The grid for `st.table`; Styler styles stay scoped to the table (D16)."""
     frame = grid_frame(ladder)
-    styles = grid_styles(ladder)
+    styles = grid_styles(ladder, frame.columns)
     entered = 1 + ladder.columns.index(ladder.entered)
     return frame.style.apply(lambda _: styles, axis=None).set_table_styles(
         [
@@ -1030,7 +1064,7 @@ def grid(ladder: calculator.Ladder) -> Styler:
 
 
 def grid_title(work: Workload) -> str:
-    return f":gray[**{GRID_TITLE}**] **Δ cost, USD · {hours_text(work.hours)}**"
+    return f":gray[**{GRID_TITLE}** ·] **Δ cost, USD · {hours_text(work.hours)}**"
 
 
 def footer(result: Result) -> list[str]:
@@ -1130,12 +1164,12 @@ def workload_sources(group: RegionGroup, result: Result | None) -> list[str]:
             f"Spot → PAYG row {CROSSES_RENTAL}: {key_text(group.key)}"
             f" → {key_text(result.payg_key)}{where}"
         )
-    lines.append(
-        snapshot_text(group.snapshot)[0].upper() + snapshot_text(group.snapshot)[1:]
-    )
+    lines.append(plain_caption(group.snapshot))
     lines.append(
         f"{scenarios.LADDER_VERSION} and {scenarios.VERSION}: {scenarios.JUDGEMENT}"
     )
+    if len(group.members) > 1:  # the tab offers a Size choice
+        lines.append(MULTI_SIZE)
     if result is not None:
         lines.append(start_text(result.start))
         lines.append(storage_line(result.workload))

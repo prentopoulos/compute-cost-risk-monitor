@@ -301,6 +301,26 @@ def test_regions_show_their_stored_names_sorted_by_name(
     ]
 
 
+def test_region_names_come_from_the_shown_run() -> None:
+    connection = database()
+    azure_run(connection, "early", [Price()])
+    azure_run(connection, "later", [Price()], started=DAY + timedelta(days=1))
+    connection.execute(
+        "UPDATE azure_retail_price SET location = 'AAA Old Name'"
+        " WHERE retrieved_at < ?",
+        [DAY + timedelta(hours=1)],
+    )
+    # min() over every run would pick the older 'AAA Old Name' (D50).
+    assert dashboard.region_names(connection, "later") == {"westeurope": "Synthetic"}
+    assert dashboard.region_names(connection, "early") == {"westeurope": "AAA Old Name"}
+    connection.execute(
+        "UPDATE azure_retail_price SET location = '  ' WHERE retrieved_at > ?",
+        [DAY + timedelta(hours=1)],
+    )
+    assert dashboard.region_names(connection, "later") == {}  # blank: the code shows
+    connection.close()
+
+
 def test_tags_are_muted_text_not_inline_code() -> None:
     # Inline code is fixed at 0.75em (10.5 px), below the 12 px floor (D49).
     assert dashboard.labels_text([groups.THIN, groups.SYNTHETIC]) == (
@@ -526,6 +546,7 @@ def test_names_for_the_sidebar_and_key_figures(
     assert dashboard.price_label("spot") == "USD/GPU-h · SPOT"
     assert dashboard.short_size("Standard_ND96isr_H100_v5") == "ND96isr H100 v5"
     assert dashboard.short_size("offer-17") == "offer-17"
+    assert dashboard.short_size("gpu_offer_17") == "gpu_offer_17"  # as stored (D50)
     assert dashboard.LIVE_DATASET == "Azure list prices (local only)"
     assert dashboard.SYNTHETIC_DATASET == "Synthetic demo"
     view = azure(views)  # the demo's runs are labelled synthetic

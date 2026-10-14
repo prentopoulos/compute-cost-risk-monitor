@@ -82,7 +82,8 @@ The values appear only after the independent check passes. With a refused input 
 check, each label shows "—" and no value or price.
 
 The Comparable groups tab SHALL show, in the same style, "Lowest, USD/GPU-h · PAYG" (or
-"· SPOT") with the lowest listed member's USD/GPU-hour, "Size" with its size or offer ID, and
+"· SPOT") with the lowest listed member's USD/GPU-hour, "Size" with its short size name (or
+"Offer" with its offer ID exactly as stored), and
 "Members" with its member count (for marketplace groups, machines and offers), plus its tags.
 
 Key figures show only figures already computed and checked, formatted as in "Display
@@ -139,7 +140,8 @@ A dropdown labelled "Catalogue" SHALL choose the source: `azure-retail` as "Azur
 `synthetic-marketplace` as "Marketplace". Each option SHALL add " (synthetic)" when that source's
 latest succeeded snapshot is labelled `synthetic`, and nothing for a `live` or `recorded` one;
 the suffix is never "(live)". One page SHALL show one database and one source at a time, and
-never combine figures from two.
+never combine figures from two. The catalogue choice SHALL be kept through a run that stops
+before drawing it, such as one that shows IN USE.
 
 The data label shown with every figure SHALL be the snapshot's recorded `collection_run`
 label, never one inferred from the file. When one source's succeeded snapshots carry more than
@@ -263,7 +265,10 @@ The view SHALL behave as follows:
 - **Marketplace source:** when the "Marketplace" catalogue is selected, the tab SHALL show only a
   short note that the calculator uses the Azure VMs catalogue.
 - **Other states:** with no snapshot, a snapshot that is not normalized, or no groups, the tab
-  SHALL show the same states as the "Comparable groups" tab and no figure.
+  SHALL show the same status words as the "Comparable groups" tab and no figure. When the
+  snapshot is not normalized, each tab names its own view: "The workload figures are withheld
+  until this snapshot is normalized." here, and "The group views are withheld until this
+  snapshot is normalized." on Comparable groups and Group browser.
 - **Invalid input:** the tab SHALL show "REFUSED" and the validator's message below it, and no
   figure.
 - **Failed check:** when the independent check fails, the tab SHALL show "CHECK FAILED" and "The
@@ -325,8 +330,9 @@ by their natural order (variant and region by name, GPU count numerically).
 
 GPU counts SHALL be shown as numbers. Rental types SHALL be shown as "Pay-as-you-go" and "Spot";
 key-figure labels and the fallback row may abbreviate pay-as-you-go to "PAYG". Regions SHALL be
-shown by the source's stored `location` name for that region, or by the region code when no name
-is stored. Nothing is shown that the source did not provide.
+shown by the stored `location` name for that region in the shown snapshot's run, or by the
+region code when no name, or only a blank one, is stored there. Nothing is shown that the source
+did not provide.
 
 #### Scenario: Only existing groups offered
 - **WHEN** a snapshot holds region groups for ("A100 PCIe 80GB", 1, `on_demand`, eastus) and ("H100 NVL 94GB", 2, `spot`, westeurope)
@@ -419,7 +425,7 @@ The dashboard SHALL display:
 - USD/GPU-h and statistics to 4 decimal places;
 - the published price at its full stored precision;
 - USD amounts to 2 decimal places with thousands separators, except grid cells, which are whole
-  USD with a sign and thousands separators;
+  USD, rounded half up, with a sign and thousands separators;
 - percentages to 1 decimal place;
 - times in UTC;
 - "n/a" in a grid cell that is not computed, and "—" for an empty input, a value not entered, or
@@ -438,6 +444,10 @@ It SHALL format values only for display and never compute from rounded values.
 #### Scenario: Whole USD in the grid
 - **WHEN** a grid cell is 27648.4
 - **THEN** it is displayed as +27,648, and the checked value is unchanged
+
+#### Scenario: Halves round up in the grid
+- **WHEN** grid cells are 2.5 and 3.5
+- **THEN** they are displayed as +3 and +4
 
 #### Scenario: Not computed is not zero
 - **WHEN** a grid row is refused

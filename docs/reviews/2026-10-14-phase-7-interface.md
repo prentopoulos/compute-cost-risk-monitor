@@ -8,9 +8,9 @@
   This is a read-through and evidence record, not the code review: `/code-review` runs on PR #13.
 - **Evidence:**
   - **Gate:** green, all nine checks.
-  - **Tests:** 779 (718 at the end of Phase 6), at 100.0% branch coverage overall: 3,142
-    statements and 852 branches. The core step holds its eleven modules at 100% (1,522
-    statements, 464 branches), `scenarios` and `workload_check` included.
+  - **Tests:** 784 after the code-review fixes (718 at the end of Phase 6), at 100.0% branch
+    coverage overall. The core step holds its eleven modules at 100% (1,526
+    statements, 468 branches), `scenarios` and `workload_check` included.
   - **Dependency audit:** `uv audit` found "no known vulnerabilities and no adverse project
     statuses in 69 packages". The phase added no dependency.
   - **Data:** every screenshot, figure and example here comes from the synthetic demo
@@ -159,5 +159,38 @@ Findings:
 
 ## Code review
 
-Pending: `/code-review` on PR #13 (task 5.2). Its findings and outcome will be recorded here
-and in the PR body.
+`/code-review` on PR #13 found 15 issues. It traced the ladder's cells, columns, refusals and
+marks through `calculator.ladder` and `workload_check._ladder`, and found the maths and the
+check sound. Design D50 records each finding. Fixed with tests:
+1. **Grid width:** an entered count outside 8–128's five columns (24 GPUs) added a sixth column
+   that needed about 1,106 px in the 960 px column. The GPU columns now share 57.5rem.
+2. **Withheld message:** a snapshot that is not normalized showed the workload message on
+   Comparable groups and "NO GROUPS" on Group browser. Both now say "The group views are
+   withheld until this snapshot is normalized."
+3. **Above-PAYG note:** it pointed to "Spot to pay-as-you-go fallback", a row of the removed
+   scenarios table. It now says "See the 'Spot → PAYG *' row." (workload-calculator, MODIFIED).
+4. **Custom label:** a computed move of −99.99999% read "Custom −100%". Labels now keep more
+   decimals when 4 would round the value.
+5. **Catalogue:** a run that stopped before drawing it (IN USE) dropped the choice, so the next
+   run switched to Azure VMs. The test fails without the fix and passes with it.
+6. **Region names:** they were the smallest stored name across every run, and a blank one could
+   win. They now come from the shown snapshot's run, and a blank one counts as none.
+7. **Sources:** the Workload tab's Sources now holds the several-sizes note when the tab offers a
+   Size choice, as the spec requires.
+8. **Offer IDs:** shortening was applied to marketplace offer IDs; only Azure `Standard_` names
+   are shortened now.
+9. **Grid title:** "SCENARIO GRID · Δ cost, USD · 720 h", as D7 says.
+10. **Rounding:** grid cells rounded half to even (+2.5 showed "+2"); they now round half up.
+11. **Cleanup:** the grid's rules follow each row's kind and sign rather than ladder-v1's IDs;
+    the snapshot line reuses `plain_caption`; the grid frame is built once; the custom names
+    share one helper; the unused `CROSSED` is removed.
+
+Answered without a change:
+- **Two row assemblies:** the ladder and the `scenarios-v1` rows stay separate computations,
+  since `scenarios-v1` is frozen and still computed and checked (D8).
+- **Unread fields:** `calculator.FALLBACK_LABEL` and the ladder rows' price and change stay as
+  the calculator's own record of each row; the page shows its shorter label.
+- **`cost_styles`:** it builds its table once, so that part of the efficiency finding does not
+  apply.
+
+After the fixes: 784 tests at 100.0% branch coverage, and the gate is green.

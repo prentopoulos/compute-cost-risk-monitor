@@ -75,7 +75,7 @@ components:
   grid-cell:
     textColor: "{colors.text}"
     typography: "{typography.small}"
-    width: "11.5rem"
+    width: "57.5rem shared by the GPU columns"
   grid-cell-added:
     textColor: "{colors.red}"
   grid-cell-saving:
@@ -187,7 +187,7 @@ A non-zero value that would round to zero shows 3 significant digits instead.
 
 Streamlit's wide layout with a sidebar holding the cascading filters (Dataset, Catalogue, GPU, GPUs per VM, Pricing, Region, all dropdowns). Above every tab sits one status line, its parts joined by " · ". Four lazy tabs follow, opening on Workload cost; only the open tab is drawn.
 
-On Workload cost, the key figures form one row packed to the left (each figure 1.2 parts of a 6-part row; the remainder is empty). One row of inputs follows, bottom-aligned, the custom unit switch stacked above its input in the same column. Everything under the inputs (a status message, the grid, its footer, COST and Sources) sits in one fixed 960 px column. Table cell minimum widths size the tables inside it: the grid fills the column (at least 945 px: 10rem label + 5 × 11.5rem), and COST takes its content width, 539 px measured (10rem + 3 × 9.5rem), at the 14 px rem.
+On Workload cost, the key figures form one row packed to the left (each figure 1.2 parts of a 6-part row; the remainder is empty). One row of inputs follows, bottom-aligned, the custom unit switch stacked above its input in the same column. Everything under the inputs (a status message, the grid, its footer, COST and Sources) sits in one fixed 960 px column. Table cell minimum widths size the tables inside it: the grid fills the column (at least 945 px: a 10rem label plus 57.5rem shared by the GPU columns, so a sixth column for an entered count still fits), and COST takes its content width, 539 px measured (10rem + 3 × 9.5rem), at the 14 px rem.
 
 The target screen is 1920×1080 at 100% zoom, where everything down to the COST table fits above the fold and the closed Sources bar sits just below it. At 1440×900 there is no horizontal scroll and the inputs stay on one row. Spacing is Streamlit's own; the system adds no spacing scale.
 
@@ -231,8 +231,8 @@ One markdown line over every tab: `COMPUTE COST & RISK MONITOR · SYNTHETIC DATA
 - **Style:** muted text at body size, joined by " · " (`single list price`, `thin`, `crosses regions`), after a section label or above the members table. Never the saving green, and never inline code, which Streamlit draws at 10.5 px here.
 
 ### Scenario Grid (signature)
-The single scenario grid: Δ price rows (−50, −25, −10, +10, +25, +50, +100%, then "+0.50 USD/GPU-h", then "Spot → PAYG *" or Custom when present) by GPU columns (8, 16, 32, 64, 128, plus the entered count). Titled by a muted bold "SCENARIO GRID" followed by bold "Δ cost, USD · 720 h". Drawn with `st.table` and a pandas Styler, never `st.dataframe`, whose canvas does not paint in a hidden window (D25).
-- **Cells:** right-aligned whole USD with sign; red for "+", green for "−", text colour for 0, muted "n/a" across a row not computed.
+The single scenario grid: Δ price rows (−50, −25, −10, +10, +25, +50, +100%, then "+0.50 USD/GPU-h", then "Spot → PAYG *" or Custom when present) by GPU columns (8, 16, 32, 64, 128, plus the entered count). Titled "SCENARIO GRID · Δ cost, USD · 720 h": the first part muted bold, the rest bold. Drawn with `st.table` and a pandas Styler, never `st.dataframe`, whose canvas does not paint in a hidden window (D25).
+- **Cells:** right-aligned whole USD with sign, rounded half up; red for "+", green for "−", text colour for 0, muted "n/a" across a row not computed.
 - **Row labels:** left-aligned, muted; a "†" mark when the row is above the pay-as-you-go price.
 - **Entered column:** shaded, bold, header in the accent; no extra label.
 - **Rules:** see Shapes.
