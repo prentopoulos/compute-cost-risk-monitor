@@ -111,7 +111,7 @@ user before each later phase. Evidence that counts in every phase:
   grilling decisions (front-office interface: dark desk theme, a status line and key
   figures, one scenario grid `ladder-v1`, no helper text, an approved Figma mock; owner
   answered every owner call on 2026-10-13 and approved mock v3 on 2026-10-14) are cited in
-  `openspec/changes/phase-7-interface/design.md` D1–D50. Vast.ai
+  `openspec/changes/archive/2026-10-14-phase-7-interface/design.md` D1–D50. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -191,7 +191,7 @@ brief lists.
 | 4 | Streamlit dashboard with comparable-group filters and the data-quality panel | Done |
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
-| 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | In progress |
+| 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Done |
 | 8 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
 
 ### ⛔ Before reading live data from any source

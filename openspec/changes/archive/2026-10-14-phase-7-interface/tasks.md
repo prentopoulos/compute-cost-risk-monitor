@@ -96,4 +96,4 @@
   - the market-review read-through;
   - what was cut, if anything
 - [x] 5.2 Run `/code-review` on the PR, fix findings in new commits or answer them, and record the outcome in the PR body
-- [ ] 5.3 Update HANDOFF.md for the checkpoint after the merge, and archive the change on the branch
+- [x] 5.3 Update HANDOFF.md for the checkpoint after the merge, and archive the change on the branch

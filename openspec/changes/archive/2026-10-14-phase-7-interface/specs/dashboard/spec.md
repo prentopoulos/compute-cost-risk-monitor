@@ -163,6 +163,10 @@ one label, the page SHALL warn that the source mixes labels.
 - **WHEN** one source has a succeeded `live` run and a succeeded `synthetic` run
 - **THEN** the page shows a warning that the source mixes labels
 
+#### Scenario: Label comes from the run
+- **WHEN** the selected database's latest `azure-retail` snapshot is labelled `synthetic`, whatever the file is called
+- **THEN** every figure for it is labelled `synthetic`: the status line reads "SYNTHETIC DATA — NOT AZURE LIST PRICES" and the catalogue "Azure VMs (synthetic)"
+
 ### Requirement: Figure captions and framing line
 The status line ("Status line and key figures") SHALL name the data and its time on every tab;
 it replaces the framing line.
@@ -226,13 +230,29 @@ in; tests SHALL inject it.
 - **WHEN** USD 5,000 of storage is entered
 - **THEN** the footer adds "Total includes USD 5,000.00 storage entered by you."
 
-#### Scenario: Fallback row stated as crossing
+#### Scenario: Fallback captioned as crossing
 - **WHEN** the Spot to pay-as-you-go row is shown
 - **THEN** its label is "Spot → PAYG *", the footer holds "* Crosses rental types (Spot → pay-as-you-go): same size, same region.", and Sources names both group keys
 
 #### Scenario: Sources hold the provenance
 - **WHEN** the Sources section of the Workload cost tab is opened for a Spot group with no storage entered
 - **THEN** it holds the group key, snapshot time, run ID, data label code, `ladder-v1`, `scenarios-v1`, the judgement note, "Storage not included.", the billing assumptions line and the Spot line
+
+#### Scenario: Every figure captioned
+- **WHEN** any group, summary or chart is shown
+- **THEN** the status line holds its data label and AS OF time, the footer style holds the exclusions text, and its Sources section holds the group key or "crosses regions", the snapshot time and the run ID
+
+#### Scenario: Synthetic framing
+- **WHEN** the latest snapshot is labelled `synthetic`
+- **THEN** the status line says, in amber, "SYNTHETIC DATA — NOT AZURE LIST PRICES"
+
+#### Scenario: Stale as of an injected time
+- **WHEN** the latest snapshot started 8 days before the injected as-of time
+- **THEN** the status line adds "STALE — OLDER THAN 7 DAYS AS OF" that time
+
+#### Scenario: Workload figures captioned
+- **WHEN** the scenario grid and COST table are shown for a Spot group with no storage entered
+- **THEN** the footer holds "Scenario calculation, not a forecast." and the exclusions text, and Sources holds the group key, snapshot time and run ID, data label, "Storage not included.", the billing assumptions line, the Spot line, `ladder-v1` and `scenarios-v1`
 
 ### Requirement: Workload cost view
 The page SHALL open on its first lazy tab, "Workload cost", followed by "Comparable groups",
@@ -394,7 +414,7 @@ listing SHALL be absent from the chart, never filled in.
 - **WHEN** the summary covers eastus, stored as "US East", and westeurope, stored as "EU West"
 - **THEN** the table and the chart show "EU West" then "US East"
 
-#### Scenario: Thin summary tagged
+#### Scenario: Thin summary labelled
 - **WHEN** a summary covers 4 regions
 - **THEN** the view shows the `thin` tag
 

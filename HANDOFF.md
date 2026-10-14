@@ -4,54 +4,37 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 7 (front-office interface) is planned and specified, with no code yet:
-- The owner added the phase on 2026-10-13, ahead of the demo, which is now Phase 8.
-- Branch `phase-7-interface`, with a draft PR.
-- OpenSpec change `openspec/changes/phase-7-interface`: proposal, design D1–D32, tasks and delta
-  specs for `dashboard` and `workload-calculator`.
-- The grilling is done: the owner accepted every recommendation on 2026-10-13.
-- The owner rejected the first design brief as cluttered, asked for research on front-office
-  screens, corrected one quick mock, and approved the second on 2026-10-14:
-  https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=5-2 (Figma file "Compute Cost &
-  Risk Monitor · Interface (Phase 7)", Projects team).
-  - It has terse labels, no helper text and one status line, then key figures, inputs, one
-    scenario grid with a compliance footer, and a cost table beside a closed Sources section.
-  - Design D6–D10 and D14 were revised to it, and D27–D32 added.
-- A design-eval critique of v2 scored 25/40 (0 P0, 4 P1, 1 P2; local snapshot in
-  `.impeccable/critique/`). The owner chose the fixes. They became mock v3
-  (https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=7-2) and its state frames:
-  - refused input (8:2), check failed (8:115), Spot without a pay-as-you-go listing (8:228),
-    and storage and budget entered (8:519);
-  - live (8:799) and stale (8:806) headers.
-  A second grilling round settled the rest, and the owner approved v3 on 2026-10-14
-  (D33–D46). Where v3 and D34–D38 differ (custom unit switch, "n/a" cells, the † mark,
-  footnote wording), the decisions govern.
-- The scenario ladder `ladder-v1` and its independent check are built (tasks 2.1–2.2, commit
-  dc43f41). The page does not show them yet.
-- Tasks 1.1–1.4 and 2.1–2.2 are done. The next tasks are 3.1–3.6: the theme, sidebar, status
-  line, plain status words, the Workload tab, Sources, and the Comparable groups key figures,
-  all built to v3.
+Phase 7 (front-office interface: dark desk theme, answer-first layout and a scenario ladder) is
+Done. It was delivered through PR #13 from branch `phase-7-interface` and archived as
+`openspec/changes/archive/2026-10-14-phase-7-interface` (design D1–D50). Specs changed in
+`openspec/specs/`:
+- `dashboard`: ADDED "Desk theme" and "Status line and key figures". MODIFIED "Local-only
+  configuration" (Streamlit's menu hidden), "Dataset and source choice", "Figure captions and
+  framing line" (status line, one footer, Sources), "Workload cost view", "Comparable-group
+  filters" (region names), "Region-group view", "Cross-region summary view", "Group browser" and
+  "Display formatting".
+- `workload-calculator`: ADDED "Scenario ladder ladder-v1". MODIFIED "Independent check of
+  workload figures" (every ladder cell re-derived), "Budget headroom" (the input is labelled
+  "Contingency, USD") and "Spot price above pay-as-you-go" (the note names the "Spot → PAYG *"
+  row).
 
-Phase 6 (tests for units, calculations, missing data and stale offers) is Done. It was delivered
-through PR #11 from branch `phase-6-tests` and archived as
-`openspec/changes/archive/2026-10-13-phase-6-tests`. Specs changed in `openspec/specs/`:
-- `quality-gate`: the coverage minimums, and the dashboard tests' loopback exception;
-- `dev-environment`: Hypothesis in the dev group;
-- `data-quality`: the 7-day boundary, the latest succeeded run, a future-dated snapshot, unknown
-  counts without a run summary, the as-of time in UTC;
-- `snapshot-history`: not listed after three or more absences; a return at a new price is not a
-  change;
-- `price-normalization`: the exact `1 Hour` unit and exclusion order;
-- `workload-calculator`: hours and budget at least 0.01;
-- `synthetic-marketplace`: ADDED "Synthetic command checks every file first".
+The design rounds, both critiques, the manual check, the market review and the code review are in
+`docs/reviews/2026-10-14-phase-7-interface.md`, with four synthetic screenshots. `DESIGN.md` at
+the root records the design system derived from the build; `config.toml` holds the theme values
+and PROJECT.md §5 outranks it.
 
-Earlier phases are Done and merged: Phase 5 (PR #10), Phase 4 (PR #9), Phase 3 (PR #8), Phase 2
-(PR #7), Phase 1 (PR #5) and Phase 0 (PR #3).
+The approved Figma mock v3 is https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=7-2 (file
+"Compute Cost & Risk Monitor · Interface (Phase 7)", the owner's Projects team), with its state
+frames. It holds synthetic figures only.
+
+Earlier phases are Done and merged: Phase 6 (PR #11), Phase 5 (PR #10), Phase 4 (PR #9), Phase 3
+(PR #8), Phase 2 (PR #7), Phase 1 (PR #5) and Phase 0 (PR #3). PR #12 added the design-skill
+routing (`.agents/skills/next-phase/design-skills.md`).
 
 Each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). Everything the
 next phase needs is in this file, PROJECT.md, OpenSpec and Git.
 
-PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 6). Copies in AGENTS.md
+PROJECT.md §5–6 are the constitution (version 2.1.0, unchanged in Phase 7). Copies in AGENTS.md
 and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`.
 
 **Live-data gate resolved for Azure (owner, 2026-10-12).** The scope, recorded in PROJECT.md §6:
@@ -62,8 +45,8 @@ and `openspec/config.yaml` are kept in step by `tests/repo/test_constitution.py`
 
 Owner's reading, 2026-10-12 (Phase 4 grilling): the dashboard's CSV download and copy controls
 stay on; a file saved on this PC is local storage, and sharing it would still be redistribution.
-Phase 6 fetched nothing new; its live regression read the stored snapshot read-only. The
-scheduling, spend and publishing gates are untouched.
+Phase 7 fetched nothing new. Live figures never left this PC: Figma, screenshots, Git and the PR
+hold synthetic figures only. The scheduling, spend and publishing gates are untouched.
 
 ## Commands
 
@@ -101,50 +84,41 @@ Every command prints counts, names and keys only, never prices.
     tests/fixtures/synthetic/marketplace/snapshot-1.json ...snapshot-2.json ...snapshot-3.json`,
     then `normalize --db data/synthetic.duckdb`. After the demo file changes, rebuild from an
     empty file: move the old `data/synthetic.duckdb` aside first.
-- **Dashboard (Phases 4–5):** `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
+- **Dashboard (Phases 4–7):** `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
   - The config beside the script applies from any folder: 127.0.0.1 only, no usage statistics,
-    no Deploy button.
-  - It offers the databases that exist, live first. Labels come from each run.
-  - Tabs: Comparable groups, Workload cost, Group browser, Data quality.
+    one dark theme, and Streamlit's menu hidden (no Deploy button and no theme switch).
+  - It offers the databases that exist, live first: "Azure list prices (local only)" and
+    "Synthetic demo". Labels come from each run.
+  - Tabs: Workload cost (first), Comparable groups, Group browser, Data quality. Only the open
+    tab is drawn.
   - Each page run holds a read-only lock while it reads (under a second on the live data). A
     collect or normalize started in that moment fails rather than waits: rerun it.
 
-## Implemented behavior (Phase 6)
+## Implemented behavior (Phase 7)
 
-Owner decisions are D1–D10 in the archived design. D11–D22 are settled with their basis. D23
-records a fix made under D7, and D24 the code review. Earlier phases' behaviour is
-in their archived designs and the main specs.
+Owner decisions are D1–D15, D27–D29, D31–D39, D47 and D49 in the archived design; the rest are
+settled with their basis. D50 records the code review.
 
-- **Tests:** 718 tests, up from 649, at 100.0% branch coverage, up from 98.4%. They cover:
-  - units: the exact "1 Hour" match and exclusion order past the first reason;
-  - calculations: every failure branch of both independent checks;
-  - missing data: not listed after three absences, a return at a new price, a run without a
-    summary, the dashboard's error states, rollback paths;
-  - stale: exactly 7 days, the latest succeeded run, a snapshot dated after the as-of time.
-- **End to end:** `tests/e2e/test_known_answers.py` runs three dated synthetic Azure-shaped
-  snapshots (`tests/fixtures/synthetic/azure_history/`) through ingest, normalize, the checks,
-  the quality report, groups, history, the calculator and the workload check. It asserts the
-  answers worked out by hand in the fixtures README.
-- **Property tests:** `tests/unit/test_properties.py`, with Hypothesis (dev only). They check:
-  - the calculator and the independent check agree;
-  - the multiply-back;
-  - cost is linear;
-  - exposure is the cost difference, with the change's sign;
-  - order independence.
-- **Fixes:**
-  - the synthetic command checks files before it opens the database;
-  - the quality command prints its as-of time in UTC;
-  - a missing run summary's counts read `unknown (no run summary)`;
-  - hours and budgets must be at least 0.01, because Hypothesis found that 5e-324 made the
-    headroom overflow or underflow (D23).
-- **Code-review fixes (D24):**
-  - every count a missing run summary leaves unproven reads unknown;
-  - the synthetic command refuses two files with one observation time, an out-of-range time
-    and an unusable `--db` folder before writing;
-  - the gate's core coverage step cannot pass on stale data or a missing module;
-  - the Hypothesis profile is tested with `CI` set, and a mistyped profile name gives one
-    message.
-- **Diagrams:** unchanged; Phase 6 changed no component, data flow or schema.
+- **Layout (mock v3):**
+  - one status line on every tab: the title, the data label in amber, AS OF in UTC, and STALE;
+  - key figures ("Cost, USD", "USD/GPU-h · PAYG|SPOT", "VMs", "GPUs × h", "Headroom,
+    USD/GPU-h"), shown as "—" until the independent check passes;
+  - one row of inputs, the %/USD unit switch above the Custom input;
+  - then one 960 px column: the scenario grid, a muted footer with one clause per line, the COST
+    table and a closed Sources section that holds every explanation.
+- **Scenario grid:** `ladder-v1` (−50% to +100% and +0.50 USD/GPU-h) by 8–128 GPUs plus the
+  entered count, whole USD rounded half up, red "+" and green "−", the entered column shaded and
+  bold, a "Spot → PAYG *" row for Spot starts and "†" for rows above the pay-as-you-go list
+  price. `workload_check` re-derives every cell without importing the calculator.
+- **States:** plain status words (REFUSED, CHECK FAILED, WITHHELD, NO SNAPSHOT, NO GROUPS, IN
+  USE, CANNOT READ) with their messages, never alert boxes.
+- **Contingency:** the headroom input is "Contingency, USD", money set aside for price rises
+  (D49). The calculation is unchanged.
+- **Region names:** the stored location name from the shown snapshot's run, in the filter, the
+  cross-region table, its chart and the Group browser; Sources keep the code.
+- **Tests:** 784, up from 718, at 100.0% branch coverage; the core modules at 100%.
+- **Diagrams:** unchanged; Phase 7 changed no component, data flow or schema. Phase 8 updates
+  them.
 
 ## Data collected so far
 
@@ -155,54 +129,55 @@ in their archived designs and the main specs.
     listed on pay-as-you-go in its region.
   - 51 cross-region summaries, 11 of them thin.
   - 49 sizes are not in the map.
-- **`data/synthetic.duckdb`:** the synthetic demo database, rebuilt 2026-10-13. It is
-  disposable, and Phase 6 did not change it. The Phase 6 history fixtures are for tests only and
-  are not in it. `tmp/synthetic.pre-phase5.duckdb` is a disposable older copy.
+- **`data/synthetic.duckdb`:** the synthetic demo database, rebuilt 2026-10-13 and unchanged by
+  Phase 7. `tmp/synthetic.pre-phase5.duckdb` is a disposable older copy.
 - All data is local in `data/` (gitignored). `data/monitor.pre-phase3.duckdb` is a pre-Phase 3
   copy the owner may delete. Only counts appear anywhere in Git.
 
 ## Verification
 
-- **Gate:** green on the branch with both coverage steps. 718 tests pass, at 100.0% branch
+- **Gate:** green on the branch with both coverage steps. 784 tests pass, at 100.0% branch
   coverage, with the core modules at 100%. `uv audit` found no known vulnerabilities in 69
-  packages.
+  packages; the phase added no dependency.
 - **CI:** hosted CI ran on the branch pushes.
-- **Review record:** `docs/reviews/2026-10-13-phase-6-tests.md`. It holds:
-  - the traceability table (area → requirement → tests) and coverage before and after;
-  - the defects fixed;
-  - the live regression, counts only: all seven checks pass; 2,476 of 2,476 member runs pass
-    the workload check, with the PROJECT example exactly 11,520; 111,420 property cases on live
-    prices pass; order independence holds in 929 of 929 groups;
-  - the build-safety and market-review read-throughs.
-- **Code review:** `/code-review` on PR #11 found 14 issues: 11 fixed with tests, and 3 answered on the PR and in design D24.
+- **Review record:** `docs/reviews/2026-10-14-phase-7-interface.md`:
+  - mock critique 25/40 and build critique 27/40, with every finding and what was done;
+  - the manual check at 1920×1080 and 1440×900, synthetic only;
+  - the market-review read-through: every shown figure matches an independent recomputation,
+    and the PROJECT example is exactly 11,520.
+- **Code review:** `/code-review` on PR #13 found 15 issues: 13 fixed with tests, and 2 partly
+  fixed and partly answered in design D50.
 
 ## Findings for later phases
 
-- **Phase 8 (demo; it was Phase 7 until 2026-10-13):**
-  - "PROJECT example +$0.50/GPU-hour" reads oddly to a public audience. Renaming it needs a
-    `scenarios-v2` and an owner call. Phase 7 D8 deferred it to the start of Phase 8, with the
-    demo copy.
-  - Screenshots of the tables need a visible Chrome window: in a hidden window the data grid's
-    canvas does not paint.
+- **Phase 8 (demo):**
+  - The dashboard opens on the live database when it exists. Switch to "Synthetic demo" before
+    the first frame of any recording, and confirm the amber SYNTHETIC label.
+  - `azure_demo.json` is the likely public demo dataset, subject to the publishing gate.
+  - The methodology document can cite the Phase 6 traceability table, the end-to-end fixture's
+    worked answers and `DESIGN.md`.
   - In the FigJam container view, the label "Dashboard reads synthetic (read-only)" overlaps
     "Creates tables" (from Phase 4). Fix it with the Phase 8 diagram update.
-  - Phase 7 builds the custom theme (deferred by Phase 4 D6). `azure_demo.json` is the likely
-    public demo dataset, subject to the publishing gate.
-  - Design skills (2026-10-13): `.agents/skills/next-phase/design-skills.md` routes UI work to
-    impeccable, ui-ux-pro-max, the tasteskill, 21st.dev and design-eval, with their limits
-    here. The 21st.dev plugin is installed and the key is in the user environment. The account
-    is free tier: AI generation off, free searches, and 2 free code copies a day.
   - Some 21st.dev code copies could be saved for Phase 8's public page, where React or HTML
-    code could actually run (Phase 7 D15).
-  - The methodology document can cite the Phase 6 traceability table and the end-to-end
-    fixture's worked answers.
-  - Hours now start at 0.01 (D23). If the owner prefers one billed minute (1/60 h), that is a
-    small `workload-calculator` change.
+    code could actually run (Phase 7 D15). The account is free tier: 2 free code copies a day.
+  - Hours start at 0.01 (Phase 6 D23). If the owner prefers one billed minute (1/60 h), that is
+    a small `workload-calculator` change.
+- **Recorded in the Phase 7 critiques, not fixed:**
+  - Group browser and Data quality got the theme only (D2): Data quality keeps large headings,
+    raw field names, "Stale: no (latest snapshot older than 7 days…)" and size names as 10.5 px
+    inline code.
+  - A Group browser row cannot load its group, and the grid cannot be exported.
+  - The 2 px zero rule measures 2.46:1 (decorative).
+  - A tiny custom move can print a grid cell in exponent form ("+6e-09").
+  - "AS OF" is the snapshot time in the status line and the check time in the STALE clause
+    (owner-approved wording, D9, D28).
+  - The owner rejected adding the region to the price label (it repeats the sidebar).
+  - D17's separate impeccable polish pass was folded into the critique fixes.
 - **Not yet tested:**
   - changes, absences and "not listed" on real data, which need more owner-started live
     snapshots;
-  - no manual browser check of Phase 6's two changed texts, which AppTest covers;
-  - mutation testing was not run (Phase 6 D5).
+  - the Phase 7 page on the live database by eye (AppTest and the synthetic viewer cover it);
+  - mutation testing (Phase 6 D5).
 - **Map v2:** add the H100 `noIB`/`flex`/`isrf` sizes, MI300X `ND96is` and 20 RTX PRO 6000 sizes
   only when Learn names them exactly. A new version, never an edit.
 - **History:** only one live snapshot exists. Changes, "not listed" and any history-based
@@ -217,10 +192,15 @@ in their archived designs and the main specs.
   - A table drawn in a hidden tab opens with collapsed columns, hence lazy tabs.
   - AppTest keeps no tab state between runs, so tests set `session_state["view"]`.
   - AppTest needs a loopback socket on Windows, so its tests are marked `allow_hosts(["127.0.0.1"])`.
-  - `persist_state="page"` resets a remounted widget to its default under AppTest; use
-    `"session"`.
+  - `persist_state="session"` keeps a widget's value through runs that do not draw it (tabs,
+    or an early return such as IN USE); `"page"` resets a remounted widget under AppTest.
   - A keyed `number_input` keeps its value when its min or step changes, and resets only when
     the value falls outside the new bounds.
+  - Inline code is fixed at 0.75em (10.5 px at the 14 px base), and `codeTextColor` defaults to
+    the theme's green; the theme sets it to the muted grey, and tags are plain muted text.
+  - `st.table` sizes to the Styler's cell `min-width`s; `width="content"` keeps a narrow table
+    narrow inside a wider `st.container(width=...)`.
+  - Streamlit paints `primaryColor` on radios, toggles and focus rings as well as the active tab.
 - **Hypothesis 6.169 and coverage 7.16 quirks:**
   - Hypothesis writes caches to `.hypothesis/` even with no example database, so the folder is
     gitignored.
@@ -233,11 +213,15 @@ in their archived designs and the main specs.
     sets `GIT_DIR`.
   - npm's `.cmd` shims break on the `&` in the folder name; run Node CLIs as
     `node node_modules/<pkg>/<bin>.js`, with `OPENSPEC_TELEMETRY=0` for the OpenSpec CLI.
+  - `openspec archive` refuses a MODIFIED requirement that drops a main-spec scenario: keep each
+    scenario's name with updated WHEN/THEN.
   - Commands shown to the owner must quote paths.
-  - The Chrome extension's screenshots time out intermittently on the Streamlit page. Reading
-    the page text, or the data grid's accessible cells through JavaScript, works.
-  - The dashboard reopens on the live database after a restart. Switch to synthetic first, and
-    confirm it before reading figures.
+  - The Chrome extension's screenshots and zoom time out intermittently on the Streamlit page.
+    Measure with JavaScript instead (bounding boxes, computed styles, canvas pixels for the data
+    grid), and check 1440×900 in an iframe of that size. For screenshots, use a scratch launcher
+    that offers `data/synthetic.duckdb` only.
+  - The harness may stop a background viewer when memory runs low; restart it only when the
+    owner says so.
   - Some multi-line bash heredocs fail to parse in the agent's shell tool, and `\b` inside a
     heredoc'd Python string can arrive as a backspace. Write to a scratch file, or use the Edit
     tool.
@@ -250,16 +234,14 @@ in their archived designs and the main specs.
   - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
   - detect-secrets scans files only: scan Git history before the repo goes public.
   - Untracked `.agents/skills/openspec-*` and `source-command-opsx-*` folders appeared on
-    2026-10-13 outside any phase. They are not committed; the owner decides whether to keep
-    them.
+    2026-10-13 outside any phase, and an untracked `.codex/config.toml` on 2026-10-14. None is
+    committed; the owner decides whether to keep them.
 
 ## Next action
 
-Continue Phase 7 on branch `phase-7-interface` at task 3.1 and build to mock v3 (Figma node
-7:2 and its state frames) and design D33–D46. Load the Figma skills first if you need to read
-the mock, and re-authenticate Figma if its connection dropped. Then do the verification in
-section 4 and the records and review in section 5. After Phase 7 merges, Phase 8 (public demo, methodology
-document, market brief, two-minute walkthrough, updated diagrams) starts in a fresh session. It
-is grilled with the Phase 1 acceptance row "7 Demo and brief" and the Phase 8 findings above. The
-publishing gate (§6) stays the owner's. Collecting more live data is the owner's choice: one
-manual run a day at most, followed by normalize.
+Phase 8 (public demo, methodology document, market brief, two-minute walkthrough, updated
+diagrams) starts in a fresh session with `/next-phase`. It is grilled with the Phase 1 acceptance
+row "7 Demo and brief" and the Phase 8 findings above. Any visible change gets a quick Figma
+mock with synthetic figures for the owner's approval first. The publishing gate (§6) stays the
+owner's. Collecting more live data is the owner's choice: one manual run a day at most, followed
+by normalize.
