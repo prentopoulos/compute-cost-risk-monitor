@@ -91,7 +91,7 @@
   - the STALE note.
 
   Add the repository tests for "README matches the brief" and "Licence and credits"
-- [ ] 6.4 Draft the five-slide deck in Figma Slides (D25) from the demo figures. The owner approves the draft, then exports the PDF to `docs/` (D38)
+- [x] 6.4 Draft the five-slide deck in Figma Slides (D25) from the demo figures. The owner approves the draft, then exports the PDF to `docs/` (D38). Done on 2026-10-15: six plain-language slides (the owner asked for a newcomer-friendly story and a markets slide), approved by the owner; the PDF was exported slide by slide through the Figma tools and merged, `docs/compute-cost-risk-monitor-deck.pdf`
 - [ ] 6.5 Write `docs/walkthrough.md`, the timed script and shot list (D10). The owner records it from the demo database (cut item 3)
 - [ ] 6.6 Update the FigJam context and container views (D33), fix the label overlap and re-export the SVGs to `docs/architecture/`. Polish is cut item 1
 
