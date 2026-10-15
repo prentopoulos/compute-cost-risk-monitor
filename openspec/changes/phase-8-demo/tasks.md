@@ -24,8 +24,8 @@
 
 ## 3. Market brief
 
-- [ ] 3.1 Build the fact set in `brief.py` (`market-brief` "Brief fact set"; D32): IDs, values, units, group keys, record links and derived-from lists, as sorted JSON. Known-answer tests on the demo history; nulls with reasons
-- [ ] 3.2 Render the template brief and the bottom line ("Template brief", "Brief bottom line"; D8, D24, D27, D45), with known-answer tests:
+- [x] 3.1 Build the fact set in `brief.py` (`market-brief` "Brief fact set"; D32): IDs, values, units, group keys, record links and derived-from lists, as sorted JSON. Known-answer tests on the demo history; nulls with reasons
+- [x] 3.2 Render the template brief and the bottom line ("Template brief", "Brief bottom line"; D8, D24, D27, D45), with known-answer tests:
   - the demo bottom line, word for word;
   - the changes and absences sections;
   - one snapshot only;
