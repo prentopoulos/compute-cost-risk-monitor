@@ -171,6 +171,8 @@ class FactSet:
     lists: dict[str, list[str]] = field(default_factory=dict)  # code-written lines
     notes: dict[str, list[str]] = field(default_factory=dict)  # code-written labels
     template: dict[str, str] = field(default_factory=dict)  # the template prose
+    # GPU, size and region names in the snapshot: written as they are, never figures.
+    names: list[str] = field(default_factory=list)
 
     def add(self, fact: Fact) -> str:
         if fact.id in self.facts:
@@ -371,6 +373,7 @@ def build(
                 records=_run_records(connection, previous.run_id),
             )
         )
+    facts.names = _names(found, names, work)
     _bottom_line(facts, found, summaries, work, names, run, params)
     _changes(facts, connection, previous, snap, names, rule_version)
     _absences(facts, connection, names, rule_version)
@@ -383,6 +386,21 @@ def build(
 
 def _name(names: Mapping[str, str], code: str) -> str:
     return names.get(code, code)
+
+
+def _names(
+    found: list[RegionGroup], locations: Mapping[str, str], work: Workload
+) -> list[str]:
+    """Every GPU, size and region name the brief may write, sorted."""
+    named = {work.variant, *locations.values()}
+    for group in found:
+        # The variant label and its model alone ("H100 NVLink 80GB" and "H100").
+        named.update(
+            (group.key.variant, group.key.variant.split()[0], group.key.region)
+        )
+        for member in group.members:
+            named.update((member.name, short_size(member.name)))
+    return sorted(named)
 
 
 def _key_text(key: GroupKey) -> str:

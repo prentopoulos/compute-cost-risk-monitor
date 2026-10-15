@@ -16,7 +16,7 @@ Phase 8 task 4.4, started by the owner.
 | Capability | Status | Reason / evidence or task | Recheck when |
 |---|---|---|---|
 | Hosted or local model inference | enabled | `drafter.py`: one Claude API request (`claude-opus-5-5`, effort low, 4,000 tokens) per attempt, at most two, started by hand with `brief --draft`; no fallback model, no SDK retries. Tests: `tests/unit/test_drafter.py`, `tests/unit/test_brief_command.py` | Any provider, model, effort or token change |
-| Prompts and structured output | enabled | `drafter.SYSTEM_PROMPT` (`prompt v1`, SHA-256 in every run record); JSON-schema output with one string per section; placeholders from the fact set's closed list; the validator and the independent brief check (`brief_check.py`) | Prompt, placeholder list, banned words, validator or model changes |
+| Prompts and structured output | enabled | `drafter.SYSTEM_PROMPT` (`prompt v2` since the first run, SHA-256 in every run record); JSON-schema output with one string per section; placeholders from the fact set's closed list; the validator and the independent brief check (`brief_check.py`) | Prompt, placeholder list, banned words, validator or model changes |
 | RAG / document ingestion | not applicable | The drafter receives one fact set built by code; nothing is retrieved or indexed | A document source or retrieval step is proposed |
 | Semantic or response caching | not applicable | One call per draft, no cache | Repeated or batched drafting is proposed |
 | Model training / feature pipelines | not applicable | No model is trained or tuned | Any training or fine-tuning is proposed |

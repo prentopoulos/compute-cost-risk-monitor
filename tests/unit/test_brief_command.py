@@ -262,7 +262,7 @@ def test_accepted_draft_is_written(
     out = tmp_path / "brief"
     assert draft(demo_db, out, Sender(REPLIES["valid"])) == 0
     text = (out / "brief.md").read_text(encoding="utf-8")
-    assert "Prose drafted by claude-opus-5-5 (prompt v1)" in text
+    assert "Prose drafted by claude-opus-5-5 (prompt v2)" in text
     record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
     assert (record["text_used"], record["requests"]) == ("draft", 1)
     assert record["attempts"][0]["outcome"] == "accepted"

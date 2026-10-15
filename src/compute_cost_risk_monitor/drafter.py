@@ -31,7 +31,7 @@ EFFORT = "low"  # thinking cannot be turned off on this model (D16)
 MAX_TOKENS = 4_000
 TIMEOUT_SECONDS = 120.0
 ATTEMPTS = 2  # one retry after a rejected draft (D19)
-PROMPT_VERSION = "prompt v1"
+PROMPT_VERSION = "prompt v2"
 # USD per million tokens, from Anthropic's pricing page, retrieved 2026-10-14 (D17).
 PRICING = {"date": "2026-10-14", "input": 4.0, "output": 20.0}
 NUMBER_WORDS = [
@@ -165,7 +165,10 @@ desk: terse, factual, no headings, no lists, no Markdown.
 Rules you must follow, or the draft is discarded:
 1. Never write a number: no digits and no number words (one, two, half, twice, percent
    and so on). Refer to every figure only through a placeholder [[fact_id]] taken from
-   the fact list, exactly as written there. Do not invent fact IDs.
+   the fact list, exactly as written there. Do not invent fact IDs. Write "a listing"
+   or "a single list price", never "one listing". GPU, VM size and region names
+   from the list of names may be written as they are, even with digits (H100,
+   US West 3); no other word may hold a digit.
 2. The bottom_line section must use these placeholders:
    {", ".join(f"[[{f}]]" for f in brief.REQUIRED["bottom_line"])}.
 3. State only what the facts say. Do not recommend, forecast, predict or describe a
@@ -226,6 +229,7 @@ def fact_list(facts: FactSet) -> str:
     for key, fact in usable(facts).items():
         group = f"; group {fact.group}" if fact.group else ""
         lines.append(f"- [[{key}]]: {fact.meaning}; {fact.unit}{group}; {fact.text}")
+    lines += ["", "Names you may write as they are: " + "; ".join(facts.names)]
     lines += ["", "The plain template version of each section, for reference:"]
     lines += [f"- {section}: {facts.template[section]}" for section in brief.SECTIONS]
     return "\n".join(lines)
@@ -264,6 +268,13 @@ def parse(reply: Reply) -> dict[str, str] | None:
     return {key: str(value) for key, value in data.items()}
 
 
+def _without_names(words: str, names: Sequence[str]) -> str:
+    """Names hold digits (H100, US West 3) but are not figures, as in brief_check."""
+    for name in sorted(names, key=len, reverse=True):
+        words = words.replace(name, " ")
+    return words
+
+
 def rejections(reply: Reply, facts: FactSet) -> list[str]:
     """Why a reply cannot be used; empty when it can (brief-drafter spec)."""
     if reply.stop_reason == "refusal":
@@ -280,11 +291,14 @@ def rejections(reply: Reply, facts: FactSet) -> list[str]:
         unknown = sorted({key for key in named if key not in known})
         if unknown:
             reasons.append(f"{section}: unknown placeholder {', '.join(unknown)}")
-        words = PLACEHOLDER.sub(" ", text)
+        words = _without_names(PLACEHOLDER.sub(" ", text), facts.names)
         if "[[" in words or "]]" in words:
             reasons.append(f"{section}: a malformed placeholder")
-        if re.search(r"\d", words):
-            reasons.append(f"{section}: a digit outside placeholders")
+        digit = re.search(r"\S*\d\S*", words)
+        if digit:
+            reasons.append(
+                f"{section}: a digit outside placeholders ({digit.group(0)!r})"
+            )
         for word, pattern in _NUMBER_WORDS:
             if pattern.search(words):
                 reasons.append(f"{section}: the number word {word!r}")
@@ -333,6 +347,7 @@ def _attempt(reply: Reply, reasons: Sequence[str]) -> dict[str, Any]:
         "model": reply.model,
         "outcome": "rejected" if reasons else "accepted",
         "reasons": list(reasons),
+        "reply": reply.text,  # synthetic figures only, so safe to keep as evidence
         "request_id": reply.request_id,
         "stop_reason": reply.stop_reason,
         "usage": reply.usage,

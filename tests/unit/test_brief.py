@@ -280,7 +280,7 @@ def test_small_formats() -> None:
 
 
 def test_disclosure_line(facts: brief.FactSet) -> None:
-    line = brief.DISCLOSURE.format(model="claude-opus-5-5", prompt="prompt v1")
+    line = brief.DISCLOSURE.format(model="claude-opus-5-5", prompt="prompt v2")
     shown = brief.render(facts, facts.template, line)
     assert f"{brief.CREDIT}\n\n{line}\n" in shown
 

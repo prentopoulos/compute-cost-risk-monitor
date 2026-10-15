@@ -87,7 +87,7 @@ def test_request_shape(facts: brief.FactSet) -> None:
         "[[bl_cost]]: the workload's cost at the lowest listed price"
         in message["content"]
     )
-    assert drafter.PROMPT_VERSION == "prompt v1"
+    assert drafter.PROMPT_VERSION == "prompt v2"
 
 
 def test_valid_draft_is_filled_and_checks(
@@ -100,7 +100,7 @@ def test_valid_draft_is_filled_and_checks(
     text = brief.render(facts, outcome.prose, drafter.disclosure(outcome.model))
     assert "cost USD 276,480.00 at the lowest listed pay-as-you-go price" in text
     assert (
-        "Prose drafted by claude-opus-5-5 (prompt v1); every number placed and checked"
+        "Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked"
         " by code."
     ) in text
     work = facts.workload
@@ -114,7 +114,7 @@ def test_valid_draft_is_filled_and_checks(
 @pytest.mark.parametrize(
     ("case", "reason"),
     [
-        ("digit", "changes: a digit outside placeholders"),
+        ("digit", "changes: a digit outside placeholders ('2')"),
         ("number_word", "groups: the number word 'twice'"),
         ("unknown_placeholder", "regions: unknown placeholder n_regions_total"),
         ("missing_contingency", "bottom_line: missing placeholder bl_c25, bl_c50"),
@@ -238,7 +238,7 @@ def test_cost_and_record_fields(facts: brief.FactSet) -> None:
         "claude-opus-5-5",
     )
     assert (fields["prompt_version"], fields["pricing"]["date"]) == (
-        "prompt v1",
+        "prompt v2",
         "2026-10-14",
     )
     assert fields["prompt_sha256"] == drafter.prompt_sha256()
@@ -291,3 +291,30 @@ def test_anthropic_sender_without_network(monkeypatch: pytest.MonkeyPatch) -> No
     with pytest.raises(drafter.DraftFailed, match="request failed: FakeError"):
         send({"model": "fail"})
     assert "anthropic" in sys.modules
+
+
+def test_names_with_digits_are_not_figures(facts: brief.FactSet) -> None:
+    # Phase 8 design D46, after the first real run rejected both drafts for names.
+    expected = {"H100 NVLink 80GB", "H100", "T4", "ND96isr H100 v5", "US West 3"}
+    assert expected <= set(facts.names)
+    sections = {
+        **REPLIES["valid"],
+        "changes": "[[n_changes]] listed prices changed between [[prev_time]] and"
+        " [[snap_time]], both for H100 NVLink 80GB on ND96isr H100 v5 in US East.",
+        "regions": "The summaries cover US West 3 and Sweden Central:"
+        " [[n_summaries]] in all.",
+    }
+    assert drafter.rejections(reply(sections), facts) == []
+    named = {
+        **REPLIES["valid"],
+        "groups": "H100 has [[n_groups]] groups, T4 more than 8.",
+    }
+    assert drafter.rejections(reply(named), facts) == [
+        "groups: a digit outside placeholders ('8.')"
+    ]
+    assert "Names you may write as they are: " in drafter.fact_list(facts)
+
+
+def test_attempts_keep_the_reply(facts: brief.FactSet) -> None:
+    outcome = drafter.draft(facts, Fake(broken("digit"), reply(REPLIES["valid"])))
+    assert outcome.attempts[0]["reply"] == broken("digit").text
