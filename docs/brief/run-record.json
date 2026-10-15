@@ -1,0 +1,12 @@
+{
+  "as_of": "2026-10-12 09:00 UTC",
+  "attempts": [],
+  "code_version": "d7c58cccecd6b1b922a146883cd096be0f2e1054",
+  "data_label": "synthetic",
+  "fact_set_sha256": "1be16361c2ee846eb139df04142ac23e101ddf9f82aceb7932212d91cca7c8da",
+  "model": null,
+  "provider": null,
+  "requests": 0,
+  "snapshot": "synthetic-20261012T090000Z-2b4972",
+  "text_used": "template"
+}

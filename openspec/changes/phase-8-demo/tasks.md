@@ -37,7 +37,7 @@
   - an import guard.
 
   Keep the core coverage list at 100%, adding `brief` and `brief_check`
-- [ ] 3.4 Add the brief command ("Brief command"; D29, D37). Tests:
+- [x] 3.4 Add the brief command ("Brief command"; D29, D37). Tests:
   - pinned as-of bytes;
   - refusals: no snapshot, and collected prices aimed at `docs/`;
   - exit codes;
