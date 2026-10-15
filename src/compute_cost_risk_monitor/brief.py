@@ -15,10 +15,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from collections import Counter, defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -1234,9 +1235,18 @@ def _inside(path: Path, folder: Path) -> bool:
     return path.resolve().is_relative_to(folder.resolve())
 
 
-def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> int:
-    """Build, check and write a brief: 0 when written, 1 when the independent check
-    fails (nothing written), 2 when refused (nothing written)."""
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    now: datetime | None = None,
+    sender: Callable[[dict[str, Any]], Any] | None = None,
+) -> int:
+    """Build, check and write a brief.
+
+    0 when written; 1 when the independent check fails (nothing written), or when
+    --draft fell back to the checked template brief (written); 2 when refused
+    (nothing written).
+    """
     parser = argparse.ArgumentParser(
         prog="python -m compute_cost_risk_monitor.brief",
         description="Write the market brief for a database's latest snapshot.",
@@ -1247,6 +1257,11 @@ def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> i
     )
     parser.add_argument(
         "--out", type=Path, help="output folder (default: data/briefs/<run ID>)"
+    )
+    parser.add_argument(
+        "--draft",
+        action="store_true",
+        help="AI-drafted prose: synthetic data only, under the spend gate",
     )
     args = parser.parse_args(argv)
     as_of = args.as_of or now or datetime.now(UTC)
@@ -1281,24 +1296,64 @@ def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> i
                 file=sys.stderr,
             )
             return 2
+        if args.draft and facts.data_label != synthetic.LABEL:
+            print("refused: the drafter reads synthetic figures only", file=sys.stderr)
+            return 2
+        if args.draft and not os.environ.get("ANTHROPIC_API_KEY"):
+            print("refused: set ANTHROPIC_API_KEY to draft", file=sys.stderr)
+            return 2
         text = render(facts)
         result = checked(connection, facts, text, as_of)
+        if not result.passed:
+            where = ", ".join(f"line {f.line}" for f in result.failures)
+            print(
+                f"check failed: {len(result.failures)} unmatched ({where});"
+                " nothing written",
+                file=sys.stderr,
+            )
+            return 1
+        record, code = run_record(facts, "template"), 0
+        if args.draft:
+            text, result, record, code = _drafted(
+                connection, facts, as_of, text, result, sender
+            )
     finally:
         connection.close()
-    if not result.passed:
-        where = ", ".join(f"line {f.line}" for f in result.failures)
-        print(
-            f"check failed: {len(result.failures)} unmatched ({where});"
-            " nothing written",
-            file=sys.stderr,
-        )
-        return 1
-    write(out, text, facts, run_record(facts, "template"))
+    write(out, text, facts, record)
     print(
         f"wrote {out}: {len(facts.facts)} facts; {result.numbers} numbers and"
-        f" {result.times} times re-derived"
+        f" {result.times} times re-derived; prose: {record['text_used']}"
+        f" ({record['requests']} requests)"
     )
-    return 0
+    return code
+
+
+def _drafted(
+    connection: duckdb.DuckDBPyConnection,
+    facts: FactSet,
+    as_of: datetime,
+    template: str,
+    template_result: brief_check.CheckResult,
+    sender: Callable[[dict[str, Any]], Any] | None,
+) -> tuple[str, brief_check.CheckResult, dict[str, Any], int]:
+    """The drafted brief when it is usable and checks; else the checked template."""
+    from compute_cost_risk_monitor import drafter  # the SDK stays out of `brief`
+
+    outcome = drafter.draft(facts, sender or drafter.anthropic_sender())
+    text, result = template, template_result
+    if outcome.text_used == "draft":
+        drafted = render(facts, outcome.prose, drafter.disclosure(outcome.model))
+        drafted_result = checked(connection, facts, drafted, as_of)
+        if drafted_result.passed:
+            text, result = drafted, drafted_result
+        else:
+            outcome.attempts[-1]["outcome"] = "rejected"
+            outcome.attempts[-1]["reasons"].append("the independent check failed")
+            outcome.text_used = "template"
+    record = run_record(
+        facts, outcome.text_used, outcome.attempts, drafter.record_fields(outcome)
+    )
+    return text, result, record, 0 if outcome.text_used == "draft" else 1
 
 
 if __name__ == "__main__":

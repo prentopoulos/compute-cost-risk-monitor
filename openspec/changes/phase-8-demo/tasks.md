@@ -47,12 +47,12 @@
 
 ## 4. AI drafter
 
-- [ ] 4.1 Add `anthropic` as a runtime dependency (MODIFIED `dev-environment`; D36):
+- [x] 4.1 Add `anthropic` as a runtime dependency (MODIFIED `dev-environment`; D36):
   - update `pyproject.toml`, `uv.lock` and `tests/repo/test_dependencies.py`;
   - test that only `drafter.py` imports the SDK;
   - run `uv audit`;
   - check the SDK calls against the current docs (the claude-api skill; Context7).
-- [ ] 4.2 Write `drafter.py` (`brief-drafter`; D16, D18, D19, D28, D44, D45):
+- [x] 4.2 Write `drafter.py` (`brief-drafter`; D16, D18, D19, D28, D44, D45):
   - the request;
   - placeholders and fill;
   - the validator;

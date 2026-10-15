@@ -12,7 +12,15 @@ from typing import Any
 
 import pytest
 
-from compute_cost_risk_monitor import brief, db, demo, normalize, synthetic
+from compute_cost_risk_monitor import (
+    brief,
+    brief_check,
+    db,
+    demo,
+    drafter,
+    normalize,
+    synthetic,
+)
 
 AS_OF = "2026-10-12T09:00:00Z"
 
@@ -189,3 +197,111 @@ def test_brief_reads_the_database_read_only(demo_db: Path, tmp_path: Path) -> No
         assert run("--db", str(demo_db), "--as-of", AS_OF, "--out", str(out)) == 0
     finally:
         holder.close()
+
+
+# --- --draft, with a synthetic fake sender (brief-drafter spec) ---
+
+REPLIES = json.loads(
+    (demo.FIXTURES / "drafter_replies.json").read_text(encoding="utf-8")
+)
+
+
+class Sender:
+    def __init__(self, *sections: dict[str, str]) -> None:
+        self.replies = list(sections)
+        self.sent = 0
+
+    def __call__(self, body: dict[str, Any]) -> drafter.Reply:
+        self.sent += 1
+        return drafter.Reply(
+            json.dumps(self.replies.pop(0)),
+            "end_turn",
+            "req_synthetic",
+            drafter.MODEL,
+            {"input_tokens": 5_000, "output_tokens": 900},
+        )
+
+
+def draft(demo_db: Path, out: Path, sender: Sender) -> int:
+    args = ["--db", str(demo_db), "--as-of", AS_OF, "--out", str(out), "--draft"]
+    return brief.main(args, sender=sender)
+
+
+def test_draft_without_a_key_is_refused(
+    demo_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    sender = Sender(REPLIES["valid"])
+    assert draft(demo_db, tmp_path / "brief", sender) == 2
+    assert "set ANTHROPIC_API_KEY" in capsys.readouterr().err
+    assert sender.sent == 0 and not (tmp_path / "brief").exists()
+
+
+def test_draft_of_collected_prices_is_refused(
+    demo_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    monkeypatch.setattr(brief, "build", live(brief.build))
+    monkeypatch.setattr(brief, "DATA", tmp_path)
+    sender = Sender(REPLIES["valid"])
+    assert draft(demo_db, tmp_path / "brief", sender) == 2
+    assert "synthetic figures only" in capsys.readouterr().err
+    assert sender.sent == 0
+
+
+def test_accepted_draft_is_written(
+    demo_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    out = tmp_path / "brief"
+    assert draft(demo_db, out, Sender(REPLIES["valid"])) == 0
+    text = (out / "brief.md").read_text(encoding="utf-8")
+    assert "Prose drafted by claude-opus-5-5 (prompt v1)" in text
+    record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
+    assert (record["text_used"], record["requests"]) == ("draft", 1)
+    assert record["attempts"][0]["outcome"] == "accepted"
+    assert record["estimated_cost_usd"] == pytest.approx(0.038)
+    assert "synthetic-test-value" not in json.dumps(record)
+
+
+def test_rejected_drafts_fall_back_to_the_template(
+    demo_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    bad = {**REPLIES["valid"], "spot": "The cheapest Spot listing."}
+    out = tmp_path / "brief"
+    assert draft(demo_db, out, Sender(bad, bad)) == 1
+    text = (out / "brief.md").read_text(encoding="utf-8")
+    assert "Prose drafted by" not in text
+    record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
+    assert (record["text_used"], record["requests"]) == ("template", 2)
+    assert "prose: template (2 requests)" in capsys.readouterr().out
+
+
+def test_draft_failing_the_check_falls_back(
+    demo_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    original = brief.checked
+
+    def strict(*args: Any) -> brief_check.CheckResult:
+        result = original(*args)
+        if "Prose drafted by" in args[2]:
+            result.failures.append(brief_check.Failure(1, 1, "x", "number"))
+        return result
+
+    monkeypatch.setattr(brief, "checked", strict)
+    out = tmp_path / "brief"
+    assert draft(demo_db, out, Sender(REPLIES["valid"])) == 1
+    record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
+    assert record["text_used"] == "template"
+    assert record["attempts"][0]["reasons"] == ["the independent check failed"]
