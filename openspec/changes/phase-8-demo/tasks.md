@@ -15,7 +15,7 @@
   - write the known-answer test: changes, absences, quality counts and no Spot above pay-as-you-go (ADDED "Synthetic demo history").
 
   Existing demo tests stay green
-- [ ] 2.2 Add `demo.py` (D39, `demo-setup`), with tests:
+- [x] 2.2 Add `demo.py` (D39, `demo-setup`), with tests:
   - a fresh build into a temporary repository layout;
   - a rebuild;
   - the refused collected database;
