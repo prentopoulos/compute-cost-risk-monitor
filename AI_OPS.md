@@ -30,7 +30,7 @@ Phase 8 task 4.4, started by the owner.
 
 | Record | Location / current status |
 |---|---|
-| System bundle and last known-good version | `run-record.json` beside each brief: model, model used, SDK version, prompt version and SHA-256, fact-set SHA-256, git commit. Last known-good: none yet (task 4.4) |
+| System bundle and last known-good version | `run-record.json` beside each brief: model, model used, SDK version, prompt version and SHA-256, fact-set SHA-256, git commit. Last known-good: provider run 2, 2026-10-15 (`docs/brief/run-record.json`) |
 | Evaluation plan, held-out cases and evaluator | Fixed cases in `tests/fixtures/synthetic/drafter_replies.json` (one valid reply and one per rejection rule), the deterministic validator (`drafter.rejections`) and the independent brief check; no LLM judge |
 | Offline deterministic check command | `uv run --frozen python scripts/gate.py` |
 | Authorized provider-evaluation command and budget | `uv run --locked python -m compute_cost_risk_monitor.brief --db data/synthetic.duckdb --as-of 2026-10-12T09:00:00Z --out docs/brief --draft`, started by hand; USD 5, up to USD 10 in total (PROJECT.md §6) |
@@ -58,5 +58,10 @@ The provider keeps API inputs and outputs for up to 30 days and does not train o
 - **Offline, 2026-10-15 (pass):** 24 drafter tests and the brief command's `--draft` tests
   pass with a fake sender and synthetic replies, no key and no network. `drafter.py` and
   `brief.py` are at 100% branch coverage; the gate is green.
-- **Provider run (not_run):** the first real request is task 4.4, on the owner's go-ahead
-  with the key in the user environment and the USD 10 limit set.
+- **Provider run 1, 2026-10-15 (fail, kept):** `prompt v1`, two requests, about USD 0.09;
+  both drafts rejected for digits (likely GPU and size names), so the template was used
+  (commit 0730db0). Fixed by design D46 (`prompt v2`).
+- **Provider run 2, 2026-10-15 (pass):** `prompt v2`, one request, 6,119 input and 1,082
+  output tokens, about USD 0.05; the draft was accepted and passed the independent check
+  (105 numbers and 13 times re-derived). Last known-good: this run's record in
+  `docs/brief/run-record.json`. Spend so far about USD 0.14 of the USD 10 cap.

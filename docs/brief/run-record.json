@@ -1,12 +1,47 @@
 {
   "as_of": "2026-10-12 09:00 UTC",
-  "attempts": [],
-  "code_version": "6a3a8dbedb6b2409e1dfadfc603e2ed59f86798c",
+  "attempts": [
+    {
+      "model": "claude-opus-5-5",
+      "outcome": "accepted",
+      "reasons": [],
+      "reply": "{\"bottom_line\":\"Running [[bl_gpus]] [[bl_variant]] GPUs as [[bl_vms]] × [[bl_size]] for [[bl_hours]] hours costs USD [[bl_cost]] at the lowest listed pay-as-you-go price, in [[bl_region]] at [[bl_price]] USD/GPU-h. Across [[bl_regions]] regions this size lists at [[bl_min]]–[[bl_max]] USD/GPU-h, putting the same workload at USD [[bl_cost_min]]–[[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] covers a +[[bl_c50_move]]% move.\",\"changes\":\"[[n_changes]] listed prices changed between [[prev_time]] and [[snap_time]], both for ND96isr H100 v5 in US East. The pay-as-you-go price rose from [[chg_1_before_gpu]] to [[chg_1_after_gpu]] USD/GPU-h, and the Spot price rose from [[chg_2_before_gpu]] to [[chg_2_after_gpu]] USD/GPU-h.\",\"absences\":\"[[n_absent_once]] listing is absent once and unconfirmed, missing since [[abs_1_since]] after last appearing at [[abs_1_seen]]. [[n_not_listed]] listing is not listed, missing since [[abs_2_since]] after last appearing at [[abs_2_seen]].\",\"groups\":\"The latest snapshot holds [[n_groups]] region groups across [[n_variants]] GPU variants, and [[n_single]] of them have a single list price. All [[grp_2_n]] H100 NVLink 80GB groups have a single list price, while [[grp_3_single]] of [[grp_3_n]] T4 16GB groups do.\",\"spot\":\"[[n_spot_paired]] of [[n_spot]] H100 NVLink 80GB Spot listings have the same size on pay-as-you-go in the same region. [[n_spot_equal]] equals it at [[spot_1_spot]] USD/GPU-h, [[n_spot_above]] are above it, and another sits at [[spot_3_spot]] against [[spot_3_payg]] USD/GPU-h, or [[spot_3_ratio]]% of pay-as-you-go.\",\"regions\":\"There are [[n_summaries]] cross-region summaries, and [[n_thin]] of them are thin, drawn from fewer than [[thin_below]] regions. H100 NVLink 80GB pay-as-you-go spans [[reg_2_min]]–[[reg_2_max]] USD/GPU-h across [[reg_2_n]] regions, with a median of [[reg_2_median]].\",\"quality\":\"The latest snapshot holds [[q_obs]] observations; [[q_normalized]] are compared and the rest are excluded, [[q_reason_2]] as an unmapped size and [[q_reason_3]] as Windows. The record covers [[n_snapshots]] succeeded snapshots over [[n_days]] days, and a snapshot is stale after [[stale_days]] days.\"}",
+      "request_id": "req_011Cg46nefcHWHeDV8FSf5oE",
+      "stop_reason": "end_turn",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "global",
+        "input_tokens": 6119,
+        "output_tokens": 1082,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": null,
+        "service_tier": "standard"
+      }
+    }
+  ],
+  "code_version": "46fcf418a725c2e06a80fb36a8db33af8f75184d",
   "data_label": "synthetic",
+  "estimated_cost_usd": 0.046116,
   "fact_set_sha256": "67851ede3d4397e7a231d34a7e44c6ac29da510691ab3fc439e12b7189b8487e",
-  "model": null,
-  "provider": null,
-  "requests": 0,
+  "model": "claude-opus-5-5",
+  "model_used": "claude-opus-5-5",
+  "pricing": {
+    "date": "2026-10-14",
+    "input": 4.0,
+    "output": 20.0
+  },
+  "prompt_sha256": "093cefa2fea4d3ca31dece6febd34d272ef287a551a4ea3df30d8e269c243142",
+  "prompt_version": "prompt v2",
+  "provider": "Anthropic Claude API",
+  "requests": 1,
+  "sdk_version": "1.14.0",
   "snapshot": "synthetic-20261012T090000Z-2b4972",
-  "text_used": "template"
+  "text_used": "draft"
 }
