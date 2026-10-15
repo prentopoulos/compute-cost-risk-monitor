@@ -1,12 +1,78 @@
 {
   "as_of": "2026-10-12 09:00 UTC",
-  "attempts": [],
-  "code_version": "d7c58cccecd6b1b922a146883cd096be0f2e1054",
+  "attempts": [
+    {
+      "model": "claude-opus-5-5",
+      "outcome": "rejected",
+      "reasons": [
+        "changes: a digit outside placeholders",
+        "groups: a digit outside placeholders",
+        "regions: a digit outside placeholders"
+      ],
+      "request_id": "req_011Cg469fd7e83d6TnujyrFj",
+      "stop_reason": "end_turn",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "global",
+        "input_tokens": 5837,
+        "output_tokens": 1059,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": null,
+        "service_tier": "standard"
+      }
+    },
+    {
+      "model": "claude-opus-5-5",
+      "outcome": "rejected",
+      "reasons": [
+        "changes: a digit outside placeholders",
+        "groups: a digit outside placeholders",
+        "spot: the number word 'one'",
+        "regions: a digit outside placeholders"
+      ],
+      "request_id": "req_011Cg46AUb83t4FPLMJkqDKJ",
+      "stop_reason": "end_turn",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "global",
+        "input_tokens": 5837,
+        "output_tokens": 1153,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": null,
+        "service_tier": "standard"
+      }
+    }
+  ],
+  "code_version": "9add81f3d9499861e819e0676059a8daceadb424",
   "data_label": "synthetic",
+  "estimated_cost_usd": 0.090936,
   "fact_set_sha256": "1be16361c2ee846eb139df04142ac23e101ddf9f82aceb7932212d91cca7c8da",
-  "model": null,
-  "provider": null,
-  "requests": 0,
+  "model": "claude-opus-5-5",
+  "model_used": null,
+  "pricing": {
+    "date": "2026-10-14",
+    "input": 4.0,
+    "output": 20.0
+  },
+  "prompt_sha256": "2304f6c281f5e6a8b91309d5941c10cc77905934cc5745c5d7bff94cc5d2268c",
+  "prompt_version": "prompt v1",
+  "provider": "Anthropic Claude API",
+  "requests": 2,
+  "sdk_version": "1.14.0",
   "snapshot": "synthetic-20261012T090000Z-2b4972",
   "text_used": "template"
 }
