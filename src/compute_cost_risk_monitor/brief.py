@@ -12,20 +12,27 @@ labels that code writes. The template prose is written here; an AI-drafted prose
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import re
+import sys
 from collections import Counter, defaultdict
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
 from typing import Any
 
 import duckdb
 
 from compute_cost_risk_monitor import (
     azure_retail,
+    brief_check,
     calculator,
+    collect,
+    db,
     groups,
     history,
     quality,
@@ -1169,3 +1176,130 @@ def render(
     raw = assemble(facts, prose or facts.template, disclosure)
     used = used_facts(raw)
     return fill(raw, facts) + "\n" + records_table(facts, used)
+
+
+# --- the command ---
+
+DATA = collect.REPO / "data"
+BRIEFS = DATA / "briefs"
+
+
+def run_record(
+    facts: FactSet,
+    text_used: str,
+    attempts: Sequence[Mapping[str, Any]] = (),
+    drafter: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """What produced a brief; a template-only run records no request (brief-drafter
+    spec)."""
+    record: dict[str, Any] = {
+        "as_of": facts.as_of,
+        "attempts": list(attempts),
+        "code_version": collect.code_version(),
+        "data_label": facts.data_label,
+        "fact_set_sha256": hashlib.sha256(facts.to_json().encode("utf-8")).hexdigest(),
+        "requests": len(attempts),
+        "snapshot": facts.snapshot,
+        "text_used": text_used,
+    }
+    record.update(drafter or {"provider": None, "model": None})
+    return record
+
+
+def write(out: Path, text: str, facts: FactSet, record: Mapping[str, Any]) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "brief.md").write_bytes(text.encode("utf-8"))
+    (out / "facts.json").write_bytes(facts.to_json().encode("utf-8"))
+    body = json.dumps(record, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+    (out / "run-record.json").write_bytes(body.encode("utf-8"))
+
+
+def checked(
+    connection: duckdb.DuckDBPyConnection, facts: FactSet, text: str, as_of: datetime
+) -> brief_check.CheckResult:
+    work = facts.workload
+    derived = brief_check.derive(
+        connection,
+        as_of,
+        work.variant,
+        work.gpus_per_vm,
+        work.gpus,
+        work.hours,
+        facts.rule_version,
+    )
+    return brief_check.check(text, derived)
+
+
+def _inside(path: Path, folder: Path) -> bool:
+    return path.resolve().is_relative_to(folder.resolve())
+
+
+def main(argv: Sequence[str] | None = None, *, now: datetime | None = None) -> int:
+    """Build, check and write a brief: 0 when written, 1 when the independent check
+    fails (nothing written), 2 when refused (nothing written)."""
+    parser = argparse.ArgumentParser(
+        prog="python -m compute_cost_risk_monitor.brief",
+        description="Write the market brief for a database's latest snapshot.",
+    )
+    parser.add_argument("--db", type=Path, required=True, help="DuckDB file")
+    parser.add_argument(
+        "--as-of", type=datetime.fromisoformat, help="time with a zone (default: now)"
+    )
+    parser.add_argument(
+        "--out", type=Path, help="output folder (default: data/briefs/<run ID>)"
+    )
+    args = parser.parse_args(argv)
+    as_of = args.as_of or now or datetime.now(UTC)
+    if as_of.tzinfo is None:
+        print("refused: --as-of needs a time zone", file=sys.stderr)
+        return 2
+    as_of = as_of.astimezone(UTC)
+    if not args.db.is_file():
+        print(f"refused: no database at {args.db}", file=sys.stderr)
+        return 2
+    try:
+        connection = db.connect(args.db, read_only=True)
+    except duckdb.Error as error:
+        print(f"refused: cannot open {args.db}: {error}", file=sys.stderr)
+        return 2
+    try:
+        try:
+            facts = build(connection, as_of)
+        except KeyError as error:
+            print(f"refused: {error}; run normalize first", file=sys.stderr)
+            return 2
+        except BriefError as error:
+            print(f"refused: {error}", file=sys.stderr)
+            return 2
+        except duckdb.CatalogException as error:  # a DuckDB file of another kind
+            print(f"refused: not a monitor database: {error}", file=sys.stderr)
+            return 2
+        out = args.out or BRIEFS / facts.snapshot
+        if facts.data_label != synthetic.LABEL and not _inside(out, DATA):
+            print(
+                f"refused: a brief of collected prices stays under {DATA}",
+                file=sys.stderr,
+            )
+            return 2
+        text = render(facts)
+        result = checked(connection, facts, text, as_of)
+    finally:
+        connection.close()
+    if not result.passed:
+        where = ", ".join(f"line {f.line}" for f in result.failures)
+        print(
+            f"check failed: {len(result.failures)} unmatched ({where});"
+            " nothing written",
+            file=sys.stderr,
+        )
+        return 1
+    write(out, text, facts, run_record(facts, "template"))
+    print(
+        f"wrote {out}: {len(facts.facts)} facts; {result.numbers} numbers and"
+        f" {result.times} times re-derived"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
