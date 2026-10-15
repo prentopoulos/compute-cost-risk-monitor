@@ -39,6 +39,9 @@ and only workflows relevant to the current boundary. Source examples are not pro
 - Use existing artifacts for small reviews. Substantial reviews go in docs/reviews with
   scope/revision, applicability, findings, evidence, owner, next action and recheck trigger.
 
+Read the sibling [compute-cost-risk-monitor-ai-ops](../compute-cost-risk-monitor-ai-ops/SKILL.md)
+for system versioning, evaluation, retrieval, state, training and operations.
+
 ## Route the work
 
 | Boundary | Complete workflows to read in agent-builder |

@@ -29,7 +29,10 @@ frames. It holds synthetic figures only.
 
 Earlier phases are Done and merged: Phase 6 (PR #11), Phase 5 (PR #10), Phase 4 (PR #9), Phase 3
 (PR #8), Phase 2 (PR #7), Phase 1 (PR #5) and Phase 0 (PR #3). PR #12 added the design-skill
-routing (`.agents/skills/next-phase/design-skills.md`).
+routing (`.agents/skills/next-phase/design-skills.md`). Before Phase 8, branch
+`chore/readme-and-ai-ops` added the first README, the AI-ops skill and `AI_OPS.md` (PROJECT.md
+§2 requires them before the brief drafter is proposed), and the ignore rules for local agent
+config.
 
 Each phase starts in a fresh session (WORKFLOW.md § Fresh session per phase). Everything the
 next phase needs is in this file, PROJECT.md, OpenSpec and Git.
@@ -233,15 +236,104 @@ settled with their basis. D50 records the code review.
   - Recheck CME futures before Phase 8.
   - Dependabot alert #1 (`braces`, dev-only, no fix) stays open.
   - detect-secrets scans files only: scan Git history before the repo goes public.
-  - Untracked `.agents/skills/openspec-*` and `source-command-opsx-*` folders appeared on
-    2026-10-13 outside any phase, and an untracked `.codex/config.toml` on 2026-10-14. None is
-    committed; the owner decides whether to keep them.
+  - The generated `.agents/skills/openspec-*` and `source-command-opsx-*` folders and
+    `.codex/config.toml` are gitignored. The config can hold an API key that detect-secrets does
+    not flag, and it was never committed.
+
+## Phase 8 grilling (done, 2026-10-14 to 2026-10-15)
+
+Two rounds with the informed answerer. The owner answered every owner call ("agreed") and
+confirmed the full decision list. The Phase 8 spec records each decision formally in PROJECT.md
+and its design, with who made it. Until then, this list is the record:
+
+- **Scope:** Phase 8 is the final phase. It may run over several sessions as one phase, and it
+  ends public-ready on GitHub.
+  - Must-haves:
+    - the brief, with a bottom line, an independent check and one real AI-drafted run;
+    - the methodology, with a "Limitations and model risk" section framed on SR 11-7;
+    - the README, with a one-command setup;
+    - a five-slide deck in Figma Slides, exported as a PDF;
+    - the futures sentence;
+    - a pre-publication check and the publishing list.
+  - Cut order if time runs short: diagram polish, then the grid "+6e-09" fix, then the video
+    (the script stays).
+  - Non-goals:
+    - a second source;
+    - scheduled collection;
+    - trend claims;
+    - hosting;
+    - a brief view in the app;
+    - any LLM use beyond drafting brief prose;
+    - live figures in any public file.
+- **Public form:** the repo is made public, the app runs from a clone, and there is no hosting.
+  Streamlit Community Cloud forces usage statistics on. The publishing gate comes last, with an
+  exact list of what goes public. That list says: no live Azure price, cost, exposure or
+  SKU-level figure; aggregate counts and coarse distributions from the one local snapshot appear
+  in design and review records (the owner approves or refuses at the gate).
+- **Data:** synthetic only in public. Two earlier synthetic snapshots (2026-09-28 and
+  2026-10-05) go in front of `azure_demo.json`, with one change, one "absent once" and one
+  "not listed". One synthetic database then drives the dashboard, screenshots, brief, bottom line
+  and deck. `azure_history` stays the end-to-end test fixture.
+- **Brief:**
+  - Building blocks:
+    - a deterministic `brief` module and CLI build a fact set where every number links to its
+      records;
+    - code renders a template brief from it;
+    - an independent `brief_check`, which never imports `brief`, recomputes every number in the
+      final text.
+  - The bottom line uses 32 GPUs × 720 h on H100 ×8 pay-as-you-go at the lowest listed price
+    (US East, 276,480.00 USD), the 5-region range (12.0000–15.0000 USD/GPU-h), the +25% and +50%
+    contingencies (69,120.00 and 138,240.00 USD), the exclusions, the data label and the as-of.
+    It says "lowest listed", never "cheapest", and it is not an investment conclusion.
+  - The committed brief is pinned to the 2026-10-12 09:00 UTC snapshot. The local live brief
+    uses the template only and is never committed.
+  - Files: `docs/brief/` (committed, synthetic) and `data/briefs/` (local).
+- **AI drafter:**
+  - Claude API with `claude-opus-5-5`, low effort, at most 4,000 output tokens, one retry, then
+    the template.
+  - It sees synthetic figures only.
+  - It writes prose with placeholders from a closed list and no numbers. A validator rejects
+    digits, number words, unknown placeholders, missing caveats and banned words.
+  - Banned words: the recorded list, plus cheapest, spread, deal, bargain, guarantee, safe,
+    risk-free, hedge and futures.
+  - The brief carries a disclosure line naming the model and prompt version.
+  - Tests use a fake client, need no key and use no network. A JSON run record sits beside
+    each brief.
+  - The official `anthropic` SDK is pinned in `uv.lock`.
+- **Spend gate (owner, 2026-10-14):** approved: the Anthropic Claude API, `claude-opus-5-5`, to
+  draft the Phase 8 market brief's prose only.
+  - Budget: USD 5, up to USD 10 in total.
+  - Runs are started by hand, use synthetic figures only, and never run in CI, tests or the app.
+  - An organisation spend limit of USD 10, automatic top-up off, and the key in the user
+    environment.
+  - The spec copies this into PROJECT.md §6.
+- **Docs:**
+  - the methodology at `docs/methodology.md`;
+  - the README, extended with the bottom line, a test that its figures match the brief, and
+    links;
+  - the futures sentence becomes "It works from observed published list prices alone and does
+    not use or depend on compute futures or GPU price indexes", plus a dated paragraph in the
+    methodology, rechecked before publishing;
+  - the diagrams: the context and container views are updated, and the ERD is unchanged.
+- **Housekeeping:**
+  - MIT licence (P1). The owner confirmed it on 2026-10-15 after comparing it with
+    fundamental-engine's PolyForm Noncommercial, and `LICENSE` was added before Phase 8;
+  - the Gmail address in history is accepted, and new commits use the noreply address;
+  - personal details are neutralised in the current files;
+  - the vendored skills are published as they are.
+- **STALE:** take the screenshots and the video before 2026-10-19 09:00 UTC if possible.
+- **Owner tasks:**
+  - rotate the 21st.dev key and move it out of `.codex/config.toml`;
+  - run one or two collects on different days;
+  - put the Anthropic key in the user environment;
+  - record the video;
+  - export the deck PDF;
+  - approve the publishing list.
 
 ## Next action
 
-Phase 8 (public demo, methodology document, market brief, two-minute walkthrough, updated
-diagrams) starts in a fresh session with `/next-phase`. It is grilled with the Phase 1 acceptance
-row "7 Demo and brief" and the Phase 8 findings above. Any visible change gets a quick Figma
-mock with synthetic figures for the owner's approval first. The publishing gate (§6) stays the
-owner's. Collecting more live data is the owner's choice: one manual run a day at most, followed
-by normalize.
+After the README and AI-ops PR merges: open the Phase 8 branch, write the spec from the grilling
+list above, commit it spec-only (`docs:`), push and open the draft PR. Any visible change gets a
+quick Figma mock with synthetic figures for the owner's approval first. The publishing gate (§6)
+stays the owner's. Collecting more live data is the owner's choice: one manual run a day at most,
+followed by normalize.
