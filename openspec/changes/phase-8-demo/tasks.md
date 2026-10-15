@@ -10,7 +10,7 @@
 
 ## 2. Demo data and setup
 
-- [ ] 2.1 Hand-work the two demo-history snapshots (2026-09-28 and 2026-10-05) and their known answers in the fixtures README (D7, D42). Then:
+- [x] 2.1 Hand-work the two demo-history snapshots (2026-09-28 and 2026-10-05) and their known answers in the fixtures README (D7, D42). Then:
   - write the files;
   - write the known-answer test: changes, absences, quality counts and no Spot above pay-as-you-go (ADDED "Synthetic demo history").
 

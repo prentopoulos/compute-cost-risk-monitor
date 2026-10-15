@@ -207,7 +207,7 @@ brief lists.
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
 | 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Done |
-| 8 | Public demo, methodology document, market brief with AI-drafted prose, README and five-slide deck, two-minute walkthrough; diagrams updated. The final phase | Planned |
+| 8 | Public demo, methodology document, market brief with AI-drafted prose, README and five-slide deck, two-minute walkthrough; diagrams updated. The final phase | In progress |
 
 ### ⛔ Before reading live data from any source
 

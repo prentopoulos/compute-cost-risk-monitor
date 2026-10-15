@@ -17,6 +17,48 @@ committed to this repository (Phase 1 design D4).
     Spot to pay-as-you-go fallback shows "not computed" (Phase 5 design D12);
   - two T4 sizes in one US East group, and single-price T4 and A100 groups;
   - an unmapped size (MI300X `ND96is`) and a Windows row.
+- `azure_demo_history/snapshot-1.json` and `snapshot-2.json`: two earlier synthetic snapshots in
+  front of `azure_demo.json`, at 2026-09-28 and 2026-10-05 09:00 UTC (Phase 8 design D7). With
+  `azure_demo.json` as snapshot 3, one database drives the dashboard, screenshots, brief,
+  bottom line, README and deck. The files copy the demo's items and IDs, so a different price is
+  a change, and they differ only as below. Every price and ID is invented. The answers below
+  were worked out by hand, not by the code under test.
+
+  | Item | Listing | 1 (2026-09-28) | 2 (10-05) | 3 (10-12, `azure_demo.json`) |
+  |---|---|---|---|---|
+  | 101 | H100 ×8 `Standard_ND96isr_H100_v5`, eastus, pay-as-you-go | 88 | 88 | 96 |
+  | 106 | the same size, eastus, Spot | 88 | 88 | 96 |
+  | 115 | A100 ×1 `Standard_NC24ads_A100_v4`, westeurope, pay-as-you-go | 4.0 | 4.0 | absent |
+  | 116 | T4 ×1 `Standard_NC8as_T4_v3`, westeurope, pay-as-you-go | 0.9 | absent | absent |
+  | every other item | as in `azure_demo.json` | same | same | same |
+
+  - **Rows:**
+    - snapshots 1, 2 and 3 store 16, 15 and 14 observations, and none is rejected;
+    - each excludes the MI300X row as `unmapped_sku` and the Windows row as `windows`, so 14,
+      13 and 12 rows are compared.
+  - **USD/GPU-hour:** 101 and 106 are 11.0 in snapshots 1 and 2, then 12.0. Item 115 is 4.0 and
+    item 116 is 0.9.
+  - **History as of snapshot 3:**
+    - nothing changed between snapshots 1 and 2;
+    - two changes since snapshot 2, both 88 to 96 (11.0 to 12.0): 101 (pay-as-you-go) and 106
+      (Spot);
+    - 115 is absent once (unconfirmed): missing from 3, last seen in 2;
+    - 116 is not listed, dated at snapshot 2 (2026-10-05 09:00 UTC), last seen in 1.
+  - **Spot never above pay-as-you-go:**
+    - eastus Spot equals pay-as-you-go in every snapshot (11.0, then 12.0);
+    - westeurope Spot is 5.0 against 12.5;
+    - uksouth Spot has no pay-as-you-go listing in its region.
+  - **Quality report for snapshot 3:** the single-snapshot demo's counts, plus the history:
+    - 14 observations: 12 normalized, 1 `unmapped_sku`, 1 `windows`;
+    - 11 region groups (10 single list price), and 4 cross-region summaries, 3 of them thin;
+    - changes 2, absent once 1, not listed 1.
+  - **Stale:** not stale at exactly 2026-10-19 09:00:00 UTC, and stale at 09:00:01.
+  - **Trend line:** 3 snapshots over 14 days.
+  - **Bottom line** (32 GPUs × 720 h, 23,040 GPU-hours, on H100 ×8 pay-as-you-go in snapshot 3):
+    - the lowest listed price is eastus at 12.0, so the workload costs 276,480;
+    - 5 regions list it, at 12.0–15.0, so the cost range is 276,480–345,600;
+    - +25% is 3.0 per GPU-hour, a 69,120 contingency;
+    - +50% is 6.0 per GPU-hour, a 138,240 contingency.
 - `azure_items.json`: one invented Azure-shaped item plus labelled cases (normal, edge,
   deliberately failing), each with its known answer for the collector's row rules.
 - `marketplace_offers.json`: marketplace-style offers for the hybrid plan's marketplace-only
