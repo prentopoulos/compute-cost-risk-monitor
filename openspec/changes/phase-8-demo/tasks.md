@@ -93,7 +93,7 @@
   Add the repository tests for "README matches the brief" and "Licence and credits"
 - [x] 6.4 Draft the five-slide deck in Figma Slides (D25) from the demo figures. The owner approves the draft, then exports the PDF to `docs/` (D38). Done on 2026-10-15: six plain-language slides (the owner asked for a newcomer-friendly story and a markets slide), approved by the owner; the PDF was exported slide by slide through the Figma tools and merged, `docs/compute-cost-risk-monitor-deck.pdf`
 - [x] 6.5 Write `docs/walkthrough.md`, the timed script and shot list (D10). The owner records it from the demo database (cut item 3). Done on 2026-10-15: the owner was away and asked Claude to record it. It was recorded from the synthetic-only launcher, bound to 127.0.0.1, with headless Edge: 1:58 at 1920 × 1080, with captions and no voice. The MP4 stays out of Git (`tmp/`) until the owner decides where it goes (task 9.1)
-- [ ] 6.6 Update the FigJam context and container views (D33), fix the label overlap and re-export the SVGs to `docs/architecture/`. Polish is cut item 1
+- [x] 6.6 Update the FigJam context and container views (D33), fix the label overlap and re-export the SVGs to `docs/architecture/`. Polish is cut item 1. Done on 2026-10-15: the context view shows the Anthropic Claude API as built; the container view adds the market brief and its check, the brief drafter and the demo command, with straight connectors and no overlapping labels; the drafter is labelled "drafts the market brief's text" (the owner asked for no reassurance taglines)
 
 ## 7. Pre-publication
 
