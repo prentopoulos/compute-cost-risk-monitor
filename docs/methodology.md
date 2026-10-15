@@ -170,7 +170,7 @@ line: the workload cost at the lowest listed price, the range across regions, an
 set aside for a +25% or +50% price move. Changes, absences, groups, Spot prices, regions and data
 quality follow. Code computes every number and links it to its records.
 
-**What the AI does.** Claude (`claude-opus-5-5`) writes the sentences, and only the sentences:
+**The AI-powered brief.** Claude (`claude-opus-5-5`) drafts the brief's text:
 - It never sees a number. It sees blanks such as `[[bl_cost]]`, and code fills in the numbers.
 - A draft is rejected if it contains a digit, a number word, a banned word, or misses a required
   blank. Banned words include "market price", "index", "forecast", "trend", "will", "cheapest",

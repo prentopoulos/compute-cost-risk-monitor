@@ -269,6 +269,11 @@ first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
   `docs/compute-cost-risk-monitor-deck.pdf`. PR #16 puts the PDF and a "Start here" README link on
   `main` ahead of the phase, at the owner's request. CI passes; the merge waits for the owner.
 - **6.1:** `docs/methodology.md`, with the futures paragraph rechecked on 2026-10-15.
+- **6.5:** `docs/walkthrough.md`. The owner asked Claude to record the video, and approved
+  the 1:58 captioned take, which is kept out of Git at `tmp/compute-cost-risk-monitor-walkthrough.mp4`.
+  Where it is published is the owner's call (9.1).
+- **Wording (owner, 2026-10-15):** no slogans or reassurance taglines. Slide 5 now reads
+  "HOW IT USES AI" / "AI-powered market brief".
 - **7.1–7.4:**
   - the owner made the repository public; PROJECT.md §6 records it (recorded 2026-10-15);
   - the pre-publication record is in `docs/reviews/2026-10-15-phase-8-demo.md`: the history
@@ -277,7 +282,6 @@ first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
 
 **Open:**
 - **6.3:** README extension and tests;
-- **6.5:** the walkthrough script;
 - **6.6:** the diagrams;
 - **8.1–8.5:** verification and review;
 - **9.1–9.2:** the close (the visibility decision is already recorded).
@@ -290,11 +294,11 @@ first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
   - rotate the 21st.dev key and move it out of `.codex/config.toml`;
   - optionally run one or two collects;
   - merge PR #16 (the deck on `main`);
-  - record the video (6.5);
   - approve the publishing list.
 
 ## Next action
 
-Extend the README (6.3) in the same plain language, with its two repository tests. Then the
-walkthrough script (6.5), the diagrams (6.6), and the verification and review (8.1–8.5). Each
-session that ends mid-phase pushes a HANDOFF update.
+Extend the README (6.3): the bottom line first, the one-command demo, links to the deck,
+methodology, brief and video, with its two repository tests. Write it in the owner's plain style,
+with no taglines. Then the diagrams (6.6), and the verification and review (8.1–8.5). PR #16, the
+deck on `main`, waits for the owner's merge.
