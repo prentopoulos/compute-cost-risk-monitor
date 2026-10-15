@@ -56,7 +56,7 @@ hold synthetic figures only. The scheduling, spend and publishing gates are unto
 ## Commands
 
 In this environment's bash, uv lives at
-`/c/Users/Peter/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`.
+`~/AppData/Local/Microsoft/WinGet/Packages/astral-sh.uv_Microsoft.Winget.Source_8wekyb3d8bbwe/uv.exe`.
 Every command prints counts, names and keys only, never prices.
 
 - **Gate:** `uv run --frozen python scripts/gate.py`. It runs nine checks:

@@ -142,7 +142,8 @@ user before each later phase. Evidence that counts in every phase:
 
 Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and `npm ci --ignore-scripts`; CI runs it plus
 `uv audit --locked --preview-features audit-command` on every PR and push to main.
-Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
+Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (public, the owner's
+decision recorded in §6 on 2026-10-15). Push phase
 branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR
 merges only after its review and the user's go-ahead. Follow WORKFLOW.md for phase work.
 
@@ -261,6 +262,13 @@ brief lists.
 
 - [ ] Operator approves making the GitHub repo public, deploying the demo, and sharing the
       walkthrough or brief, including the data and caveats they show.
+- Decision, recorded 2026-10-15 (owner): the owner has made the GitHub repository public, with
+  what is on `main` and the open branches, and asked for the six-slide deck to go on `main` at
+  once. GitHub's event log does not show clearly when visibility changed. The change came before
+  the Phase 8 pre-publication record, which was made on 2026-10-15: a secret
+  scan of every blob in the history, the survey for figures from collected prices, and the
+  personal details. It is in the Phase 8 review record. It approves no hosting, and no sharing of
+  the video. The brief, the methodology and the publishing list still come through the Phase 8 PR.
 
 Record explicit operator decisions already given, with scope and date; do not request them
 again. Gates without such a decision remain unresolved. Local work proceeds independently.

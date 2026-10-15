@@ -79,7 +79,7 @@
 
 ## 6. Documents and visuals
 
-- [ ] 6.1 Write `docs/methodology.md` (D13, D11): every recorded rule; the AI section; "Limitations and model risk" on SR 11-7 (data, method, process and AI risks, each with its control and test); why the data is synthetic; credits; the reading list; and a compute-futures paragraph rechecked against primary sources on the day
+- [x] 6.1 Write `docs/methodology.md` (D13, D11): every recorded rule; the AI section; "Limitations and model risk" on SR 11-7 (data, method, process and AI risks, each with its control and test); why the data is synthetic; credits; the reading list; and a compute-futures paragraph rechecked against primary sources on the day. Done on 2026-10-15 in plain language; the futures paragraph was rechecked that day against the CFTC letter of 21 September 2026 and the ICE notice of 29 September 2026
 - [x] 6.2 Take Workload cost screenshots (US East H100 ×8 pay-as-you-go, 32 × 720) and one Comparable groups screenshot from the demo database into `docs/assets/`, named `*-synthetic`, before 2026-10-19 09:00 UTC if possible (D29). Taken 2026-10-15 at 1920×1080 from a scratch launcher offering only the synthetic database, with headless Edge over the DevTools protocol; the figures checked by hand (276,480; +69,120; +1,105,920; median 13)
 - [ ] 6.3 Extend the README (D12, D31):
   - the bottom line first;
@@ -97,10 +97,10 @@
 
 ## 7. Pre-publication
 
-- [ ] 7.1 Scan every blob in the Git history for secrets (blobs exported with `git rev-list --objects --all` and `git cat-file`, scanned by detect-secrets) and record the command and result
-- [ ] 7.2 Survey tracked files and history for figures derived from collected data, and record the result (D26)
-- [ ] 7.3 Neutralise personal details in the current, non-archived files (D23): PROJECT.md, HANDOFF.md, and `source_kit` in `source-manifest.json` (the digests and the provenance test unchanged)
-- [ ] 7.4 Write the exact publishing list for the operator (D5, D26, D41)
+- [x] 7.1 Scan every blob in the Git history for secrets (blobs exported with `git rev-list --objects --all` and `git cat-file`, scanned by detect-secrets) and record the command and result. Done on 2026-10-15: 808 blobs, no secret; recorded in `docs/reviews/2026-10-15-phase-8-demo.md`
+- [x] 7.2 Survey tracked files and history for figures derived from collected data, and record the result (D26). Done on 2026-10-15: no live price, cost, exposure or SKU-level figure; recorded in the review record
+- [x] 7.3 Neutralise personal details in the current, non-archived files (D23): PROJECT.md, HANDOFF.md, and `source_kit` in `source-manifest.json` (the digests and the provenance test unchanged). Done on 2026-10-15: the HANDOFF user path and `source_kit`; the owner's name stays
+- [x] 7.4 Write the exact publishing list for the operator (D5, D26, D41). Done on 2026-10-15, in the review record. The owner had already made the repository public; PROJECT.md §6 records it
 
 ## 8. Verification and review
 
