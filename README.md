@@ -43,10 +43,10 @@ pay, or a price forecast. It covers one provider, Azure, and list prices only.
 | Absent once / not listed | Missing from one snapshot (unconfirmed) / missing from two in a row. |
 | Synthetic | Invented prices for demonstration, labelled on every screen. |
 
-![Workload cost on the synthetic demo](docs/reviews/2026-10-14-phase-7-screenshots/workload-spot-synthetic.jpg)
+![Workload cost on the synthetic demo](docs/assets/workload-cost-synthetic.png)
 
-*Workload cost on the synthetic demo: 32 H100 GPUs (4 × ND96isr H100 v5) on Spot in EU West for
-720 hours, at 5.0000 USD/GPU-h. Invented prices, dated 12 October 2026 (UTC).*
+*Workload cost on the synthetic demo: 32 H100 GPUs (4 × ND96isr H100 v5) on pay-as-you-go in
+US East for 720 hours, at 12.0000 USD/GPU-h. Invented prices, dated 12 October 2026 (UTC).*
 
 Public screenshots always use the synthetic demo. Collected Azure list prices stay on the machine
 that collected them.
