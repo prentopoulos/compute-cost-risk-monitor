@@ -948,7 +948,8 @@ def _spot(
         "[[n_spot_paired]] of [[n_spot]] Spot listings have the same size on"
         f" pay-as-you-go in the same region; [[n_spot_equal]]"
         f" {plural(equal, 'equals', 'equal')} it and [[n_spot_above]]"
-        f" {plural(above, 'is', 'are')} above it. The table shows [[bl_variant]]."
+        f" {plural(above, 'is', 'are')} above it."
+        + (" The table shows [[bl_variant]]." if i else "")
     )
 
 

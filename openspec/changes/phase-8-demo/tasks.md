@@ -31,7 +31,7 @@
   - one snapshot only;
   - no pay-as-you-go listing;
   - the Records table covering every fact used.
-- [ ] 3.3 Write `brief_check.py`, which never imports `brief` ("Independent brief check"; D32). Tests:
+- [x] 3.3 Write `brief_check.py`, which never imports `brief` ("Independent brief check"; D32). Tests:
   - the correct brief passes;
   - a tampered figure and an unknown number are named;
   - an import guard.
