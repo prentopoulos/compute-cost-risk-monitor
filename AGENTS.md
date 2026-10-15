@@ -8,6 +8,8 @@ Read PROJECT.md for scope, acceptance criteria and gates.
 Follow WORKFLOW.md and .agents/skills/next-phase/SKILL.md for phase/checkpoint work.
 Read HANDOFF.md for recovery state. Use .agents/skills/compute-cost-risk-monitor-build-safety/SKILL.md for
 architecture, dependencies, tool contracts, data, telemetry, spend or readiness.
+Read AI_OPS.md and .agents/skills/compute-cost-risk-monitor-ai-ops/SKILL.md for model, prompt,
+evaluation, runtime-state or operational changes (the market-brief drafter).
 Use .agents/skills/compute-cost-risk-monitor-market-review/SKILL.md for offer data, comparable
 pricing, workload costs, budget exposure and the market brief.
 

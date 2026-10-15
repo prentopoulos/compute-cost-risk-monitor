@@ -34,6 +34,8 @@ Use [compute-cost-risk-monitor-build-safety](../compute-cost-risk-monitor-build-
 tool or adapter contracts, external calls, data handling, prompts/model behavior, run recording,
 cost or phase readiness. It routes to the full 17-workflow collection. Load only workflows
 needed for the slice.
+Read the sibling [compute-cost-risk-monitor-ai-ops](../compute-cost-risk-monitor-ai-ops/SKILL.md)
+for system versioning, evaluation, retrieval, state, training and operations.
 Use [compute-cost-risk-monitor-market-review](../compute-cost-risk-monitor-market-review/SKILL.md)
 for offer data, comparable pricing, workload costs, budget exposure and the market brief.
 When a user-facing interface is actually in scope, read [design-skills.md](design-skills.md):

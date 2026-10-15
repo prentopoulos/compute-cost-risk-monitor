@@ -51,7 +51,7 @@ Deferred or out of scope:
   (⛔ below). Cross-provider comparisons are out of scope.
 - Trend claims, made only after several weeks of collection.
 - The optional AI agent, which may only draft the market brief from validated numbers (⛔ spend).
-  Before proposing it, install the setup kit's AI-ops skill and AI_OPS.md (deferred 2026-10-11).
+  The setup kit's AI-ops skill and AI_OPS.md were installed on 2026-10-15, before proposing it.
 - Renting, creating or modifying instances, or any account action beyond reading offers.
 - Accounts, logins or multiple users. Hosting before Phase 8 (⛔ publishing).
 
