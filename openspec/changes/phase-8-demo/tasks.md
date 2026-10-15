@@ -69,13 +69,13 @@
 
 ## 5. Dashboard labels
 
-- [ ] 5.1 Draw a quick Figma mock of the grid title with "NOT A FORECAST" and the "EXCL." tag line, synthetic figures only, and get the owner's approval (D30)
-- [ ] 5.2 Build D30 (MODIFIED "Figure captions and framing line", "Workload cost view"). Update the AppTest flows:
+- [x] 5.1 Draw a quick Figma mock of the grid title with "NOT A FORECAST" and the "EXCL." tag line, synthetic figures only, and get the owner's approval (D30). Mock v4: [Workload](https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=21-2) and [Spot, no pay-as-you-go listing](https://www.figma.com/design/aODgN8zO3eCm9bmN8sOSCK?node-id=21-280), copies of v3 with only the labels changed. Approved by the owner on 2026-10-15
+- [x] 5.2 Build D30 (MODIFIED "Figure captions and framing line", "Workload cost view"). Update the AppTest flows:
   - the title;
   - the tag line on Workload cost and Comparable groups;
   - the unchanged storage, "*", "†" and not-computed lines;
   - no "Scenario calculation" sentence on the page.
-- [ ] 5.3 Grid cells in positional form (MODIFIED "Display formatting"; D14; cut item 2), with the 0.000000006 test
+- [x] 5.3 Grid cells in positional form (MODIFIED "Display formatting"; D14; cut item 2), with the 0.000000006 test (shown as +0.000000006)
 
 ## 6. Documents and visuals
 

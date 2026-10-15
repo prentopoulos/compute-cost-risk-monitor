@@ -811,6 +811,10 @@ GPU_HOURS_LABEL = "GPUs × h"
 HEADROOM_LABEL = "Headroom, USD/GPU-h"
 # The scenario grid (D7, D25, D35, D36, D38).
 GRID_TITLE = "SCENARIO GRID"
+# Labels every scenario figure on the tab, Headroom included (Phase 8 D30).
+GRID_MARK = "NOT A FORECAST"
+EXCLUDES = "Excludes "  # how the stored exclusions text opens (groups-v1)
+EXCL_TAG = "EXCL."
 GRID_CORNER = "Δ price \\ GPUs"
 FALLBACK_LABEL = "Spot → PAYG *"
 MARKED = " †"
@@ -944,12 +948,18 @@ def workload_figures(
 
 def grid_cell(value: float) -> str:
     """A change in cost in whole USD with its sign, or 3 significant digits when a
-    non-zero value would round to 0 (D32)."""
+    non-zero value would round to 0 (D32), always positional: never "6e-09"
+    (Phase 8 D14)."""
     if value == 0:
         return "0"
+    exact = Decimal(repr(abs(value)))
     # Half up, so 2.5 shows 3 as 3.5 shows 4 (Python's round() goes to even, D50).
-    whole = int(Decimal(repr(abs(value))).quantize(Decimal(1), ROUND_HALF_UP))
-    text = f"{whole:,}" if whole else f"{abs(value):.3g}"
+    whole = int(exact.quantize(Decimal(1), ROUND_HALF_UP))
+    if whole:
+        text = f"{whole:,}"
+    else:
+        step = Decimal(1).scaleb(exact.adjusted() - 2)  # the third significant digit
+        text = format(exact.quantize(step, ROUND_HALF_UP).normalize(), "f")
     return ("+" if value > 0 else "−") + text
 
 
@@ -1064,14 +1074,27 @@ def grid(ladder: calculator.Ladder) -> Styler:
 
 
 def grid_title(work: Workload) -> str:
-    return f":gray[**{GRID_TITLE}** ·] **Δ cost, USD · {hours_text(work.hours)}**"
+    return (
+        f":gray[**{GRID_TITLE}** ·] **Δ cost, USD · {hours_text(work.hours)}**"
+        f" :gray[· **{GRID_MARK}**]"
+    )
+
+
+def exclusions_tag(text: str) -> str:
+    """The stored exclusions sentence as one tag line: "EXCL. " and every item, in
+    order, joined by " · " (Phase 8 D30). Text of another shape is shown whole, so
+    no exclusion is ever dropped."""
+    if not (text.startswith(EXCLUDES) and text.endswith(".")):
+        return text
+    items = text.removeprefix(EXCLUDES).removesuffix(".").split(", ")
+    return f"{EXCL_TAG} " + " · ".join(items)
 
 
 def footer(result: Result) -> list[str]:
-    """Under the grid, one line each: the scenario label and the exclusions word for
-    word, then each clause that applies, its mark first (D9, D35, D36, D39, D44,
-    D49)."""
-    lines = [f"{scenarios.NOT_A_FORECAST}. {result.start.group.exclusions}"]
+    """Under the grid, one line each: the exclusions tag line, then each clause that
+    applies, its mark first (D9, D35, D36, D44, D49; Phase 8 D30). The grid title
+    carries "NOT A FORECAST"."""
+    lines = [exclusions_tag(result.start.group.exclusions)]
     if result.workload.storage is not None:
         lines.append(STORAGE_CLAUSE.format(amount=f"{result.workload.storage:,.2f}"))
     rows = {row.id: row for row in result.ladder.rows}

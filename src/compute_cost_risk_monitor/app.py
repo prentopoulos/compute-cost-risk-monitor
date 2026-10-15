@@ -133,7 +133,7 @@ def _groups(view: SourceView, choice: Choice | None) -> None:
     _table(dashboard.members_frame(group))
     if group.stats is not None:  # marketplace: one price per machine
         _table(dashboard.stats_frame(group.stats, "Machines"))
-    st.markdown(f":gray[{group.exclusions}]")
+    st.markdown(f":gray[{dashboard.exclusions_tag(group.exclusions)}]")
     summary = dashboard.find_summary(view.summaries, variant, count, rental)
     if summary is not None:
         st.markdown(

@@ -126,7 +126,7 @@ It SHALL format values only for display and never compute from rounded values.
 
 #### Scenario: Tiny grid change in positional form
 - **WHEN** a grid cell is 0.000000006
-- **THEN** it is displayed as +0.00000000600, never as "+6e-09"
+- **THEN** it is displayed as +0.000000006, never as "+6e-09"
 
 ### Requirement: Workload cost view
 The page SHALL open on its first lazy tab, "Workload cost", followed by "Comparable groups",

@@ -35,7 +35,7 @@ AS_OF = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
 DEMO = FIXTURES / "azure_demo.json"
 SNAPSHOTS = sorted((FIXTURES / "marketplace").glob("snapshot-*.json"))
 H100 = "H100 NVLink 80GB"
-EXCLUDES = "Excludes disks"
+EXCLUDES = "EXCL. disks and storage · egress"
 FILTERS = ["GPU", "GPUs per VM", "Pricing", "Region"]
 
 
@@ -559,7 +559,7 @@ def cost(tab: Any) -> list[list[str]]:
 
 
 def footer(tab: Any) -> str:
-    (shown,) = [t for t in texts(tab) if t.startswith(":gray[Scenario calculation")]
+    (shown,) = [t for t in texts(tab) if t.startswith(":gray[EXCL. ")]
     return str(shown)
 
 
@@ -583,7 +583,11 @@ def test_known_workload_on_the_demo(demo: list[tuple[str, Path]]) -> None:
         ("VMs", "4 × ND96isr H100 v5"),
         ("GPUs × h", "32 × 720"),
     ]
-    assert ":gray[**SCENARIO GRID** ·] **Δ cost, USD · 720 h**" in texts(tab)
+    assert (
+        ":gray[**SCENARIO GRID** ·] **Δ cost, USD · 720 h** :gray[· **NOT A FORECAST**]"
+        in texts(tab)
+    )
+    assert not [t for t in texts(tab) if "Scenario calculation" in t]
     cells = grid(tab)
     assert list(cells) == [
         "−50%",
@@ -598,7 +602,7 @@ def test_known_workload_on_the_demo(demo: list[tuple[str, Path]]) -> None:
     assert cells["+0.50 USD/GPU-h"][2] == "+11,520"  # PROJECT's example
     assert cells["+100%"][2] == "+276,480"
     assert footer(tab).startswith(
-        ":gray[Scenario calculation, not a forecast. Excludes disks"
+        ":gray[EXCL. disks and storage · egress · public IPs · licences"
     )
     assert cost(tab) == [
         ["Compute", "96.00", "2,880", "276,480.00"],
