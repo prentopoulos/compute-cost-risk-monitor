@@ -4,6 +4,8 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
+Phase 8 (the final phase) is specified and not yet built: see § Phase 8 below.
+
 Phase 7 (front-office interface: dark desk theme, answer-first layout and a scenario ladder) is
 Done. It was delivered through PR #13 from branch `phase-7-interface` and archived as
 `openspec/changes/archive/2026-10-14-phase-7-interface` (design D1–D50). Specs changed in
@@ -240,100 +242,42 @@ settled with their basis. D50 records the code review.
     `.codex/config.toml` are gitignored. The config can hold an API key that detect-secrets does
     not flag, and it was never committed.
 
-## Phase 8 grilling (done, 2026-10-14 to 2026-10-15)
+## Phase 8 (in planning: spec on branch `phase-8-demo`)
 
-Two rounds with the informed answerer. The owner answered every owner call ("agreed") and
-confirmed the full decision list. The Phase 8 spec records each decision formally in PROJECT.md
-and its design, with who made it. Until then, this list is the record:
+Phase 8 is the final phase. It may run over several sessions as one phase, and it ends with the
+repository ready to make public. The grilling ran two rounds on 2026-10-14 and 2026-10-15. The
+owner answered every owner call and confirmed the full decision list. Every decision is recorded
+with who made it:
+- in `openspec/changes/phase-8-demo/design.md`, D1–D45;
+- in PROJECT.md §1, §2, §4 and §6, including the spend decision of 2026-10-14.
 
-- **Scope:** Phase 8 is the final phase. It may run over several sessions as one phase, and it
-  ends public-ready on GitHub.
-  - Must-haves:
-    - the brief, with a bottom line, an independent check and one real AI-drafted run;
-    - the methodology, with a "Limitations and model risk" section framed on SR 11-7;
-    - the README, with a one-command setup;
-    - a five-slide deck in Figma Slides, exported as a PDF;
-    - the futures sentence;
-    - a pre-publication check and the publishing list.
-  - Cut order if time runs short: diagram polish, then the grid "+6e-09" fix, then the video
-    (the script stays).
-  - Non-goals:
-    - a second source;
-    - scheduled collection;
-    - trend claims;
-    - hosting;
-    - a brief view in the app;
-    - any LLM use beyond drafting brief prose;
-    - live figures in any public file.
-- **Public form:** the repo is made public, the app runs from a clone, and there is no hosting.
-  Streamlit Community Cloud forces usage statistics on. The publishing gate comes last, with an
-  exact list of what goes public. That list says: no live Azure price, cost, exposure or
-  SKU-level figure; aggregate counts and coarse distributions from the one local snapshot appear
-  in design and review records (the owner approves or refuses at the gate).
-- **Data:** synthetic only in public. Two earlier synthetic snapshots (2026-09-28 and
-  2026-10-05) go in front of `azure_demo.json`, with one change, one "absent once" and one
-  "not listed". One synthetic database then drives the dashboard, screenshots, brief, bottom line
-  and deck. `azure_history` stays the end-to-end test fixture.
-- **Brief:**
-  - Building blocks:
-    - a deterministic `brief` module and CLI build a fact set where every number links to its
-      records;
-    - code renders a template brief from it;
-    - an independent `brief_check`, which never imports `brief`, recomputes every number in the
-      final text.
-  - The bottom line uses 32 GPUs × 720 h on H100 ×8 pay-as-you-go at the lowest listed price
-    (US East, 276,480.00 USD), the 5-region range (12.0000–15.0000 USD/GPU-h), the +25% and +50%
-    contingencies (69,120.00 and 138,240.00 USD), the exclusions, the data label and the as-of.
-    It says "lowest listed", never "cheapest", and it is not an investment conclusion.
-  - The committed brief is pinned to the 2026-10-12 09:00 UTC snapshot. The local live brief
-    uses the template only and is never committed.
-  - Files: `docs/brief/` (committed, synthetic) and `data/briefs/` (local).
-- **AI drafter:**
-  - Claude API with `claude-opus-5-5`, low effort, at most 4,000 output tokens, one retry, then
-    the template.
-  - It sees synthetic figures only.
-  - It writes prose with placeholders from a closed list and no numbers. A validator rejects
-    digits, number words, unknown placeholders, missing caveats and banned words.
-  - Banned words: the recorded list, plus cheapest, spread, deal, bargain, guarantee, safe,
-    risk-free, hedge and futures.
-  - The brief carries a disclosure line naming the model and prompt version.
-  - Tests use a fake client, need no key and use no network. A JSON run record sits beside
-    each brief.
-  - The official `anthropic` SDK is pinned in `uv.lock`.
-- **Spend gate (owner, 2026-10-14):** approved: the Anthropic Claude API, `claude-opus-5-5`, to
-  draft the Phase 8 market brief's prose only.
-  - Budget: USD 5, up to USD 10 in total.
-  - Runs are started by hand, use synthetic figures only, and never run in CI, tests or the app.
-  - An organisation spend limit of USD 10, automatic top-up off, and the key in the user
-    environment.
-  - The spec copies this into PROJECT.md §6.
-- **Docs:**
-  - the methodology at `docs/methodology.md`;
-  - the README, extended with the bottom line, a test that its figures match the brief, and
-    links;
-  - the futures sentence becomes "It works from observed published list prices alone and does
-    not use or depend on compute futures or GPU price indexes", plus a dated paragraph in the
-    methodology, rechecked before publishing;
-  - the diagrams: the context and container views are updated, and the ERD is unchanged.
-- **Housekeeping:**
-  - MIT licence (P1). The owner confirmed it on 2026-10-15 after comparing it with
-    fundamental-engine's PolyForm Noncommercial, and `LICENSE` was added before Phase 8;
-  - the Gmail address in history is accepted, and new commits use the noreply address;
-  - personal details are neutralised in the current files;
-  - the vendored skills are published as they are.
-- **STALE:** take the screenshots and the video before 2026-10-19 09:00 UTC if possible.
+The tasks are in `openspec/changes/phase-8-demo/tasks.md`; task 1.1 (records) is done.
+
+- **Before the spec, PR #14 landed:**
+  - the first README, shaped like the owner's fundamental-engine repo;
+  - the MIT licence (D20);
+  - the AI-ops skill and AI_OPS.md;
+  - the ignore rules for `.codex/config.toml` and generated skill copies.
+- **Commit email:** new commits use the GitHub noreply address, set in this repository's Git
+  config (D21).
+- **Grid labels (D30):** the owner chose terse desk labels for the grid footer, "NOT A FORECAST"
+  in the title and an "EXCL." tag line. A quick Figma mock comes before the build.
+- **STALE:** the demo turns STALE after 2026-10-19 09:00 UTC. Take the screenshots and the video
+  before then if possible (D29).
 - **Owner tasks:**
-  - rotate the 21st.dev key and move it out of `.codex/config.toml`;
-  - run one or two collects on different days;
-  - put the Anthropic key in the user environment;
-  - record the video;
-  - export the deck PDF;
-  - approve the publishing list.
+  - rotate the 21st.dev key and move it out of `.codex/config.toml` (D15);
+  - run one or two collects on different days (D9);
+  - put `ANTHROPIC_API_KEY` in the user environment, set the USD 10 organisation spend limit
+    and turn automatic top-up off (D17);
+  - record the video (D10);
+  - export the deck PDF (D25);
+  - approve the publishing list (D5).
 
 ## Next action
 
-After the README and AI-ops PR merges: open the Phase 8 branch, write the spec from the grilling
-list above, commit it spec-only (`docs:`), push and open the draft PR. Any visible change gets a
-quick Figma mock with synthetic figures for the owner's approval first. The publishing gate (§6)
-stays the owner's. Collecting more live data is the owner's choice: one manual run a day at most,
-followed by normalize.
+The Phase 8 spec is committed on `phase-8-demo` (spec-only `docs:` commit), with a draft PR for
+the owner's review. When the owner approves the spec, start the build at task 2.1, the
+demo-history fixtures with their hand-worked answers. The first implementation commit sets
+Phase 8 to In progress in PROJECT.md §6. Each session that ends mid-phase pushes a HANDOFF update
+naming the finished and open tasks (WORKFLOW.md § Mid-phase). The publishing gate (§6) stays the
+owner's, and making the repository public comes after the merge, on the owner's decision.
