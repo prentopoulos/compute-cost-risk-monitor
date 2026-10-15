@@ -61,7 +61,7 @@
   - the synthetic-only and missing-key refusals.
 
   Fake-client tests cover every rejection case, a second attempt accepted, two rejections falling back, and the request shape, with no key and no network
-- [ ] 4.3 Update AI_OPS.md: the inference and prompt capabilities become enabled once 4.2 passes, with their evidence locations filled in (D35)
+- [x] 4.3 Update AI_OPS.md: the inference and prompt capabilities become enabled once 4.2 passes, with their evidence locations filled in (D35)
 - [ ] 4.4 On the owner's go-ahead, with the key in the user environment and the USD 10 organisation limit set (D17), run `brief --draft` once on the demo database as of 2026-10-12 09:00 UTC, with at most one retry inside the command. Then:
   - commit the drafted brief, its fact set and run record when the check passes;
   - otherwise commit the template brief with the run record of the rejected attempts;
