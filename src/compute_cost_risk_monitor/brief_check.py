@@ -397,7 +397,7 @@ def _masked(line: str, names: Iterable[str]) -> str:
 def check(text: str, derived: Derived) -> CheckResult:
     """Every number and time in the brief, outside its Records table, re-derived."""
     result = CheckResult()
-    body = text.split("\n## Records\n", 1)[0]
+    body = text.replace("\r\n", "\n").split("\n## Records\n", 1)[0]  # any checkout
     names = [name for name in derived.names if any(ch.isdigit() for ch in name)]
     for number, line in enumerate(body.splitlines(), start=1):
         masked = _masked(line, names)

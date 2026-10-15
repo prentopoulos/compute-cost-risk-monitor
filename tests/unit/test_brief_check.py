@@ -147,3 +147,8 @@ def test_check_imports_no_brief_or_grouping_code() -> None:
     }
     assert project == {"compute_cost_risk_monitor.scenarios"}
     assert not any(name.endswith(word) for name in project for word in forbidden)
+
+
+def test_windows_line_endings(text: str, derived: brief_check.Derived) -> None:
+    result = brief_check.check(text.replace("\n", "\r\n"), derived)
+    assert result.passed, result.failures

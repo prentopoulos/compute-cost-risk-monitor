@@ -15,6 +15,8 @@ uv.lock text eol=lf
 .python-version text eol=lf
 .gitattributes text eol=lf
 .editorconfig text eol=lf
+# The committed brief is reproduced byte for byte (Phase 8, market-brief spec).
+docs/brief/** text eol=lf
 
 # Verbatim skill copies keep their current line endings (their manifest digests depend on it).
 .agents/** !eol
