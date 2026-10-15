@@ -150,10 +150,12 @@ each phase's decisions, with who made them, are in `openspec/changes/archive/`.
 
 ## Licence and credits
 
-No licence has been chosen yet, so all rights are reserved. One will be added before the
-repository is made public.
+This project's code and documentation are released under the [MIT License](LICENSE).
+Third-party material keeps its own licence:
+- The GPU map contains material from Microsoft Learn, © Microsoft, licensed under
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See
+  [its attribution](src/compute_cost_risk_monitor/reference/README.md).
+- The vendored grilling skill is MIT-licensed by its author. See
+  [its licence](.agents/skills/grilling/LICENSE).
 
-The GPU map contains material from Microsoft Learn, © Microsoft, licensed under
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See
-[its attribution](src/compute_cost_risk_monitor/reference/README.md). Azure is a trademark of
-Microsoft. This project is not affiliated with or endorsed by Microsoft.
+Azure is a trademark of Microsoft. This project is not affiliated with or endorsed by Microsoft.

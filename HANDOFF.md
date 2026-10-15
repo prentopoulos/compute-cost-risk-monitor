@@ -316,8 +316,8 @@ and its design, with who made it. Until then, this list is the record:
     methodology, rechecked before publishing;
   - the diagrams: the context and container views are updated, and the ERD is unchanged.
 - **Housekeeping:**
-  - MIT licence (P1). The fundamental-engine repo uses PolyForm Noncommercial; the owner is asked
-    to confirm the choice;
+  - MIT licence (P1). The owner confirmed it on 2026-10-15 after comparing it with
+    fundamental-engine's PolyForm Noncommercial, and `LICENSE` was added before Phase 8;
   - the Gmail address in history is accepted, and new commits use the noreply address;
   - personal details are neutralised in the current files;
   - the vendored skills are published as they are.
