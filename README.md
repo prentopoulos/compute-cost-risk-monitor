@@ -15,6 +15,9 @@ from, and deterministic code computes every number.
 checks run today. The final phase adds a market brief, a methodology document and a short
 walkthrough.
 
+**Start here:** [the six-slide deck](docs/compute-cost-risk-monitor-deck.pdf) explains what the
+project is, why it matters and how it works, using invented prices.
+
 ## What you get
 
 - A local dashboard over **published Azure list prices for GPU VMs**, or over a labelled
