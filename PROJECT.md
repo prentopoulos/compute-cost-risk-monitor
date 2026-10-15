@@ -136,7 +136,10 @@ user before each later phase. Evidence that counts in every phase:
 - Architecture diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A)
   on the owner's Pro seat (Projects team), confirmed in Phase 1 (owner): C4 system context, C4
   container (built or planned) and an ERD of the DuckDB schema. The C4 views are flowcharts in
-  C4 notation because Figma's diagram tool has no C4 type. Exported as SVG to
+  C4 notation because Figma's diagram tool has no C4 type. They follow the C4 notation guide
+  (c4model.com, owner, 2026-10-15): a typed title and a key on each view, a description on
+  every element, a verb and [technology] on every line, and only containers (programs and data
+  stores) in the container view. Exported as SVG to
   `docs/architecture/`; update them when a phase changes components, data flow or schema.
 - Code review: every PR that changes code is reviewed before merge (WORKFLOW.md).
 
