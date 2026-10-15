@@ -263,29 +263,24 @@ first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
 - **5.1–5.3:** the owner approved mock v4 (Figma node 21:2), and the build added "NOT A FORECAST"
   in the grid title, the "EXCL." tag line and positional grid cells.
 - **6.2:** synthetic screenshots in `docs/assets/`.
-- **Gate:** green, with 885 tests at 100.0% branch coverage; hosted CI passes.
-
-**In progress:**
-- **6.4, the deck:** https://www.figma.com/slides/Z6FH7RthVyYAWPB5pWEl03 (Projects team).
-  - The owner asked for plain language a person would say in an interview (2026-10-15). The
-    deck now has six slides, not five, because the market story needed its own slide:
-    1. what it is and who uses it;
-    2. why it matters for markets;
-    3. how it works;
-    4. what you see;
-    5. how the numbers stay honest;
-    6. limits and next steps.
-  - Waiting for the owner's approval, then the owner exports
-    `docs/compute-cost-risk-monitor-deck.pdf`.
+- **6.4, the deck:** six plain-language slides in Figma Slides
+  (https://www.figma.com/slides/Z6FH7RthVyYAWPB5pWEl03), approved by the owner on 2026-10-15.
+  The PDF was exported slide by slide through the Figma tools and is
+  `docs/compute-cost-risk-monitor-deck.pdf`. PR #16 puts the PDF and a "Start here" README link on
+  `main` ahead of the phase, at the owner's request. CI passes; the merge waits for the owner.
+- **6.1:** `docs/methodology.md`, with the futures paragraph rechecked on 2026-10-15.
+- **7.1–7.4:**
+  - the owner made the repository public; PROJECT.md §6 records it (recorded 2026-10-15);
+  - the pre-publication record is in `docs/reviews/2026-10-15-phase-8-demo.md`: the history
+    secret scan, the live-figure survey, the personal details and the publishing list.
+- **Gate:** green on 2026-10-15; hosted CI passes.
 
 **Open:**
-- **6.1:** the methodology;
 - **6.3:** README extension and tests;
 - **6.5:** the walkthrough script;
 - **6.6:** the diagrams;
-- **7.1–7.4:** pre-publication;
 - **8.1–8.5:** verification and review;
-- **9.1–9.2:** the gate decision and close.
+- **9.1–9.2:** the close (the visibility decision is already recorded).
 
 **Facts and owner tasks:**
 - **STALE:** the demo turns STALE after 2026-10-19 09:00 UTC; the screenshots were taken before
@@ -294,14 +289,12 @@ first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
 - **Owner tasks:**
   - rotate the 21st.dev key and move it out of `.codex/config.toml`;
   - optionally run one or two collects;
+  - merge PR #16 (the deck on `main`);
   - record the video (6.5);
-  - export the deck PDF;
   - approve the publishing list.
 
 ## Next action
 
-Get the owner's approval of the deck (task 6.4) and the exported PDF. Then write
-`docs/methodology.md` (6.1) in the same plain language: explain the project to a newcomer first,
-with the model-risk section and the dated futures paragraph. Then extend the README (6.3). Each
-session that ends mid-phase pushes a HANDOFF update. Making the repository public comes after
-the merge, on the owner's publishing decision.
+Extend the README (6.3) in the same plain language, with its two repository tests. Then the
+walkthrough script (6.5), the diagrams (6.6), and the verification and review (8.1–8.5). Each
+session that ends mid-phase pushes a HANDOFF update.
