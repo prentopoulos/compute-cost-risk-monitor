@@ -4,7 +4,7 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 8 (the final phase) is specified and not yet built: see § Phase 8 below.
+Phase 8 (the final phase) is in progress: see § Phase 8 below.
 
 Phase 7 (front-office interface: dark desk theme, answer-first layout and a scenario ladder) is
 Done. It was delivered through PR #13 from branch `phase-7-interface` and archived as
@@ -242,42 +242,66 @@ settled with their basis. D50 records the code review.
     `.codex/config.toml` are gitignored. The config can hold an API key that detect-secrets does
     not flag, and it was never committed.
 
-## Phase 8 (in planning: spec on branch `phase-8-demo`)
+## Phase 8 (in progress on branch `phase-8-demo`, draft PR #15)
 
 Phase 8 is the final phase. It may run over several sessions as one phase, and it ends with the
-repository ready to make public. The grilling ran two rounds on 2026-10-14 and 2026-10-15. The
-owner answered every owner call and confirmed the full decision list. Every decision is recorded
-with who made it:
-- in `openspec/changes/phase-8-demo/design.md`, D1–D45;
-- in PROJECT.md §1, §2, §4 and §6, including the spend decision of 2026-10-14.
+repository ready to make public. The owner approved the spec on 2026-10-15. Every decision is
+in `openspec/changes/phase-8-demo/design.md`: D1–D45 come from the grilling, and D46 from the
+first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
 
-The tasks are in `openspec/changes/phase-8-demo/tasks.md`; task 1.1 (records) is done.
+**Done:**
+- **2.1–2.2:** the demo history (two earlier synthetic snapshots before `azure_demo.json`), and
+  `python -m compute_cost_risk_monitor.demo [--serve]`.
+- **3.1–3.4:** `brief.py` (fact set, template, bottom line, command), `brief_check.py`
+  (independent check) and the committed brief in `docs/brief/`.
+- **4.1–4.4:**
+  - `anthropic` 1.14 and `drafter.py`;
+  - two real runs on 2026-10-15, about USD 0.14 in total. Run 1 used prompt v1: both drafts
+    were rejected and the record is kept in commit 0730db0. Run 2 used prompt v2: accepted,
+    and `docs/brief/` now holds the AI-drafted brief;
+  - AI_OPS.md records both runs.
+- **5.1–5.3:** the owner approved mock v4 (Figma node 21:2), and the build added "NOT A FORECAST"
+  in the grid title, the "EXCL." tag line and positional grid cells.
+- **6.2:** synthetic screenshots in `docs/assets/`.
+- **Gate:** green, with 885 tests at 100.0% branch coverage; hosted CI passes.
 
-- **Before the spec, PR #14 landed:**
-  - the first README, shaped like the owner's fundamental-engine repo;
-  - the MIT licence (D20);
-  - the AI-ops skill and AI_OPS.md;
-  - the ignore rules for `.codex/config.toml` and generated skill copies.
-- **Commit email:** new commits use the GitHub noreply address, set in this repository's Git
-  config (D21).
-- **Grid labels (D30):** the owner chose terse desk labels for the grid footer, "NOT A FORECAST"
-  in the title and an "EXCL." tag line. A quick Figma mock comes before the build.
-- **STALE:** the demo turns STALE after 2026-10-19 09:00 UTC. Take the screenshots and the video
-  before then if possible (D29).
+**In progress:**
+- **6.4, the deck:** https://www.figma.com/slides/Z6FH7RthVyYAWPB5pWEl03 (Projects team).
+  - The owner asked for plain language a person would say in an interview (2026-10-15). The
+    deck now has six slides, not five, because the market story needed its own slide:
+    1. what it is and who uses it;
+    2. why it matters for markets;
+    3. how it works;
+    4. what you see;
+    5. how the numbers stay honest;
+    6. limits and next steps.
+  - Waiting for the owner's approval, then the owner exports
+    `docs/compute-cost-risk-monitor-deck.pdf`.
+
+**Open:**
+- **6.1:** the methodology;
+- **6.3:** README extension and tests;
+- **6.5:** the walkthrough script;
+- **6.6:** the diagrams;
+- **7.1–7.4:** pre-publication;
+- **8.1–8.5:** verification and review;
+- **9.1–9.2:** the gate decision and close.
+
+**Facts and owner tasks:**
+- **STALE:** the demo turns STALE after 2026-10-19 09:00 UTC; the screenshots were taken before
+  that.
+- **API key:** in the gitignored `.env`, loaded only for a `--draft` run.
 - **Owner tasks:**
-  - rotate the 21st.dev key and move it out of `.codex/config.toml` (D15);
-  - run one or two collects on different days (D9);
-  - put `ANTHROPIC_API_KEY` in the user environment, set the USD 10 organisation spend limit
-    and turn automatic top-up off (D17);
-  - record the video (D10);
-  - export the deck PDF (D25);
-  - approve the publishing list (D5).
+  - rotate the 21st.dev key and move it out of `.codex/config.toml`;
+  - optionally run one or two collects;
+  - record the video (6.5);
+  - export the deck PDF;
+  - approve the publishing list.
 
 ## Next action
 
-The Phase 8 spec is committed on `phase-8-demo` (spec-only `docs:` commit), with a draft PR for
-the owner's review. When the owner approves the spec, start the build at task 2.1, the
-demo-history fixtures with their hand-worked answers. The first implementation commit sets
-Phase 8 to In progress in PROJECT.md §6. Each session that ends mid-phase pushes a HANDOFF update
-naming the finished and open tasks (WORKFLOW.md § Mid-phase). The publishing gate (§6) stays the
-owner's, and making the repository public comes after the merge, on the owner's decision.
+Get the owner's approval of the deck (task 6.4) and the exported PDF. Then write
+`docs/methodology.md` (6.1) in the same plain language: explain the project to a newcomer first,
+with the model-risk section and the dated futures paragraph. Then extend the README (6.3). Each
+session that ends mid-phase pushes a HANDOFF update. Making the repository public comes after
+the merge, on the owner's publishing decision.
