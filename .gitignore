@@ -32,3 +32,9 @@ data/
 
 # impeccable design-review snapshots and state (Phase 7 design D22)
 .impeccable/
+
+# Local agent config that can hold credentials, and generated copies of tracked skills
+# (Phase 8 grilling, 2026-10-14)
+.codex/config.toml
+.agents/skills/openspec-*/
+.agents/skills/source-command-opsx-*/
