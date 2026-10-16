@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-RUNTIME = {"altair", "duckdb", "pandas", "pytz", "streamlit"}
+RUNTIME = {"altair", "anthropic", "duckdb", "pandas", "pytz", "streamlit"}
 DEV = {
     "commitizen",
     "detect-secrets",
@@ -84,3 +84,18 @@ def test_unknown_hypothesis_profile_stops_with_one_message() -> None:
     done = _profile_under({"HYPOTHESIS_PROFILE": "explor"})
     assert done.returncode != 0
     assert "HYPOTHESIS_PROFILE='explor' is not a profile here" in done.stderr
+
+
+def test_only_the_drafter_imports_the_model_sdk() -> None:
+    # Phase 8 design D36: the SDK is imported by drafter.py and nowhere else.
+    package = ROOT / "src" / "compute_cost_risk_monitor"
+    importers = {
+        path.name
+        for path in package.glob("*.py")
+        if re.search(
+            r"^\s*(import anthropic|from anthropic\b)",
+            path.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+    }
+    assert importers <= {"drafter.py"}

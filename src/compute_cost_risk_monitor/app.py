@@ -133,7 +133,7 @@ def _groups(view: SourceView, choice: Choice | None) -> None:
     _table(dashboard.members_frame(group))
     if group.stats is not None:  # marketplace: one price per machine
         _table(dashboard.stats_frame(group.stats, "Machines"))
-    st.markdown(f":gray[{group.exclusions}]")
+    st.markdown(f":gray[{dashboard.exclusions_tag(group.exclusions)}]")
     summary = dashboard.find_summary(view.summaries, variant, count, rental)
     if summary is not None:
         st.markdown(
@@ -396,6 +396,15 @@ def main(known: Sequence[tuple[str, Path]], as_of: datetime) -> None:
                 _panel(each, dataset.path, as_of)
 
 
+def datasets(argv: Sequence[str]) -> tuple[tuple[str, Path], ...]:
+    """Every known database, or only the demo that `demo --serve` just built."""
+    if len(argv) == 2 and argv[0] == "--demo":
+        return ((dashboard.SYNTHETIC_DATASET, Path(argv[1])),)
+    return dashboard.KNOWN
+
+
 if __name__ == "__main__":
+    import sys
+
     # The only clock read (D15): the page's as-of time for the stale flag.
-    main(dashboard.KNOWN, datetime.now(UTC))
+    main(datasets(sys.argv[1:]), datetime.now(UTC))

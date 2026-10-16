@@ -220,11 +220,14 @@ browser shows no prices, so nothing is compared.
 The status line ("Status line and key figures") SHALL name the data and its time on every tab;
 it replaces the framing line.
 
-Every tab that shows a workload figure SHALL show a footer directly under the scenario grid:
-"Scenario calculation, not a forecast." followed by the group's exclusions text, word for word.
-It states the exclusions for every workload figure on that tab, and labels every scenario figure
-on it, the Headroom key figure included. Only when they apply, the footer then adds, each on its
-own line with its mark first:
+Every tab that shows a workload figure SHALL title its scenario grid
+"SCENARIO GRID · Δ cost, USD · <hours> h · NOT A FORECAST". The title labels every scenario
+figure on that tab, the Headroom key figure included. Directly under the grid, a footer SHALL
+start with the exclusions tag line: "EXCL. " followed by every item of the group's exclusions
+text, in its stored order, joined by " · ". The items are the text after "Excludes ", split at
+", ", without the final full stop. The tag line states the exclusions for every workload figure
+on that tab. Only when they apply, the footer then adds, each on its own line with its mark
+first:
 - "Total includes USD X storage entered by you.";
 - "* Crosses rental types (Spot → pay-as-you-go): same size, same region.", for the fallback row
   labelled "Spot → PAYG *";
@@ -234,8 +237,8 @@ own line with its mark first:
   region." (on the "*" line) or "Not computed: the price would be zero or below." (for the
   Custom row).
 
-The Comparable groups tab SHALL show the exclusions text once, in the footer style, under its
-first price table; it states the exclusions for every price and statistic on that tab.
+The Comparable groups tab SHALL show the exclusions tag line once, in the footer style, under
+its first price table; it states the exclusions for every price and statistic on that tab.
 
 Comparisons SHALL carry terse tags on the page, as muted text at body size, joined by " · "
 (not inline code, which Streamlit draws at 0.75em, below 12 px): `crosses regions` on the
@@ -273,7 +276,7 @@ in; tests SHALL inject it.
 
 #### Scenario: Footer under the grid
 - **WHEN** the scenario grid is shown with no storage, no Spot row and no marked row
-- **THEN** the footer reads "Scenario calculation, not a forecast." followed by the exclusions text, and nothing else
+- **THEN** the grid title ends "NOT A FORECAST", and the footer reads only the exclusions tag line, which on the demo is "EXCL. disks and storage · egress · public IPs · licences · taxes · negotiated discounts · reservations and savings plans · Spot eviction risk · capacity and quota"
 
 #### Scenario: Storage clause
 - **WHEN** USD 5,000 of storage is entered
@@ -289,7 +292,7 @@ in; tests SHALL inject it.
 
 #### Scenario: Every figure captioned
 - **WHEN** any group, summary or chart is shown
-- **THEN** the status line holds its data label and AS OF time, the footer style holds the exclusions text, and its Sources section holds the group key or "crosses regions", the snapshot time and the run ID
+- **THEN** the status line holds its data label and AS OF time, the footer style holds the exclusions tag line, and its Sources section holds the group key or "crosses regions", the snapshot time and the run ID
 
 #### Scenario: Synthetic framing
 - **WHEN** the latest snapshot is labelled `synthetic`
@@ -301,7 +304,7 @@ in; tests SHALL inject it.
 
 #### Scenario: Workload figures captioned
 - **WHEN** the scenario grid and COST table are shown for a Spot group with no storage entered
-- **THEN** the footer holds "Scenario calculation, not a forecast." and the exclusions text, and Sources holds the group key, snapshot time and run ID, data label, "Storage not included.", the billing assumptions line, the Spot line, `ladder-v1` and `scenarios-v1`
+- **THEN** the grid title ends "NOT A FORECAST", the footer holds the exclusions tag line, and Sources holds the group key, snapshot time and run ID, data label, "Storage not included.", the billing assumptions line, the Spot line, `ladder-v1` and `scenarios-v1`
 
 ### Requirement: Data-quality panel
 For each source in the selected database, the dashboard SHALL show a data-quality panel built from
@@ -331,7 +334,8 @@ The dashboard SHALL display:
 - USD/GPU-h and statistics to 4 decimal places;
 - the published price at its full stored precision;
 - USD amounts to 2 decimal places with thousands separators, except grid cells, which are whole
-  USD, rounded half up, with a sign and thousands separators;
+  USD, rounded half up, with a sign and thousands separators. A non-zero cell that would round to
+  0 shows 3 significant digits in positional notation, never in exponent form;
 - percentages to 1 decimal place;
 - times in UTC;
 - "n/a" in a grid cell that is not computed, and "—" for an empty input, a value not entered, or
@@ -358,6 +362,10 @@ It SHALL format values only for display and never compute from rounded values.
 #### Scenario: Not computed is not zero
 - **WHEN** a grid row is refused
 - **THEN** its cells show "n/a", never "0" or "—"
+
+#### Scenario: Tiny grid change in positional form
+- **WHEN** a grid cell is 0.000000006
+- **THEN** it is displayed as +0.000000006, never as "+6e-09"
 
 ### Requirement: Workload cost view
 The page SHALL open on its first lazy tab, "Workload cost", followed by "Comparable groups",
@@ -413,7 +421,7 @@ passes, so no price is ever shown with a refused input or a failed check.
 
 #### Scenario: Known workload on the demo
 - **WHEN** the synthetic demo is open on an H100 ×8 pay-as-you-go group with 32 GPUs and 720 hours
-- **THEN** the key figures show 4 VMs and the cost, and the grid's 32-GPU "+0.50 USD/GPU-h" cell is +11,520, with the "Scenario calculation, not a forecast." footer
+- **THEN** the key figures show 4 VMs and the cost, and the grid's 32-GPU "+0.50 USD/GPU-h" cell is +11,520, under a grid title ending "NOT A FORECAST"
 
 #### Scenario: Grid on the demo
 - **WHEN** the same workload is shown

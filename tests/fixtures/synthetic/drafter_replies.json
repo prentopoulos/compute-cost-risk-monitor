@@ -1,0 +1,22 @@
+{
+  "_label": "synthetic",
+  "_note": "Synthetic replies for the brief drafter's offline tests (Phase 8 design D36). Written by hand, never returned by a model. The valid reply names facts only through placeholders; each other case breaks one validator rule.",
+  "valid": {
+    "bottom_line": "[[bl_gpus]] [[bl_variant]] GPUs, as [[bl_vms]] × [[bl_size]] VMs for [[bl_hours]] hours, cost USD [[bl_cost]] at the lowest listed pay-as-you-go price, in [[bl_region]] at [[bl_price]] USD/GPU-h. Across [[bl_regions]] regions the lowest listed prices run from [[bl_min]] to [[bl_max]] USD/GPU-h, a workload cost of USD [[bl_cost_min]] to [[bl_cost_max]]. Holding USD [[bl_c25]] covers a +[[bl_c25_move]]% move in list price, and USD [[bl_c50]] a +[[bl_c50_move]]% move.",
+    "changes": "[[n_changes]] listed prices changed between [[prev_time]] and [[snap_time]], each for [[bl_variant]] in [[bl_region]].",
+    "absences": "[[n_absent_once]] listing is absent once (unconfirmed) and [[n_not_listed]] is not listed.",
+    "groups": "The snapshot holds [[n_groups]] region groups across [[n_variants]] GPU variants, [[n_single]] of them at a single list price.",
+    "spot": "[[n_spot_paired]] of [[n_spot]] Spot listings have the same size on pay-as-you-go in the same region; [[n_spot_equal]] equals it.",
+    "regions": "There are [[n_summaries]] cross-region summaries, [[n_thin]] of them thin.",
+    "quality": "Of [[q_obs]] observations, [[q_normalized]] are compared; the sample is too thin to read a direction from."
+  },
+  "breaks": {
+    "digit": ["changes", "Prices changed for 2 listings between [[prev_time]] and [[snap_time]]."],
+    "number_word": ["groups", "The snapshot holds twice as many groups as variants: [[n_groups]] and [[n_variants]]."],
+    "unknown_placeholder": ["regions", "There are [[n_summaries]] summaries and [[n_regions_total]] regions."],
+    "missing_contingency": ["bottom_line", "[[bl_gpus]] GPUs cost USD [[bl_cost]] in [[bl_region]], with prices from [[bl_min]] to [[bl_max]] USD/GPU-h and costs from USD [[bl_cost_min]] to [[bl_cost_max]]."],
+    "cheapest": ["spot", "The cheapest Spot listing is in [[bl_region]]."],
+    "will": ["quality", "The sample will grow with more snapshots: [[q_obs]] observations so far."],
+    "malformed": ["groups", "[[N_GROUPS]] region groups."]
+  }
+}

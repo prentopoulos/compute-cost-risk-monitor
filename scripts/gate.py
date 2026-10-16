@@ -24,7 +24,8 @@ SECRETS_BASELINE = ".secrets.baseline"
 SECRETS_BATCH = 100
 COVERAGE_DATA = ROOT / ".coverage"
 # Held at 100% coverage (Phase 6 design D3): every price, cost, exposure, quality and
-# history figure, and the rules and checks behind them.
+# history figure, and the rules and checks behind them; Phase 8 adds the market brief
+# and its independent check.
 CORE_MODULES = (
     "azure_retail",
     "normalize",
@@ -37,6 +38,8 @@ CORE_MODULES = (
     "calculator",
     "scenarios",
     "workload_check",
+    "brief",
+    "brief_check",
 )
 
 

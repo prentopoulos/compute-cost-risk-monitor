@@ -5,8 +5,9 @@ Owner: Peter Rentopoulos. Created: 2026-10-11.
 ## 1. Goal
 
 A tool that answers: **which comparable GPU cloud options are listed, what would my
-workload cost, and how exposed is my budget to changing prices?** It works today from
-observed published prices, without depending on compute futures launching.
+workload cost, and how exposed is my budget to changing prices?** It works from observed
+published list prices alone and does not use or depend on compute futures or GPU price indexes
+(owner, Phase 8 grilling, 2026-10-14).
 
 - Users: a GPU buyer sizing a workload (the product persona). Audience for the demo:
   contacts and recruiters on trading-data, compute-market and AI-product teams. For sales
@@ -23,9 +24,10 @@ observed published prices, without depending on compute futures launching.
   io.net, Akash) forbids automated collection into a database without a written agreement,
   and the owner chose not to seek one. Labelled synthetic marketplace-style offers exercise
   the marketplace-only rules (duplicates, re-listing, thin samples).
-- Budget: eight focused sessions, roughly 24–29 hours, built alongside exams by replacing
-  some study blocks rather than adding a full workload. The owner added the eighth, Phase 7
-  (front-office interface), on 2026-10-13.
+- Budget: eight focused sessions, roughly 24–29 hours. The owner added the eighth, Phase 7
+  (front-office interface), on 2026-10-13. On 2026-10-14 the owner made Phase 8 the final
+  phase: it may run over several sessions as one phase, may pass the hours above, and ends
+  with the repository ready to make public (Phase 8 design D1).
 
 ## 2. Current scope boundary
 
@@ -43,17 +45,24 @@ In scope (one phase per session, see §6):
 - Budget exposure: cost changes under explicitly labelled price scenarios. Example:
   32 GPUs × 720 hours × a $0.50/hour increase = $11,520 additional monthly expense.
 - Data-quality panel: missing fields, duplicates, stale observations and thin samples.
-- Market brief: observed changes, each linked to its underlying records.
+- Market brief: a buyer's bottom line and the observed changes, each number linked to its
+  records and re-derived by an independent check. An AI model drafts its prose only, from
+  synthetic figures, and writes no number (Phase 8, ⛔ spend decision in §6).
+- Public demo (Phase 8): the repository made public on the operator's decision, with a README,
+  methodology, six-slide deck and walkthrough, all on synthetic data. The app runs from a
+  clone; it is not hosted.
 
 Deferred or out of scope:
 
 - A second source, added only after its access, terms and comparable fields are verified
   (⛔ below). Cross-provider comparisons are out of scope.
 - Trend claims, made only after several weeks of collection.
-- The optional AI agent, which may only draft the market brief from validated numbers (⛔ spend).
-  The setup kit's AI-ops skill and AI_OPS.md were installed on 2026-10-15, before proposing it.
+- Any AI use beyond drafting the brief's prose: no model computes a figure, runs in the
+  dashboard, tests or CI, or reads collected Azure prices. The setup kit's AI-ops skill and
+  AI_OPS.md were installed on 2026-10-15, before the drafter was proposed.
 - Renting, creating or modifying instances, or any account action beyond reading offers.
-- Accounts, logins or multiple users. Hosting before Phase 8 (⛔ publishing).
+- Accounts, logins or multiple users. Hosting the app: Phase 8 publishes the repository only
+  (Phase 8 design D4).
 
 Data: real public Azure list prices once the live-data ⛔ gate is resolved. Tests use
 synthetic fixtures, labelled as such; no real source data is committed to Git. Runs
@@ -111,23 +120,33 @@ user before each later phase. Evidence that counts in every phase:
   grilling decisions (front-office interface: dark desk theme, a status line and key
   figures, one scenario grid `ladder-v1`, no helper text, an approved Figma mock; owner
   answered every owner call on 2026-10-13 and approved mock v3 on 2026-10-14) are cited in
-  `openspec/changes/archive/2026-10-14-phase-7-interface/design.md` D1–D50. Vast.ai
+  `openspec/changes/archive/2026-10-14-phase-7-interface/design.md` D1–D50. Phase 8
+  grilling decisions (the final phase, public form, one synthetic demo history, the brief and
+  its bottom line, the AI drafter, documents and pre-publication; owner answered every owner
+  call on 2026-10-14 and 2026-10-15) are cited in
+  `openspec/changes/archive/2026-10-16-phase-8-demo/design.md` D1–D47. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
   adjusts for configuration and rental-condition differences. This project shows those
   problems are understood; it does not claim to be an index.
-- Optional: an LLM to draft the market brief from validated numbers. Provider TBD (⛔ spend).
+- LLM: the Anthropic Claude API (`claude-opus-5-5`) drafts the market brief's prose only,
+  from validated synthetic figures (Phase 8; spend decision in §6). AI_OPS.md maps it to its
+  evidence.
 - Architecture diagrams: [FigJam board](https://www.figma.com/board/JISCFP9eQzMq5QVg1k2V2A)
   on the owner's Pro seat (Projects team), confirmed in Phase 1 (owner): C4 system context, C4
   container (built or planned) and an ERD of the DuckDB schema. The C4 views are flowcharts in
-  C4 notation because Figma's diagram tool has no C4 type. Exported as SVG to
+  C4 notation because Figma's diagram tool has no C4 type. They follow the C4 notation guide
+  (c4model.com, owner, 2026-10-15): a typed title and a key on each view, a description on
+  every element, a verb and [technology] on every line, and only containers (programs and data
+  stores) in the container view. Exported as SVG to
   `docs/architecture/`; update them when a phase changes components, data flow or schema.
 - Code review: every PR that changes code is reviewed before merge (WORKFLOW.md).
 
 Gate: `uv run --frozen python scripts/gate.py` after `uv sync --locked` and `npm ci --ignore-scripts`; CI runs it plus
 `uv audit --locked --preview-features audit-command` on every PR and push to main.
-Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (private). Push phase
+Remote: https://github.com/prentopoulos/compute-cost-risk-monitor (public, the owner's
+decision recorded in §6 on 2026-10-15). Push phase
 branches and open PRs at the points WORKFLOW.md sets; nothing goes straight to main, and a PR
 merges only after its review and the user's go-ahead. Follow WORKFLOW.md for phase work.
 
@@ -192,7 +211,7 @@ brief lists.
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
 | 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Done |
-| 8 | Public demo, methodology document, market brief, two-minute walkthrough; diagrams updated | Planned |
+| 8 | Public demo, methodology document, market brief with AI-drafted prose, README and six-slide deck, two-minute walkthrough; diagrams updated. The final phase | Done |
 
 ### ⛔ Before reading live data from any source
 
@@ -232,11 +251,41 @@ brief lists.
 - Decision, 2026-10-11 (owner, Phase 0 grilling): GitHub Actions CI may use the account's free
   included minutes; the owner confirmed overage cannot bill. Scope: the Phase 0 CI workflow
   and its later updates. It approves no paid service.
+- Decision, 2026-10-14 (owner, Phase 8 grilling): approved: the Anthropic Claude API,
+  `claude-opus-5-5`, to draft the Phase 8 market brief's prose only. Scope:
+  - budget USD 5, up to USD 10 in total if needed;
+  - runs are started by hand, use synthetic figures only, and never run in CI, tests or the
+    app;
+  - an organisation spend limit of USD 10 in the provider console, with automatic top-up off;
+  - the API key in the user environment, never in the repo.
+
+  It approves no other model, provider or use.
 
 ### ⛔ Before publishing
 
 - [ ] Operator approves making the GitHub repo public, deploying the demo, and sharing the
       walkthrough or brief, including the data and caveats they show.
+- Decision, recorded 2026-10-15 (owner): the owner has made the GitHub repository public, with
+  what is on `main` and the open branches, and asked for the six-slide deck to go on `main` at
+  once. GitHub's event log does not show clearly when visibility changed. The change came before
+  the Phase 8 pre-publication record, which was made on 2026-10-15: a secret
+  scan of every blob in the history, the survey for figures from collected prices, and the
+  personal details. It is in the Phase 8 review record. It approves no hosting, and no sharing of
+  the video. The brief, the methodology and the publishing list still come through the Phase 8 PR.
+- Decision, 2026-10-15 (owner): approved the Phase 8 publishing list in
+  `docs/reviews/2026-10-16-phase-8-demo.md`. Scope:
+  - **public:** everything tracked, with the full Git history. That covers the code, tests and
+    invented fixtures, the OpenSpec records, the README, methodology, brief, deck, walkthrough
+    video, screenshots, diagrams and review records, AI_OPS.md, HANDOFF.md, PROJECT.md and the
+    vendored skills;
+  - **data:** "No live Azure price, cost, exposure or SKU-level price figure appears.
+    Aggregate counts and coarse distributions from the one local snapshot appear in design and
+    review records.";
+  - **not public:** `data/` (collected prices, original responses, local databases) and `.env`;
+    no app is hosted.
+
+  The walkthrough video is in the repository (PR #16, at the owner's request), not on a video
+  site.
 
 Record explicit operator decisions already given, with scope and date; do not request them
 again. Gates without such a decision remain unresolved. Local work proceeds independently.

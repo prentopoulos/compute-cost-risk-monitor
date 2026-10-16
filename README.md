@@ -2,24 +2,40 @@
 
 [![CI](https://github.com/prentopoulos/compute-cost-risk-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/prentopoulos/compute-cost-risk-monitor/actions/workflows/ci.yml)
 ![Python 3.13](https://img.shields.io/badge/python-3.13-blue)
-![Status: in development](https://img.shields.io/badge/status-in%20development-orange)
+![Status: portfolio demo](https://img.shields.io/badge/status-portfolio%20demo-blue)
 
 **What would this GPU workload cost at Azure list prices, and how exposed is the budget if those prices move?**
 
-Compute Cost & Risk Monitor reads Microsoft Azure's published retail list prices for GPU virtual
-machines. It sorts them into comparable groups, converts them to USD per GPU-hour, and prices a
-workload under labelled scenarios. Every figure traces back to the stored price record it came
-from, and deterministic code computes every number.
+<!-- bottom-line:start -->
+> **Bottom line** · SYNTHETIC DATA — NOT AZURE LIST PRICES · prices as of 2026-10-12 09:00 UTC
+>
+> 32 H100 NVLink 80GB GPUs (4 × ND96isr H100 v5) for 720 hours cost **USD 276,480.00** at the
+> lowest listed pay-as-you-go price: US East, 12.0000 USD/GPU-h. Across 5 regions, the lowest
+> listed prices for this GPU and count run 12.0000–15.0000 USD/GPU-h, so the same workload costs
+> USD 276,480.00–345,600.00. Setting aside USD 69,120.00 covers a +25% list-price rise, and
+> USD 138,240.00 a +50% rise.
+>
+> Scenario calculation, not a forecast. Not included: storage, data transfer, IP addresses,
+> licences, taxes, discounts, reserved-price plans, Spot interruptions and availability limits.
+<!-- bottom-line:end -->
 
-**In active development.** The dashboard, workload calculator, scenario grid and data-quality
-checks run today. The final phase adds a market brief, a methodology document and a short
-walkthrough.
+Compute Cost & Risk Monitor reads Microsoft Azure's published list prices for GPU virtual
+machines, makes them comparable as USD per GPU-hour, and prices a workload under what-if price
+moves. Every figure traces back to the price record it came from. The public demo runs on
+invented prices, labelled on every screen.
 
-**Start here:** [the six-slide deck](docs/compute-cost-risk-monitor-deck.pdf) explains what the
-project is, why it matters and how it works, using invented prices.
+- **Start here:** [the six-slide deck](docs/compute-cost-risk-monitor-deck.pdf) explains what the
+  project is, why it matters and how it works.
+- **Watch:** [the walkthrough video](docs/compute-cost-risk-monitor-walkthrough.mp4) (1:58, with
+  captions).
+- **Read:** [the methodology](docs/methodology.md) and [the market brief](docs/brief/brief.md).
 
-**Watch:** [the walkthrough video](docs/compute-cost-risk-monitor-walkthrough.mp4) (1:58, with
-captions, on invented prices).
+The market brief is AI-powered: Claude drafts its text, and the code fills in every figure.
+
+![Workload cost on the synthetic demo](docs/assets/workload-cost-synthetic.png)
+
+*Workload cost on the synthetic demo: 32 H100 GPUs (4 × ND96isr H100 v5), pay-as-you-go in US
+East, for 720 hours at 12.0000 USD/GPU-h. Invented prices, dated 12 October 2026 (UTC).*
 
 ## What you get
 
@@ -27,11 +43,13 @@ captions, on invented prices).
   **synthetic demo** that runs offline.
 - **Workload cost:** GPUs × hours × USD/GPU-hour, plus storage only when you enter it, with every
   exclusion stated.
-- A **scenario grid:** the change in cost for list-price moves from −50% to +100% (and
+- A **what-if grid:** the change in cost for list-price moves from −50% to +100% (and
   +0.50 USD/GPU-h), for 8 to 128 GPUs. A scenario calculation, not a forecast.
 - **Comparable groups** across regions, with thin samples flagged, and a **data-quality panel**
   for missing, duplicate, stale and unmapped rows.
-- A **collector** for Microsoft's public Retail Prices API that paces itself to one request per
+- An AI-powered **market brief** for each snapshot: the bottom line first, then price changes,
+  absences, groups and data quality.
+- A **collector** for Microsoft's public Retail Prices API that sends at most one request a
   second and keeps every original response.
 
 It is **not** a marketplace, a price index or benchmark, executed trades, what customers actually
@@ -42,22 +60,17 @@ pay, or a price forecast. It covers one provider, Azure, and list prices only.
 | List price | Azure's published hourly price for a VM size in a region. Not what a customer with negotiated discounts pays. |
 | USD/GPU-h | The VM's hourly list price divided by the GPUs in that VM. |
 | Comparable group | Same GPU model and variant, GPUs per VM, region and rental type. Prices are compared only within a group, or the comparison says it crosses groups. |
-| Pay-as-you-go / Spot | Azure's standard price / its lower price for capacity Azure can reclaim. Eviction risk is not priced. |
+| Pay-as-you-go / Spot | Azure's standard price / its lower price for capacity Azure can reclaim. The risk of being reclaimed is not priced. |
 | Single list price | A group with one listed price, so there is nothing to compare inside it. |
 | Thin | A cross-region figure from fewer than 5 regions. |
 | Stale | The latest snapshot is more than 7 days old. |
 | Absent once / not listed | Missing from one snapshot (unconfirmed) / missing from two in a row. |
 | Synthetic | Invented prices for demonstration, labelled on every screen. |
 
-![Workload cost on the synthetic demo](docs/reviews/2026-10-14-phase-7-screenshots/workload-spot-synthetic.jpg)
+Public screenshots, the deck and the video always use the synthetic demo. Collected Azure list
+prices stay on the machine that collected them.
 
-*Workload cost on the synthetic demo: 32 H100 GPUs (4 × ND96isr H100 v5) on Spot in EU West for
-720 hours, at 5.0000 USD/GPU-h. Invented prices, dated 12 October 2026 (UTC).*
-
-Public screenshots always use the synthetic demo. Collected Azure list prices stay on the machine
-that collected them.
-
-## Try it first — no account or key needed
+## Try it — no account or key needed
 
 You need **Git** and **[uv](https://docs.astral.sh/uv/getting-started/installation/) 0.13 or
 newer**. uv installs Python 3.13 and the locked packages on first use, so the first run needs
@@ -67,18 +80,16 @@ internet access. The demo then runs offline. On Windows, clone into a short fold
 ```bash
 git clone https://github.com/prentopoulos/compute-cost-risk-monitor.git
 cd compute-cost-risk-monitor
-uv run --locked python -m compute_cost_risk_monitor.synthetic tests/fixtures/synthetic/azure_demo.json tests/fixtures/synthetic/marketplace/snapshot-1.json tests/fixtures/synthetic/marketplace/snapshot-2.json tests/fixtures/synthetic/marketplace/snapshot-3.json
-uv run --locked python -m compute_cost_risk_monitor.normalize --db data/synthetic.duckdb
-uv run --locked streamlit run src/compute_cost_risk_monitor/app.py
+uv run --locked python -m compute_cost_risk_monitor.demo --serve
 ```
 
-The same commands work in Windows PowerShell and on macOS or Linux. Open
-**http://127.0.0.1:8501** and stop with Ctrl+C. The first command stores the synthetic snapshots
-in `data/synthetic.duckdb`; it never writes to the database of collected prices. To rebuild the
-demo, delete that file first.
+The last command builds the demo database, `data/synthetic.duckdb`, from the committed invented
+snapshots and opens the dashboard at **http://127.0.0.1:8501**. Stop it with Ctrl+C. Run it again
+to rebuild the demo; it never touches the database of collected prices. The same commands work in
+Windows PowerShell and on macOS or Linux.
 
-The demo data is dated 12 October 2026 09:00 UTC, so after the same time on 19 October the
-dashboard marks it STALE. That is the 7-day rule working.
+The demo's prices are dated 12 October 2026 09:00 UTC, so from 09:00 UTC on 19 October the
+dashboard marks them STALE. That is the 7-day rule working.
 
 ## Choose how to run it
 
@@ -86,9 +97,10 @@ Run these from the repository folder.
 
 | Mode | Command | Requires |
 | --- | --- | --- |
-| Synthetic demo | The commands above | Nothing beyond the first install |
+| Synthetic demo | `uv run --locked python -m compute_cost_risk_monitor.demo --serve` | Nothing beyond the first install |
 | Collect Azure list prices | `uv run --locked python -m compute_cost_risk_monitor.collect`, then `uv run --locked python -m compute_cost_risk_monitor.normalize` | Internet. Reads Microsoft's public, unauthenticated Retail Prices API; refuses a second fetch within 24 hours |
 | Data-quality report | `uv run --locked python -m compute_cost_risk_monitor.quality [--db FILE]` | A collected or synthetic database |
+| Market brief | `uv run --locked python -m compute_cost_risk_monitor.brief --db data/synthetic.duckdb` | A database. Writes to `data/briefs/<run ID>/` with the plain template; `--draft` asks Claude for the text, on invented data only, and needs an `ANTHROPIC_API_KEY` |
 | Dashboard | `uv run --locked streamlit run src/compute_cost_risk_monitor/app.py` | Offers whichever databases exist, collected prices first |
 
 The collector only reads published prices: it never calls anything that creates or changes cloud
@@ -121,16 +133,31 @@ the same workload costs 276,480.00 USD at list price.
 - **Traceability:** every price keeps its source item ID, retrieval time (UTC), original response,
   currency, unit and rental type. Every collection run is labelled `synthetic`, `recorded` or
   `live` by how its bytes were obtained.
-- **Independent checks:** separate code recomputes the normalized prices and every workload and
-  scenario figure before the dashboard shows them. A figure that fails its check is withheld.
+- **Independent checks:** separate code recomputes the normalized prices, every workload and
+  scenario figure, and every number in the brief before they are shown or saved. A figure that
+  fails its check is withheld.
+
+## Limits and model risk
+
+- **Data:** one provider and its list prices only. There is one real snapshot so far, so no
+  trends. Sizes that Microsoft Learn doesn't name exactly are left out.
+- **Method:** the list price is treated as the price paid. What-if moves are round numbers chosen
+  by judgement, not forecasts. The risk of Spot capacity being reclaimed is not priced.
+- **Process:** the quality gate runs on every change. Before publishing, the whole Git history
+  was scanned for secrets and for real prices.
+- **AI:** Claude drafts only the brief's text, from invented figures. It never runs in the
+  dashboard, the tests or CI.
+
+The [methodology](docs/methodology.md#6-limitations-and-model-risk) sets out each risk with its
+control and its tests, following the US banking guidance on model risk (SR 11-7).
 
 ## Project layout
 
 ```text
-src/compute_cost_risk_monitor/   Collector, normalization, groups, history, calculator, scenarios, checks, dashboard
+src/compute_cost_risk_monitor/   Collector, normalization, groups, history, calculator, scenarios, brief, checks, dashboard
 tests/                           Unit, end-to-end and property tests on synthetic fixtures; no network
 openspec/                        Current requirements, and each phase's proposal, design decisions and tasks
-docs/                            Architecture diagrams and review records
+docs/                            Methodology, market brief, deck, video, screenshots, diagrams and review records
 scripts/                         The quality gate
 ```
 

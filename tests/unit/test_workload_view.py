@@ -181,6 +181,12 @@ def test_missing_published_price_fails_the_check(found: list[RegionGroup]) -> No
 
 # --- known figures on the demo (phase-7 D6, D7, D9, D32-D39) ---
 
+# The footer's first line on the demo, worked out by hand (Phase 8 D30).
+TAG = (
+    "EXCL. disks and storage · egress · public IPs · licences · taxes · negotiated"
+    " discounts · reservations and savings plans · Spot eviction risk · capacity and"
+    " quota"
+)
 EXCLUSIONS = (
     "Excludes disks and storage, egress, public IPs, licences, taxes, negotiated"
     " discounts, reservations and savings plans, Spot eviction risk, capacity and"
@@ -264,6 +270,7 @@ def test_grid_on_the_demo(found: list[RegionGroup]) -> None:
     ]
     assert dashboard.grid_title(KNOWN) == (
         ":gray[**SCENARIO GRID** ·] **Δ cost, USD · 720 h**"  # D7's title
+        " :gray[· **NOT A FORECAST**]"  # Phase 8 D30
     )
 
 
@@ -317,6 +324,11 @@ def test_grid_cells() -> None:
     assert dashboard.grid_cell(-13_824.0) == "−13,824"
     assert dashboard.grid_cell(0.0) == "0"
     assert dashboard.grid_cell(-0.004) == "−0.004"  # never shown as 0
+    # Positional, never exponent form, at 3 significant digits (Phase 8 D14).
+    assert dashboard.grid_cell(0.000000006) == "+0.000000006"
+    assert dashboard.grid_cell(-0.000012345) == "−0.0000123"
+    assert dashboard.grid_cell(0.1235) == "+0.124"  # half up
+    assert dashboard.grid_cell(0.0012) == "+0.0012"
     # Whole USD round half up, not to even (D50).
     assert [dashboard.grid_cell(v) for v in (0.5, 2.5, 3.5, -2.5, 27_648.5)] == [
         "+1",
@@ -358,9 +370,7 @@ def test_refused_custom_row_shows_na(found: list[RegionGroup]) -> None:
 
 def test_footer_clauses(found: list[RegionGroup]) -> None:
     # One line per clause, each starting with its mark (D49).
-    assert dashboard.footer(result(found)) == [
-        f"Scenario calculation, not a forecast. {EXCLUSIONS}"
-    ]
+    assert dashboard.footer(result(found)) == [TAG]
     stored = dashboard.footer(result(found, work=Workload(32, 720.0, 5_000.0)))
     assert stored[1:] == ["Total includes USD 5,000.00 storage entered by you."]
     unlisted = dashboard.footer(result(found, "uksouth", "spot"))
@@ -388,6 +398,14 @@ def test_footer_clauses(found: list[RegionGroup]) -> None:
     assert dashboard.footer_text(result(found, "eastus", "spot")) == "  \n".join(
         f":gray[{line}]" for line in marked
     )
+
+
+def test_exclusions_tag_keeps_every_item() -> None:
+    assert dashboard.exclusions_tag(EXCLUSIONS) == TAG
+    assert TAG.count(" · ") == 8  # nine items, none dropped
+    # Text of another shape is shown whole rather than cut (Phase 8 D30).
+    assert dashboard.exclusions_tag("Storage excluded") == "Storage excluded"
+    assert dashboard.exclusions_tag("Excludes egress") == "Excludes egress"
 
 
 def test_workload_sources(found: list[RegionGroup]) -> None:

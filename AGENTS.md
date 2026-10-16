@@ -23,7 +23,8 @@ pricing, workload costs, budget exposure and the market brief.
 - Data is published list prices, read-only. Never create or change cloud resources.
 - Tests use synthetic or recorded fixtures. Live reads, scheduled collection, paid calls and
   publishing wait for their ⛔ gates.
-- An AI agent is optional and only drafts the market brief from validated numbers.
+- An AI model only drafts the market brief's prose from validated synthetic numbers (Phase 8,
+  under the spend decision in PROJECT.md §6).
 
 ## Non-negotiables
 

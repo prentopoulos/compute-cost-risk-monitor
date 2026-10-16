@@ -1,0 +1,1939 @@
+{
+  "as_of": "2026-10-12 09:00 UTC",
+  "data_label": "synthetic",
+  "exclusions": "Excludes disks and storage, egress, public IPs, licences, taxes, negotiated discounts, reservations and savings plans, Spot eviction risk, capacity and quota.",
+  "facts": {
+    "abs_1_seen": {
+      "derived_from": [],
+      "group": null,
+      "id": "abs_1_seen",
+      "meaning": "last snapshot with it",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": null
+        }
+      ],
+      "text": "2026-10-05 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-05 09:00 UTC"
+    },
+    "abs_1_since": {
+      "derived_from": [],
+      "group": null,
+      "id": "abs_1_since",
+      "meaning": "first snapshot without it",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "2026-10-12 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-12 09:00 UTC"
+    },
+    "abs_2_seen": {
+      "derived_from": [],
+      "group": null,
+      "id": "abs_2_seen",
+      "meaning": "last snapshot with it",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20260928T090000Z-f69c3e",
+          "sha256": "f69c3e5397031c96203cd54f69b82a536ccdf736f66eb69cbf064ca2421fccf3",
+          "unit": null
+        }
+      ],
+      "text": "2026-09-28 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-09-28 09:00 UTC"
+    },
+    "abs_2_since": {
+      "derived_from": [],
+      "group": null,
+      "id": "abs_2_since",
+      "meaning": "first snapshot without it",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": null
+        }
+      ],
+      "text": "2026-10-05 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-05 09:00 UTC"
+    },
+    "as_of": {
+      "derived_from": [],
+      "group": null,
+      "id": "as_of",
+      "meaning": "the brief's as-of time",
+      "reason": null,
+      "records": [],
+      "text": "2026-10-12 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-12 09:00 UTC"
+    },
+    "bl_c25": {
+      "derived_from": [
+        "bl_gpus",
+        "bl_hours",
+        "bl_price",
+        "bl_c25_move"
+      ],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_c25",
+      "meaning": "the contingency covering the +25% move",
+      "reason": null,
+      "records": [],
+      "text": "69,120.00",
+      "unit": "USD",
+      "value": 69120.0
+    },
+    "bl_c25_move": {
+      "derived_from": [],
+      "group": null,
+      "id": "bl_c25_move",
+      "meaning": "a ladder-v1 list-price move",
+      "reason": null,
+      "records": [],
+      "text": "25",
+      "unit": "%",
+      "value": 25.0
+    },
+    "bl_c50": {
+      "derived_from": [
+        "bl_gpus",
+        "bl_hours",
+        "bl_price",
+        "bl_c50_move"
+      ],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_c50",
+      "meaning": "the contingency covering the +50% move",
+      "reason": null,
+      "records": [],
+      "text": "138,240.00",
+      "unit": "USD",
+      "value": 138240.0
+    },
+    "bl_c50_move": {
+      "derived_from": [],
+      "group": null,
+      "id": "bl_c50_move",
+      "meaning": "a ladder-v1 list-price move",
+      "reason": null,
+      "records": [],
+      "text": "50",
+      "unit": "%",
+      "value": 50.0
+    },
+    "bl_cost": {
+      "derived_from": [
+        "bl_gpus",
+        "bl_hours",
+        "bl_price"
+      ],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_cost",
+      "meaning": "the workload's cost at the lowest listed price",
+      "reason": null,
+      "records": [],
+      "text": "276,480.00",
+      "unit": "USD",
+      "value": 276480.0
+    },
+    "bl_cost_max": {
+      "derived_from": [
+        "bl_gpus",
+        "bl_hours",
+        "bl_max"
+      ],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_cost_max",
+      "meaning": "the workload's cost at the highest regional price",
+      "reason": null,
+      "records": [],
+      "text": "345,600.00",
+      "unit": "USD",
+      "value": 345600.0
+    },
+    "bl_cost_min": {
+      "derived_from": [
+        "bl_gpus",
+        "bl_hours",
+        "bl_min"
+      ],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_cost_min",
+      "meaning": "the workload's cost at the lowest regional price",
+      "reason": null,
+      "records": [],
+      "text": "276,480.00",
+      "unit": "USD",
+      "value": 276480.0
+    },
+    "bl_gpus": {
+      "derived_from": [],
+      "group": null,
+      "id": "bl_gpus",
+      "meaning": "GPUs in the workload",
+      "reason": null,
+      "records": [],
+      "text": "32",
+      "unit": "GPUs",
+      "value": 32
+    },
+    "bl_hours": {
+      "derived_from": [],
+      "group": null,
+      "id": "bl_hours",
+      "meaning": "hours in the workload",
+      "reason": null,
+      "records": [],
+      "text": "720",
+      "unit": "hours",
+      "value": 720.0
+    },
+    "bl_max": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_max",
+      "meaning": "the highest of the regions' lowest listed prices for this GPU and count",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "15.0000",
+      "unit": "USD/GPU-h",
+      "value": 15.0
+    },
+    "bl_min": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_min",
+      "meaning": "the lowest listed price for this GPU and count, across regions",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "bl_price": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_price",
+      "meaning": "the lowest listed pay-as-you-go price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "bl_region": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_region",
+      "meaning": "the region of the lowest listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "US East",
+      "unit": "text",
+      "value": "eastus"
+    },
+    "bl_regions": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_regions",
+      "meaning": "regions listing this GPU and count",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000103|SYNTH0103/0001|southcentralus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000104|SYNTH0104/0001|westus3|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "5",
+      "unit": "regions",
+      "value": 5
+    },
+    "bl_size": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "bl_size",
+      "meaning": "the lowest listed size",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "ND96isr H100 v5",
+      "unit": "text",
+      "value": "Standard_ND96isr_H100_v5"
+    },
+    "bl_variant": {
+      "derived_from": [],
+      "group": null,
+      "id": "bl_variant",
+      "meaning": "the GPU variant",
+      "reason": null,
+      "records": [],
+      "text": "H100 NVLink 80GB",
+      "unit": "text",
+      "value": "H100 NVLink 80GB"
+    },
+    "bl_vms": {
+      "derived_from": [
+        "bl_gpus"
+      ],
+      "group": null,
+      "id": "bl_vms",
+      "meaning": "VMs the workload needs",
+      "reason": null,
+      "records": [],
+      "text": "4",
+      "unit": "VMs",
+      "value": 4
+    },
+    "chg_1_after": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_1_after",
+      "meaning": "US East · ND96isr H100 v5 · pay-as-you-go · linux: the later price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "96.00",
+      "unit": "USD/VM-h",
+      "value": 96.0
+    },
+    "chg_1_after_gpu": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_1_after_gpu",
+      "meaning": "US East · ND96isr H100 v5 · pay-as-you-go · linux: the after price per GPU-hour",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "chg_1_before": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_1_before",
+      "meaning": "US East · ND96isr H100 v5 · pay-as-you-go · linux: the earlier price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-05 09:00 UTC",
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "88.00",
+      "unit": "USD/VM-h",
+      "value": 88.0
+    },
+    "chg_1_before_gpu": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_1_before_gpu",
+      "meaning": "US East · ND96isr H100 v5 · pay-as-you-go · linux: the before price per GPU-hour",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-05 09:00 UTC",
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "11.0000",
+      "unit": "USD/GPU-h",
+      "value": 11.0
+    },
+    "chg_2_after": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_2_after",
+      "meaning": "US East · ND96isr H100 v5 · Spot · linux: the later price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "96.00",
+      "unit": "USD/VM-h",
+      "value": 96.0
+    },
+    "chg_2_after_gpu": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_2_after_gpu",
+      "meaning": "US East · ND96isr H100 v5 · Spot · linux: the after price per GPU-hour",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "chg_2_before": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_2_before",
+      "meaning": "US East · ND96isr H100 v5 · Spot · linux: the earlier price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-05 09:00 UTC",
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "88.00",
+      "unit": "USD/VM-h",
+      "value": 88.0
+    },
+    "chg_2_before_gpu": {
+      "derived_from": [],
+      "group": null,
+      "id": "chg_2_before_gpu",
+      "meaning": "US East · ND96isr H100 v5 · Spot · linux: the before price per GPU-hour",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-05 09:00 UTC",
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "11.0000",
+      "unit": "USD/GPU-h",
+      "value": 11.0
+    },
+    "grp_1_n": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_1_n",
+      "meaning": "A100 PCIe 80GB: region groups",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "grp_1_single": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_1_single",
+      "meaning": "A100 PCIe 80GB: groups with a single list price",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "grp_2_n": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_2_n",
+      "meaning": "H100 NVLink 80GB: region groups",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "8",
+      "unit": "count",
+      "value": 8
+    },
+    "grp_2_single": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_2_single",
+      "meaning": "H100 NVLink 80GB: groups with a single list price",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "8",
+      "unit": "count",
+      "value": 8
+    },
+    "grp_3_n": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_3_n",
+      "meaning": "T4 16GB: region groups",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "2",
+      "unit": "count",
+      "value": 2
+    },
+    "grp_3_single": {
+      "derived_from": [],
+      "group": null,
+      "id": "grp_3_single",
+      "meaning": "T4 16GB: groups with a single list price",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "n_absent_once": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_absent_once",
+      "meaning": "listings absent once (unconfirmed)",
+      "reason": null,
+      "records": [],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "n_changes": {
+      "derived_from": [
+        "prev_time",
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_changes",
+      "meaning": "listed prices that changed since the previous snapshot",
+      "reason": null,
+      "records": [],
+      "text": "2",
+      "unit": "count",
+      "value": 2
+    },
+    "n_days": {
+      "derived_from": [],
+      "group": null,
+      "id": "n_days",
+      "meaning": "days from the first snapshot to the latest",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "14",
+      "unit": "count",
+      "value": 14
+    },
+    "n_groups": {
+      "derived_from": [],
+      "group": null,
+      "id": "n_groups",
+      "meaning": "region groups in the latest snapshot",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "11",
+      "unit": "count",
+      "value": 11
+    },
+    "n_not_listed": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_not_listed",
+      "meaning": "listings not listed: absent from two snapshots in a row",
+      "reason": null,
+      "records": [],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "n_single": {
+      "derived_from": [],
+      "group": null,
+      "id": "n_single",
+      "meaning": "region groups with a single list price",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "10",
+      "unit": "count",
+      "value": 10
+    },
+    "n_snapshots": {
+      "derived_from": [],
+      "group": null,
+      "id": "n_snapshots",
+      "meaning": "succeeded snapshots",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "3",
+      "unit": "count",
+      "value": 3
+    },
+    "n_spot": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_spot",
+      "meaning": "Spot listings for this GPU and count",
+      "reason": null,
+      "records": [],
+      "text": "3",
+      "unit": "count",
+      "value": 3
+    },
+    "n_spot_above": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_spot_above",
+      "meaning": "of them, those above that pay-as-you-go price",
+      "reason": null,
+      "records": [],
+      "text": "0",
+      "unit": "count",
+      "value": 0
+    },
+    "n_spot_equal": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_spot_equal",
+      "meaning": "of them, those equal to that pay-as-you-go price",
+      "reason": null,
+      "records": [],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "n_spot_paired": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_spot_paired",
+      "meaning": "of them, those with the same size on pay-as-you-go in the same region",
+      "reason": null,
+      "records": [],
+      "text": "2",
+      "unit": "count",
+      "value": 2
+    },
+    "n_summaries": {
+      "derived_from": [
+        "snap_time"
+      ],
+      "group": null,
+      "id": "n_summaries",
+      "meaning": "cross-region summaries",
+      "reason": null,
+      "records": [],
+      "text": "4",
+      "unit": "count",
+      "value": 4
+    },
+    "n_thin": {
+      "derived_from": [
+        "snap_time",
+        "thin_below"
+      ],
+      "group": null,
+      "id": "n_thin",
+      "meaning": "thin cross-region summaries",
+      "reason": null,
+      "records": [],
+      "text": "3",
+      "unit": "count",
+      "value": 3
+    },
+    "n_variants": {
+      "derived_from": [],
+      "group": null,
+      "id": "n_variants",
+      "meaning": "GPU variants",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "3",
+      "unit": "count",
+      "value": 3
+    },
+    "prev_time": {
+      "derived_from": [],
+      "group": null,
+      "id": "prev_time",
+      "meaning": "start of the previous snapshot",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261005T090000Z-101e6e",
+          "sha256": "101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8",
+          "unit": null
+        }
+      ],
+      "text": "2026-10-05 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-05 09:00 UTC"
+    },
+    "q_normalized": {
+      "derived_from": [],
+      "group": null,
+      "id": "q_normalized",
+      "meaning": "observations compared",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "12",
+      "unit": "count",
+      "value": 12
+    },
+    "q_obs": {
+      "derived_from": [],
+      "group": null,
+      "id": "q_obs",
+      "meaning": "observations in the latest snapshot",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "14",
+      "unit": "count",
+      "value": 14
+    },
+    "q_reason_2": {
+      "derived_from": [],
+      "group": null,
+      "id": "q_reason_2",
+      "meaning": "excluded as unmapped_sku",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "q_reason_3": {
+      "derived_from": [],
+      "group": null,
+      "id": "q_reason_3",
+      "meaning": "excluded as windows",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "q_unmapped": {
+      "derived_from": [],
+      "group": null,
+      "id": "q_unmapped",
+      "meaning": "sizes not in the GPU map",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "1",
+      "unit": "count",
+      "value": 1
+    },
+    "reg_1_max": {
+      "derived_from": [],
+      "group": "A100 PCIe 80GB × 1 · pay-as-you-go",
+      "id": "reg_1_max",
+      "meaning": "A100 PCIe 80GB × 1 · pay-as-you-go: the highest regional price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000111|SYNTH0111/0001|eastus|Consumption||0.0|USD|Standard_NC24ads_A100_v4",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "3.8000",
+      "unit": "USD/GPU-h",
+      "value": 3.8
+    },
+    "reg_1_median": {
+      "derived_from": [],
+      "group": "A100 PCIe 80GB × 1 · pay-as-you-go",
+      "id": "reg_1_median",
+      "meaning": "A100 PCIe 80GB × 1 · pay-as-you-go: the median, a statistic, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000111|SYNTH0111/0001|eastus|Consumption||0.0|USD|Standard_NC24ads_A100_v4",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "3.8000",
+      "unit": "USD/GPU-h",
+      "value": 3.8
+    },
+    "reg_1_min": {
+      "derived_from": [],
+      "group": "A100 PCIe 80GB × 1 · pay-as-you-go",
+      "id": "reg_1_min",
+      "meaning": "A100 PCIe 80GB × 1 · pay-as-you-go: the lowest listed price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000111|SYNTH0111/0001|eastus|Consumption||0.0|USD|Standard_NC24ads_A100_v4",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "3.8000",
+      "unit": "USD/GPU-h",
+      "value": 3.8
+    },
+    "reg_1_n": {
+      "derived_from": [],
+      "group": "A100 PCIe 80GB × 1 · pay-as-you-go",
+      "id": "reg_1_n",
+      "meaning": "A100 PCIe 80GB × 1 · pay-as-you-go: regions",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000111|SYNTH0111/0001|eastus|Consumption||0.0|USD|Standard_NC24ads_A100_v4",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "1",
+      "unit": "regions",
+      "value": 1
+    },
+    "reg_2_max": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "reg_2_max",
+      "meaning": "H100 NVLink 80GB × 8 · pay-as-you-go: the highest regional price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000103|SYNTH0103/0001|southcentralus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000104|SYNTH0104/0001|westus3|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "15.0000",
+      "unit": "USD/GPU-h",
+      "value": 15.0
+    },
+    "reg_2_median": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "reg_2_median",
+      "meaning": "H100 NVLink 80GB × 8 · pay-as-you-go: the median, a statistic, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000103|SYNTH0103/0001|southcentralus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000104|SYNTH0104/0001|westus3|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "13.0000",
+      "unit": "USD/GPU-h",
+      "value": 13.0
+    },
+    "reg_2_min": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "reg_2_min",
+      "meaning": "H100 NVLink 80GB × 8 · pay-as-you-go: the lowest listed price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000103|SYNTH0103/0001|southcentralus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000104|SYNTH0104/0001|westus3|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "reg_2_n": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
+      "id": "reg_2_n",
+      "meaning": "H100 NVLink 80GB × 8 · pay-as-you-go: regions",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000103|SYNTH0103/0001|southcentralus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000105|SYNTH0105/0001|swedencentral|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000104|SYNTH0104/0001|westus3|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "5",
+      "unit": "regions",
+      "value": 5
+    },
+    "reg_3_max": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "reg_3_max",
+      "meaning": "H100 NVLink 80GB × 8 · Spot: the highest regional price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000114|SYNTH0114/0001|uksouth|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000107|SYNTH0107/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "reg_3_median": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "reg_3_median",
+      "meaning": "H100 NVLink 80GB × 8 · Spot: the median, a statistic, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000114|SYNTH0114/0001|uksouth|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000107|SYNTH0107/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "6.0000",
+      "unit": "USD/GPU-h",
+      "value": 6.0
+    },
+    "reg_3_min": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "reg_3_min",
+      "meaning": "H100 NVLink 80GB × 8 · Spot: the lowest listed price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000114|SYNTH0114/0001|uksouth|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000107|SYNTH0107/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "5.0000",
+      "unit": "USD/GPU-h",
+      "value": 5.0
+    },
+    "reg_3_n": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "reg_3_n",
+      "meaning": "H100 NVLink 80GB × 8 · Spot: regions",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000114|SYNTH0114/0001|uksouth|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000107|SYNTH0107/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "3",
+      "unit": "regions",
+      "value": 3
+    },
+    "reg_4_max": {
+      "derived_from": [],
+      "group": "T4 16GB × 1 · pay-as-you-go",
+      "id": "reg_4_max",
+      "meaning": "T4 16GB × 1 · pay-as-you-go: the highest regional price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000108|SYNTH0108/0001|eastus|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000110|SYNTH0110/0001|westeurope|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "0.7000",
+      "unit": "USD/GPU-h",
+      "value": 0.7
+    },
+    "reg_4_median": {
+      "derived_from": [],
+      "group": "T4 16GB × 1 · pay-as-you-go",
+      "id": "reg_4_median",
+      "meaning": "T4 16GB × 1 · pay-as-you-go: the median, a statistic, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000108|SYNTH0108/0001|eastus|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000110|SYNTH0110/0001|westeurope|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "0.6500",
+      "unit": "USD/GPU-h",
+      "value": 0.6499999999999999
+    },
+    "reg_4_min": {
+      "derived_from": [],
+      "group": "T4 16GB × 1 · pay-as-you-go",
+      "id": "reg_4_min",
+      "meaning": "T4 16GB × 1 · pay-as-you-go: the lowest listed price, USD/GPU-h",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000108|SYNTH0108/0001|eastus|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000110|SYNTH0110/0001|westeurope|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "0.6000",
+      "unit": "USD/GPU-h",
+      "value": 0.6
+    },
+    "reg_4_n": {
+      "derived_from": [],
+      "group": "T4 16GB × 1 · pay-as-you-go",
+      "id": "reg_4_n",
+      "meaning": "T4 16GB × 1 · pay-as-you-go: regions",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000108|SYNTH0108/0001|eastus|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        },
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000110|SYNTH0110/0001|westeurope|Consumption||0.0|USD|Standard_NC4as_T4_v3",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "2",
+      "unit": "regions",
+      "value": 2
+    },
+    "snap_time": {
+      "derived_from": [],
+      "group": null,
+      "id": "snap_time",
+      "meaning": "start of the latest snapshot",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "2026-10-12 09:00 UTC",
+      "unit": "UTC",
+      "value": "2026-10-12 09:00 UTC"
+    },
+    "spot_1_payg": {
+      "derived_from": [],
+      "group": null,
+      "id": "spot_1_payg",
+      "meaning": "the same size's pay-as-you-go listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000101|SYNTH0101/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "spot_1_ratio": {
+      "derived_from": [
+        "spot_1_spot",
+        "spot_1_payg"
+      ],
+      "group": null,
+      "id": "spot_1_ratio",
+      "meaning": "Spot as a share of pay-as-you-go",
+      "reason": null,
+      "records": [],
+      "text": "100.0",
+      "unit": "%",
+      "value": 100.0
+    },
+    "spot_1_spot": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "spot_1_spot",
+      "meaning": "a Spot listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000106|SYNTH0106/0001|eastus|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.0000",
+      "unit": "USD/GPU-h",
+      "value": 12.0
+    },
+    "spot_2_spot": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "spot_2_spot",
+      "meaning": "a Spot listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000114|SYNTH0114/0001|uksouth|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "6.0000",
+      "unit": "USD/GPU-h",
+      "value": 6.0
+    },
+    "spot_3_payg": {
+      "derived_from": [],
+      "group": null,
+      "id": "spot_3_payg",
+      "meaning": "the same size's pay-as-you-go listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000102|SYNTH0102/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "on_demand",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "12.5000",
+      "unit": "USD/GPU-h",
+      "value": 12.5
+    },
+    "spot_3_ratio": {
+      "derived_from": [
+        "spot_3_spot",
+        "spot_3_payg"
+      ],
+      "group": null,
+      "id": "spot_3_ratio",
+      "meaning": "Spot as a share of pay-as-you-go",
+      "reason": null,
+      "records": [],
+      "text": "40.0",
+      "unit": "%",
+      "value": 40.0
+    },
+    "spot_3_spot": {
+      "derived_from": [],
+      "group": "H100 NVLink 80GB × 8 · Spot",
+      "id": "spot_3_spot",
+      "meaning": "a Spot listed price",
+      "reason": null,
+      "records": [
+        {
+          "currency": "USD",
+          "item_key": "00000000-0000-0000-0000-000000000107|SYNTH0107/0001|westeurope|Consumption||0.0|USD|Standard_ND96isr_H100_v5",
+          "rental_type": "spot",
+          "retrieved_at": "2026-10-12 09:00 UTC",
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": "1 Hour"
+        }
+      ],
+      "text": "5.0000",
+      "unit": "USD/GPU-h",
+      "value": 5.0
+    },
+    "stale_days": {
+      "derived_from": [],
+      "group": null,
+      "id": "stale_days",
+      "meaning": "a snapshot is stale after this many days",
+      "reason": null,
+      "records": [
+        {
+          "currency": null,
+          "item_key": null,
+          "rental_type": null,
+          "retrieved_at": null,
+          "run_id": "synthetic-20261012T090000Z-2b4972",
+          "sha256": "2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a",
+          "unit": null
+        }
+      ],
+      "text": "7",
+      "unit": "count",
+      "value": 7
+    },
+    "thin_below": {
+      "derived_from": [],
+      "group": null,
+      "id": "thin_below",
+      "meaning": "a cross-region figure from fewer regions is thin (groups-v1)",
+      "reason": null,
+      "records": [],
+      "text": "5",
+      "unit": "regions",
+      "value": 5
+    }
+  },
+  "lists": {
+    "absences": [
+      "- EU West · NC24ads A100 v4 · pay-as-you-go · linux: absent once (unconfirmed) since [[abs_1_since]], last seen [[abs_1_seen]].",
+      "- EU West · NC8as T4 v3 · pay-as-you-go · linux: not listed since [[abs_2_since]], last seen [[abs_2_seen]]."
+    ],
+    "changes": [
+      "- US East · ND96isr H100 v5 · pay-as-you-go · linux: [[chg_1_before]] → [[chg_1_after]] USD/VM-h ([[chg_1_before_gpu]] → [[chg_1_after_gpu]] USD/GPU-h).",
+      "- US East · ND96isr H100 v5 · Spot · linux: [[chg_2_before]] → [[chg_2_after]] USD/VM-h ([[chg_2_before_gpu]] → [[chg_2_after_gpu]] USD/GPU-h)."
+    ],
+    "groups": [
+      "| GPU | Region groups | Single list price |",
+      "|---|---:|---:|",
+      "| A100 PCIe 80GB | [[grp_1_n]] | [[grp_1_single]] |",
+      "| H100 NVLink 80GB | [[grp_2_n]] | [[grp_2_single]] |",
+      "| T4 16GB | [[grp_3_n]] | [[grp_3_single]] |"
+    ],
+    "quality": [
+      "- Observations: [[q_obs]], of which [[q_normalized]] are compared.",
+      "- Excluded as `unmapped_sku`: [[q_reason_2]].",
+      "- Excluded as `windows`: [[q_reason_3]].",
+      "- Sizes not in the GPU map: [[q_unmapped]].",
+      "- Region groups: [[n_groups]], [[n_single]] with a single list price.",
+      "- Cross-region summaries: [[n_summaries]], [[n_thin]] thin.",
+      "- Changes since the previous snapshot: [[n_changes]].",
+      "- Absent once (unconfirmed): [[n_absent_once]]; not listed: [[n_not_listed]].",
+      "- Stale: no, as of [[as_of]] (stale after [[stale_days]] days)."
+    ],
+    "regions": [
+      "| GPU | Pricing | Regions | Lowest | Median | Highest | Labels |",
+      "|---|---|---:|---:|---:|---:|---|",
+      "| A100 PCIe 80GB × 1 | pay-as-you-go | [[reg_1_n]] | [[reg_1_min]] | [[reg_1_median]] | [[reg_1_max]] | crosses regions · thin |",
+      "| H100 NVLink 80GB × 8 | pay-as-you-go | [[reg_2_n]] | [[reg_2_min]] | [[reg_2_median]] | [[reg_2_max]] | crosses regions |",
+      "| H100 NVLink 80GB × 8 | Spot | [[reg_3_n]] | [[reg_3_min]] | [[reg_3_median]] | [[reg_3_max]] | crosses regions · thin |",
+      "| T4 16GB × 1 | pay-as-you-go | [[reg_4_n]] | [[reg_4_min]] | [[reg_4_median]] | [[reg_4_max]] | crosses regions · thin |"
+    ],
+    "spot": [
+      "| Region | Size | Spot, USD/GPU-h | Pay-as-you-go, USD/GPU-h | Spot as % of pay-as-you-go |",
+      "|---|---|---:|---:|---:|",
+      "| US East | ND96isr H100 v5 | [[spot_1_spot]] | [[spot_1_payg]] | [[spot_1_ratio]] |",
+      "| UK South | ND96isr H100 v5 | [[spot_2_spot]] | no pay-as-you-go listing for this size in this region | — |",
+      "| EU West | ND96isr H100 v5 | [[spot_3_spot]] | [[spot_3_payg]] | [[spot_3_ratio]] |"
+    ]
+  },
+  "map_version": "gpu-map-v1",
+  "names": [
+    "A100",
+    "A100 PCIe 80GB",
+    "EU West",
+    "H100",
+    "H100 NVLink 80GB",
+    "NC24ads A100 v4",
+    "NC4as T4 v3",
+    "NC8as T4 v3",
+    "ND96is MI300X v5",
+    "ND96isr H100 v5",
+    "Standard_NC24ads_A100_v4",
+    "Standard_NC4as_T4_v3",
+    "Standard_NC8as_T4_v3",
+    "Standard_ND96is_MI300X_v5",
+    "Standard_ND96isr_H100_v5",
+    "Sweden Central",
+    "T4",
+    "T4 16GB",
+    "UK South",
+    "US East",
+    "US South Central",
+    "US West 3",
+    "eastus",
+    "southcentralus",
+    "swedencentral",
+    "uksouth",
+    "westeurope",
+    "westus3"
+  ],
+  "notes": {
+    "bottom_line": [
+      "This compares across regions.",
+      "Scenario calculation, not a forecast. Round sensitivities chosen by judgement, not calibrated to history or to any model.",
+      "Not priced: disks and storage, egress, public IPs, licences, taxes, negotiated discounts, reservations and savings plans, Spot eviction risk, capacity and quota."
+    ],
+    "quality": [
+      "Sample too thin for trends: [[n_snapshots]] snapshots over [[n_days]] days."
+    ],
+    "regions": [
+      "This compares across regions. Each region counts once, at its lowest listed price. The median is a statistic, not a listed price."
+    ],
+    "spot": [
+      "Each line crosses rental types (Spot → pay-as-you-go): same size, same region."
+    ]
+  },
+  "previous": "synthetic-20261005T090000Z-101e6e",
+  "rule_version": "groups-v1",
+  "snapshot": "synthetic-20261012T090000Z-2b4972",
+  "snapshot_start": "2026-10-12 09:00 UTC",
+  "snapshots": 3,
+  "source": "azure-retail",
+  "stale": false,
+  "template": {
+    "absences": "[[n_absent_once]] listing is absent once (unconfirmed), and [[n_not_listed]] is not listed.",
+    "bottom_line": "[[bl_gpus]] [[bl_variant]] GPUs ([[bl_vms]] × [[bl_size]]) for [[bl_hours]] hours cost USD [[bl_cost]] at the lowest listed pay-as-you-go price for this GPU and count: [[bl_region]], [[bl_price]] USD/GPU-h. Across [[bl_regions]] regions, the lowest listed prices for this GPU and count run [[bl_min]]–[[bl_max]] USD/GPU-h, so the same workload costs USD [[bl_cost_min]]–[[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] a +[[bl_c50_move]]% move.",
+    "changes": "[[n_changes]] listed prices changed between [[prev_time]] and [[snap_time]].",
+    "groups": "[[n_groups]] region groups across [[n_variants]] GPU variants; [[n_single]] of them have a single list price.",
+    "quality": "The latest snapshot holds [[q_obs]] observations; [[q_normalized]] are compared and the rest are excluded, each with its reason.",
+    "regions": "[[n_summaries]] cross-region summaries; [[n_thin]] of them are thin, from fewer than [[thin_below]] regions.",
+    "spot": "[[n_spot_paired]] of [[n_spot]] [[bl_variant]] Spot listings have the same size on pay-as-you-go in the same region; [[n_spot_equal]] equals it and [[n_spot_above]] are above it."
+  },
+  "workload": {
+    "gpus": 32,
+    "gpus_per_vm": 8,
+    "hours": 720.0,
+    "variant": "H100 NVLink 80GB"
+  }
+}

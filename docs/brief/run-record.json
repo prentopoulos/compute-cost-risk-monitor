@@ -1,0 +1,48 @@
+{
+  "as_of": "2026-10-12 09:00 UTC",
+  "attempts": [
+    {
+      "model": "claude-opus-5-5",
+      "outcome": "accepted",
+      "reasons": [],
+      "reply": "{\"bottom_line\":\"[[bl_gpus]] [[bl_variant]] GPUs, run as [[bl_vms]] VMs of [[bl_size]] for [[bl_hours]] hours, cost USD [[bl_cost]] at the lowest listed pay-as-you-go price for this GPU and count, in [[bl_region]] at [[bl_price]] USD/GPU-h. Across [[bl_regions]] regions the lowest listed prices run from [[bl_min]] to [[bl_max]] USD/GPU-h, putting the same workload at USD [[bl_cost_min]] to [[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] covers a +[[bl_c50_move]]% move.\",\"changes\":\"[[n_changes]] listed prices changed between [[prev_time]] and [[snap_time]], each for ND96isr H100 v5 on Linux in US East. The pay-as-you-go price rose from [[chg_1_before]] to [[chg_1_after]] USD/VM-h ([[chg_1_before_gpu]] to [[chg_1_after_gpu]] USD/GPU-h), and the Spot price rose from [[chg_2_before]] to [[chg_2_after]] USD/VM-h ([[chg_2_before_gpu]] to [[chg_2_after_gpu]] USD/GPU-h).\",\"absences\":\"[[n_absent_once]] listing is absent once and unconfirmed, missing since [[abs_1_since]] after last appearing at [[abs_1_seen]]. [[n_not_listed]] listing is not listed, missing since [[abs_2_since]] after last appearing at [[abs_2_seen]].\",\"groups\":\"The latest snapshot holds [[n_groups]] region groups across [[n_variants]] GPU variants, and [[n_single]] of them have a single list price. H100 NVLink 80GB accounts for [[grp_2_n]] groups, all [[grp_2_single]] with a single list price; T4 16GB has [[grp_3_n]] groups with [[grp_3_single]] single-priced, and A100 PCIe 80GB has [[grp_1_n]] group with [[grp_1_single]] single-priced.\",\"spot\":\"[[n_spot_paired]] of [[n_spot]] [[bl_variant]] Spot listings have the same size on pay-as-you-go in the same region; [[n_spot_equal]] equals it and [[n_spot_above]] are above it. A Spot price of [[spot_1_spot]] USD/GPU-h matches its pay-as-you-go price of [[spot_1_payg]], a share of [[spot_1_ratio]]%, while another at [[spot_3_spot]] sits at [[spot_3_ratio]]% of [[spot_3_payg]]; a further Spot listing at [[spot_2_spot]] has no pay-as-you-go pair.\",\"regions\":\"There are [[n_summaries]] cross-region summaries, and [[n_thin]] of them are thin, from fewer than [[thin_below]] regions. H100 NVLink 80GB pay-as-you-go across [[reg_2_n]] regions runs [[reg_2_min]] to [[reg_2_max]] USD/GPU-h with a median of [[reg_2_median]], while its Spot group across [[reg_3_n]] regions runs [[reg_3_min]] to [[reg_3_max]] with a median of [[reg_3_median]]. T4 16GB across [[reg_4_n]] regions runs [[reg_4_min]] to [[reg_4_max]] with a median of [[reg_4_median]], and A100 PCIe 80GB in [[reg_1_n]] region lists at [[reg_1_min]], with median [[reg_1_median]] and high [[reg_1_max]].\",\"quality\":\"The latest snapshot holds [[q_obs]] observations; [[q_normalized]] are compared and the rest are excluded, each with its reason: [[q_reason_2]] as an unmapped size and [[q_reason_3]] as Windows, with [[q_unmapped]] size absent from the GPU map. The data spans [[n_snapshots]] succeeded snapshots over [[n_days]] days, and a snapshot counts as stale after [[stale_days]] days.\"}",
+      "request_id": "req_011Cg52qiTgCLnoxT5kh7rPz",
+      "stop_reason": "end_turn",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "inference_geo": "global",
+        "input_tokens": 6223,
+        "output_tokens": 1475,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": null,
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    }
+  ],
+  "code_version": "aadd1a079b8cbf329ae4a204945ff5a91e0ac865-dirty",
+  "data_label": "synthetic",
+  "estimated_cost_usd": 0.054392,
+  "fact_set_sha256": "94aec9889b1474319c1981893eaa9f321edb03b4c894495a15ccc3c8ee5577b8",
+  "model": "claude-opus-5-5",
+  "model_used": "claude-opus-5-5",
+  "pricing": {
+    "date": "2026-10-14",
+    "input": 4.0,
+    "output": 20.0
+  },
+  "prompt_sha256": "9f5c32325bab7380eebb6d041d0fab74d46f70e6eaaf063e93c7ae419d59da2c",
+  "prompt_version": "prompt v3",
+  "provider": "Anthropic Claude API",
+  "requests": 1,
+  "sdk_version": "1.14.0",
+  "snapshot": "synthetic-20261012T090000Z-2b4972",
+  "text_used": "draft"
+}
