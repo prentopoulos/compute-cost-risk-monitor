@@ -104,13 +104,13 @@
 
 ## 8. Verification and review
 
-- [ ] 8.1 Run the compute-cost-risk-monitor-market-review read-through of the brief, bottom line, README, methodology and deck (PROJECT.md §3)
-- [ ] 8.2 Manual check, synthetic only:
+- [x] 8.1 Run the compute-cost-risk-monitor-market-review read-through of the brief, bottom line, README, methodology and deck (PROJECT.md §3)
+- [x] 8.2 Manual check, synthetic only:
   - the demo from a fresh clone at a short path, with `--serve`;
   - the dashboard labels at 1920×1080;
   - the brief command with and without `--draft` refused on collected prices.
-- [ ] 8.3 Run the gate and `uv audit`
-- [ ] 8.4 Write `docs/reviews/<date>-phase-8-demo.md`:
+- [x] 8.3 Run the gate and `uv audit`
+- [x] 8.4 Write `docs/reviews/<date>-phase-8-demo.md` (done: `docs/reviews/2026-10-15-phase-8-demo.md`):
   - the grilling summary;
   - the mock;
   - the drafter run and its cost;
