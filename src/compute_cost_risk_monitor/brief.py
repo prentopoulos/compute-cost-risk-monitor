@@ -225,7 +225,8 @@ def count(value: int) -> str:
 
 
 def hours_text(hours: float) -> str:
-    return f"{Decimal(repr(hours)).normalize():f}"
+    """Exact, with thousands separators, as the independent check writes it."""
+    return f"{Decimal(repr(hours)).normalize():,f}"
 
 
 def when(moment: datetime) -> str:
@@ -286,16 +287,39 @@ def _item_record(
     return Record(run_id, sha, item_key, when(at), currency, unit, rental)
 
 
-def _locations(connection: duckdb.DuckDBPyConnection, run_id: str) -> dict[str, str]:
+_IN_RUNS = (
+    " FROM azure_retail_price a"
+    " JOIN price_observation p ON p.source = a.source AND p.item_key = a.item_key"
+    " AND p.retrieved_at = a.retrieved_at"
+    " JOIN raw_response r ON r.response_id = p.response_id"
+    " WHERE list_contains(?, r.run_id)"
+)
+
+
+def _locations(
+    connection: duckdb.DuckDBPyConnection, run_ids: Sequence[str]
+) -> dict[str, str]:
+    """Region display names from every snapshot: an absent listing's region too."""
     rows = connection.execute(
-        "SELECT DISTINCT a.arm_region_name, a.location FROM azure_retail_price a"
-        " JOIN price_observation p ON p.source = a.source AND p.item_key = a.item_key"
-        " AND p.retrieved_at = a.retrieved_at"
-        " JOIN raw_response r ON r.response_id = p.response_id"
-        " WHERE r.run_id = ? AND a.location IS NOT NULL ORDER BY 1, 2",
-        [run_id],
+        "SELECT DISTINCT a.arm_region_name, a.location"
+        + _IN_RUNS
+        + " AND a.location IS NOT NULL ORDER BY 1, 2",
+        [list(run_ids)],
     ).fetchall()
     return {code: name for code, name in rows}
+
+
+def _sizes(connection: duckdb.DuckDBPyConnection, run_ids: Sequence[str]) -> list[str]:
+    """Every size in any snapshot, as the independent check masks them all."""
+    return [
+        size
+        for (size,) in connection.execute(
+            "SELECT DISTINCT a.arm_sku_name"
+            + _IN_RUNS
+            + " AND a.arm_sku_name IS NOT NULL ORDER BY 1",
+            [list(run_ids)],
+        ).fetchall()
+    ]
 
 
 def _map_version(connection: duckdb.DuckDBPyConnection, run_id: str) -> str | None:
@@ -331,13 +355,17 @@ def build(
         )
     previous = ordered[-2] if len(ordered) > 1 else None
     params = rules.stored(connection, rule_version)
-    report = quality.build(connection, SOURCE, as_of, rule_version)
     found = groups.region_groups(connection, snap, rule_version)
+    report = quality.build(connection, SOURCE, as_of, rule_version, region_groups=found)
     summaries = groups.cross_region(found, params["thin_below_regions"])
+    # Changes and absences draw on earlier snapshots too, so the brief is synthetic
+    # only when every snapshot is; otherwise it takes a collected snapshot's label.
+    labels = [s.data_label for s in reversed(ordered)]
+    data_label = next((x for x in labels if x != synthetic.LABEL), synthetic.LABEL)
     facts = FactSet(
         source=SOURCE,
         as_of=when(as_of),
-        data_label=snap.data_label,
+        data_label=data_label,
         snapshot=snap.run_id,
         snapshot_start=when(snap.started_at),
         previous=None if previous is None else previous.run_id,
@@ -349,7 +377,8 @@ def build(
         workload=work,
     )
     run = _run_records(connection, snap.run_id)
-    names = _locations(connection, snap.run_id)
+    run_ids = [s.run_id for s in ordered]
+    names = _locations(connection, run_ids)
     facts.add(Fact("as_of", facts.as_of, "UTC", facts.as_of, "the brief's as-of time"))
     facts.add(
         Fact(
@@ -373,7 +402,7 @@ def build(
                 records=_run_records(connection, previous.run_id),
             )
         )
-    facts.names = _names(found, names, work)
+    facts.names = _names(found, names, work, _sizes(connection, run_ids))
     _bottom_line(facts, found, summaries, work, names, run, params)
     _changes(facts, connection, previous, snap, names, rule_version)
     _absences(facts, connection, names, rule_version)
@@ -389,10 +418,14 @@ def _name(names: Mapping[str, str], code: str) -> str:
 
 
 def _names(
-    found: list[RegionGroup], locations: Mapping[str, str], work: Workload
+    found: list[RegionGroup],
+    locations: Mapping[str, str],
+    work: Workload,
+    sizes: Sequence[str] = (),
 ) -> list[str]:
     """Every GPU, size and region name the brief may write, sorted."""
     named = {work.variant, *locations.values()}
+    named.update(name for size in sizes for name in (size, short_size(size)))
     for group in found:
         # The variant label and its model alone ("H100 NVLink 80GB" and "H100").
         named.update(
@@ -549,7 +582,7 @@ def _bottom_line(
             summary.stats.minimum,
             "USD/GPU-h",
             per_gpu(summary.stats.minimum),
-            "the lowest listed price across regions",
+            "the lowest listed price for this GPU and count, across regions",
             group=label,
             records=low_record,
         )
@@ -560,7 +593,7 @@ def _bottom_line(
             summary.stats.maximum,
             "USD/GPU-h",
             per_gpu(summary.stats.maximum),
-            "the highest of the regions' lowest listed prices",
+            "the highest of the regions' lowest listed prices for this GPU and count",
             group=label,
             records=high_record,
         )
@@ -608,9 +641,9 @@ def _bottom_line(
     facts.template["bottom_line"] = (
         "[[bl_gpus]] [[bl_variant]] GPUs ([[bl_vms]] × [[bl_size]]) for [[bl_hours]]"
         " hours cost USD [[bl_cost]] at the lowest listed pay-as-you-go price for"
-        " this size: [[bl_region]], [[bl_price]] USD/GPU-h. This size lists in"
-        " [[bl_regions]] regions at [[bl_min]]–[[bl_max]] USD/GPU-h, so the same"
-        " workload costs USD"
+        " this GPU and count: [[bl_region]], [[bl_price]] USD/GPU-h. Across"
+        " [[bl_regions]] regions, the lowest listed prices for this GPU and count"
+        " run [[bl_min]]–[[bl_max]] USD/GPU-h, so the same workload costs USD"
         " [[bl_cost_min]]–[[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a"
         " +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] a +[[bl_c50_move]]%"
         " move."
@@ -891,7 +924,12 @@ def _spot(
     ]
     i = 0
     for group in found:
-        if group.key.rental_type != calculator.SPOT:
+        # The counts and the table cover the workload's GPU and count only (code review:
+        # counts across every model read as counts of this one).
+        if group.key.rental_type != calculator.SPOT or (
+            group.key.variant,
+            group.key.gpu_count,
+        ) != (work.variant, work.gpus_per_vm):
             continue
         for member in group.members:
             total += 1
@@ -902,11 +940,6 @@ def _spot(
                 paired += 1
                 equal += member.usd_per_gpu_hour == twin.usd_per_gpu_hour
                 above += member.usd_per_gpu_hour > twin.usd_per_gpu_hour
-            if (group.key.variant, group.key.gpu_count) != (
-                work.variant,
-                work.gpus_per_vm,
-            ):
-                continue
             i += 1
             f = f"spot_{i}"
             record = _member_record(member, calculator.SPOT)
@@ -954,14 +987,14 @@ def _spot(
                 f" | [[{f}_ratio]] |"
             )
     for name, value, meaning in (
-        ("n_spot", total, "Spot listings compared"),
+        ("n_spot", total, "Spot listings for this GPU and count"),
         (
             "n_spot_paired",
             paired,
-            "Spot listings with the same size on pay-as-you-go in the same region",
+            "of them, those with the same size on pay-as-you-go in the same region",
         ),
-        ("n_spot_equal", equal, "Spot listings equal to that pay-as-you-go price"),
-        ("n_spot_above", above, "Spot listings above that pay-as-you-go price"),
+        ("n_spot_equal", equal, "of them, those equal to that pay-as-you-go price"),
+        ("n_spot_above", above, "of them, those above that pay-as-you-go price"),
     ):
         facts.add(
             Fact(
@@ -971,11 +1004,10 @@ def _spot(
     facts.lists["spot"] = lines if i else []
     facts.notes["spot"] = [CROSSES_RENTAL]
     facts.template["spot"] = (
-        "[[n_spot_paired]] of [[n_spot]] Spot listings have the same size on"
-        f" pay-as-you-go in the same region; [[n_spot_equal]]"
+        "[[n_spot_paired]] of [[n_spot]] [[bl_variant]] Spot listings have the same"
+        f" size on pay-as-you-go in the same region; [[n_spot_equal]]"
         f" {plural(equal, 'equals', 'equal')} it and [[n_spot_above]]"
         f" {plural(above, 'is', 'are')} above it."
-        + (" The table shows [[bl_variant]]." if i else "")
     )
 
 
@@ -1233,11 +1265,12 @@ def write(out: Path, text: str, facts: FactSet, record: Mapping[str, Any]) -> No
     (out / "run-record.json").write_bytes(body.encode("utf-8"))
 
 
-def checked(
-    connection: duckdb.DuckDBPyConnection, facts: FactSet, text: str, as_of: datetime
-) -> brief_check.CheckResult:
+def derived_for(
+    connection: duckdb.DuckDBPyConnection, facts: FactSet, as_of: datetime
+) -> brief_check.Derived:
+    """The independent check's values, derived once for every text that is checked."""
     work = facts.workload
-    derived = brief_check.derive(
+    return brief_check.derive(
         connection,
         as_of,
         work.variant,
@@ -1246,6 +1279,9 @@ def checked(
         work.hours,
         facts.rule_version,
     )
+
+
+def checked(text: str, derived: brief_check.Derived) -> brief_check.CheckResult:
     return brief_check.check(text, derived)
 
 
@@ -1321,22 +1357,21 @@ def main(
             print("refused: set ANTHROPIC_API_KEY to draft", file=sys.stderr)
             return 2
         text = render(facts)
-        result = checked(connection, facts, text, as_of)
-        if not result.passed:
-            where = ", ".join(f"line {f.line}" for f in result.failures)
-            print(
-                f"check failed: {len(result.failures)} unmatched ({where});"
-                " nothing written",
-                file=sys.stderr,
-            )
-            return 1
-        record, code = run_record(facts, "template"), 0
-        if args.draft:
-            text, result, record, code = _drafted(
-                connection, facts, as_of, text, result, sender
-            )
+        derived = derived_for(connection, facts, as_of)
     finally:
-        connection.close()
+        connection.close()  # released before any request: drafting needs no database
+    result = checked(text, derived)
+    if not result.passed:
+        where = ", ".join(f"line {f.line}" for f in result.failures)
+        print(
+            f"check failed: {len(result.failures)} unmatched ({where});"
+            " nothing written",
+            file=sys.stderr,
+        )
+        return 1
+    record, code = run_record(facts, "template"), 0
+    if args.draft:
+        text, result, record, code = _drafted(facts, derived, text, result, sender)
     write(out, text, facts, record)
     print(
         f"wrote {out}: {len(facts.facts)} facts; {result.numbers} numbers and"
@@ -1347,9 +1382,8 @@ def main(
 
 
 def _drafted(
-    connection: duckdb.DuckDBPyConnection,
     facts: FactSet,
-    as_of: datetime,
+    derived: brief_check.Derived,
     template: str,
     template_result: brief_check.CheckResult,
     sender: Callable[[dict[str, Any]], Any] | None,
@@ -1357,17 +1391,15 @@ def _drafted(
     """The drafted brief when it is usable and checks; else the checked template."""
     from compute_cost_risk_monitor import drafter  # the SDK stays out of `brief`
 
-    outcome = drafter.draft(facts, sender or drafter.anthropic_sender())
+    def check(text: str) -> list[str]:
+        # Inside the drafter's loop, so a draft failing it gets the second attempt.
+        return [] if checked(text, derived).passed else ["the independent check failed"]
+
+    outcome = drafter.draft(facts, sender or drafter.anthropic_sender(), check)
     text, result = template, template_result
     if outcome.text_used == "draft":
-        drafted = render(facts, outcome.prose, drafter.disclosure(outcome.model))
-        drafted_result = checked(connection, facts, drafted, as_of)
-        if drafted_result.passed:
-            text, result = drafted, drafted_result
-        else:
-            outcome.attempts[-1]["outcome"] = "rejected"
-            outcome.attempts[-1]["reasons"].append("the independent check failed")
-            outcome.text_used = "template"
+        text = render(facts, outcome.prose, drafter.disclosure(outcome.model))
+        result = checked(text, derived)
     record = run_record(
         facts, outcome.text_used, outcome.attempts, drafter.record_fields(outcome)
     )

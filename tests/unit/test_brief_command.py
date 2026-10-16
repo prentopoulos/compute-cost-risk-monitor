@@ -6,6 +6,7 @@ The database is the synthetic demo, built by the demo command into a temporary f
 import json
 import re
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from compute_cost_risk_monitor import (
     db,
     demo,
     drafter,
+    groups,
     normalize,
     synthetic,
 )
@@ -262,7 +264,7 @@ def test_accepted_draft_is_written(
     out = tmp_path / "brief"
     assert draft(demo_db, out, Sender(REPLIES["valid"])) == 0
     text = (out / "brief.md").read_text(encoding="utf-8")
-    assert "Prose drafted by claude-opus-5-5 (prompt v2)" in text
+    assert "Prose drafted by claude-opus-5-5 (prompt v3)" in text
     record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
     assert (record["text_used"], record["requests"]) == ("draft", 1)
     assert record["attempts"][0]["outcome"] == "accepted"
@@ -287,21 +289,82 @@ def test_rejected_drafts_fall_back_to_the_template(
     assert "prose: template (2 requests)" in capsys.readouterr().out
 
 
+def strict_check(monkeypatch: pytest.MonkeyPatch, failing: int) -> None:
+    """The first `failing` drafted texts fail the independent check."""
+    original = brief.checked
+    seen = []
+
+    def strict(text: str, derived: brief_check.Derived) -> brief_check.CheckResult:
+        result = original(text, derived)
+        if "Prose drafted by" in text:
+            seen.append(text)
+            if len(seen) <= failing:
+                result.failures.append(brief_check.Failure(1, 1, "x", "number"))
+        return result
+
+    monkeypatch.setattr(brief, "checked", strict)
+
+
 def test_draft_failing_the_check_falls_back(
     demo_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
-    original = brief.checked
-
-    def strict(*args: Any) -> brief_check.CheckResult:
-        result = original(*args)
-        if "Prose drafted by" in args[2]:
-            result.failures.append(brief_check.Failure(1, 1, "x", "number"))
-        return result
-
-    monkeypatch.setattr(brief, "checked", strict)
+    strict_check(monkeypatch, failing=2)
     out = tmp_path / "brief"
-    assert draft(demo_db, out, Sender(REPLIES["valid"])) == 1
+    assert draft(demo_db, out, Sender(REPLIES["valid"], REPLIES["valid"])) == 1
     record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
-    assert record["text_used"] == "template"
-    assert record["attempts"][0]["reasons"] == ["the independent check failed"]
+    assert (record["text_used"], record["requests"]) == ("template", 2)
+    assert [a["reasons"] for a in record["attempts"]] == [
+        ["the independent check failed"],
+        ["the independent check failed"],
+    ]
+
+
+def test_a_draft_failing_the_check_gets_its_second_attempt(
+    demo_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Code review: the check ran after the retry loop, so the second try was lost.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    strict_check(monkeypatch, failing=1)
+    out = tmp_path / "brief"
+    assert draft(demo_db, out, Sender(REPLIES["valid"], REPLIES["valid"])) == 0
+    record = json.loads((out / "run-record.json").read_text(encoding="utf-8"))
+    assert (record["text_used"], record["requests"]) == ("draft", 2)
+    assert [a["outcome"] for a in record["attempts"]] == ["rejected", "accepted"]
+
+
+def test_a_bare_gpu_name_in_a_draft_passes_the_check(
+    demo_db: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Code review: the drafter allowed "H100" but the check read its "100" as a figure.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    named = {
+        **REPLIES["valid"],
+        "spot": "[[n_spot_paired]] of [[n_spot]] H100 Spot listings have the same size"
+        " on pay-as-you-go in the same region.",
+    }
+    out = tmp_path / "brief"
+    assert draft(demo_db, out, Sender(named)) == 0
+    assert "H100 Spot listings" in (out / "brief.md").read_text(encoding="utf-8")
+
+
+def test_an_earlier_collected_snapshot_makes_the_brief_collected(
+    demo_db: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # Code review: a synthetic latest snapshot over collected earlier ones would have
+    # sent the collected prices behind the changes and absences to the API.
+    original = groups.snapshots
+
+    def mixed(*args: Any) -> Any:
+        found = original(*args)
+        return [replace(found[0], data_label="live"), *found[1:]]
+
+    monkeypatch.setattr(groups, "snapshots", mixed)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
+    sender = Sender(REPLIES["valid"])
+    assert draft(demo_db, tmp_path / "data" / "brief", sender) == 2
+    assert sender.sent == 0
+    assert "refused: a brief of collected prices stays under" in capsys.readouterr().err

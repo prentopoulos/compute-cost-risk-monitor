@@ -396,6 +396,15 @@ def main(known: Sequence[tuple[str, Path]], as_of: datetime) -> None:
                 _panel(each, dataset.path, as_of)
 
 
+def datasets(argv: Sequence[str]) -> tuple[tuple[str, Path], ...]:
+    """Every known database, or only the demo that `demo --serve` just built."""
+    if len(argv) == 2 and argv[0] == "--demo":
+        return ((dashboard.SYNTHETIC_DATASET, Path(argv[1])),)
+    return dashboard.KNOWN
+
+
 if __name__ == "__main__":
+    import sys
+
     # The only clock read (D15): the page's as-of time for the stale flag.
-    main(dashboard.KNOWN, datetime.now(UTC))
+    main(datasets(sys.argv[1:]), datetime.now(UTC))

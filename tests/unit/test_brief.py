@@ -27,10 +27,11 @@ AS_OF = datetime(2026, 10, 12, 9, 0, tzinfo=UTC)
 NOW = datetime(2026, 10, 12, 12, 0, tzinfo=UTC)
 BOTTOM_LINE = (
     "32 H100 NVLink 80GB GPUs (4 × ND96isr H100 v5) for 720 hours cost USD 276,480.00"
-    " at the lowest listed pay-as-you-go price for this size: US East, 12.0000"
-    " USD/GPU-h. This size lists in 5 regions at 12.0000–15.0000 USD/GPU-h, so the same"
-    " workload costs USD 276,480.00–345,600.00. A contingency of USD 69,120.00 covers a"
-    " +25% list-price move, and USD 138,240.00 a +50% move."
+    " at the lowest listed pay-as-you-go price for this GPU and count: US East, 12.0000"
+    " USD/GPU-h. Across 5 regions, the lowest listed prices for this GPU and count run"
+    " 12.0000–15.0000 USD/GPU-h, so the same workload costs USD 276,480.00–345,600.00."
+    " A contingency of USD 69,120.00 covers a +25% list-price move, and USD 138,240.00"
+    " a +50% move."
 )
 
 
@@ -139,8 +140,8 @@ def test_groups_spot_regions_and_quality(text: str) -> None:
     assert "| T4 16GB | 2 | 1 |" in text
     spot = section(text, "Spot against pay-as-you-go")
     assert spot.startswith(
-        "2 of 3 Spot listings have the same size on pay-as-you-go in the same region;"
-        " 1 equals it and 0 are above it."
+        "2 of 3 H100 NVLink 80GB Spot listings have the same size on pay-as-you-go in"
+        " the same region; 1 equals it and 0 are above it."
     )
     assert "| US East | ND96isr H100 v5 | 12.0000 | 12.0000 | 100.0 |" in spot
     assert "| EU West | ND96isr H100 v5 | 5.0000 | 12.5000 | 40.0 |" in spot
@@ -267,9 +268,17 @@ def test_published_keeps_every_decimal(value: float, shown: str) -> None:
     assert brief.published(value) == shown
 
 
+def test_names_cover_earlier_snapshots(facts: brief.FactSet) -> None:
+    # Code review: an absent listing's size is in no current group, so the names came
+    # only from the latest snapshot and a draft naming it was rejected.
+    assert {"Standard_NC8as_T4_v3", "NC8as T4 v3"} <= set(facts.names)
+
+
 def test_small_formats() -> None:
     assert (brief.move(25.0), brief.move(12.5)) == ("25", "12.5")
     assert (brief.hours_text(720.0), brief.hours_text(0.5)) == ("720", "0.5")
+    # Thousands separators, as the independent check writes them (code review).
+    assert (brief.hours_text(1000.0), brief.hours_text(8784.0)) == ("1,000", "8,784")
     assert (brief.usd(2.005), brief.per_gpu(0.00005), brief.percent(9.95)) == (
         "2.01",
         "0.0001",

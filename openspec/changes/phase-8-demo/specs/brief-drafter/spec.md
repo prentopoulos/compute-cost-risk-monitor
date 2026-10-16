@@ -4,7 +4,7 @@
 With `--draft`, the brief command SHALL ask a hosted model for the brief's prose through the
 official Anthropic SDK, from `drafter.py` only:
 - model `claude-opus-5-5`, effort `low`, `max_tokens` 4,000, one request per attempt;
-- a versioned system prompt stored in the package (`prompt v2`), whose SHA-256 is recorded;
+- a versioned system prompt stored in the package (`prompt v3` since D47), whose SHA-256 is recorded;
 - structured output: one prose string per brief section;
 - one user message holding the fact IDs with their meanings and units.
 
@@ -17,7 +17,7 @@ log or record it. Without the key, it SHALL refuse with exit code 2 before any r
 
 #### Scenario: Request shape
 - **WHEN** a draft is requested through an injected fake client
-- **THEN** the request names `claude-opus-5-5`, effort `low`, `max_tokens` 4000, the `prompt v2` system prompt and the section schema, and sets no fallback
+- **THEN** the request names `claude-opus-5-5`, effort `low`, `max_tokens` 4000, the `prompt v3` system prompt and the section schema, and sets no fallback
 
 ### Requirement: Synthetic inputs only
 The drafter SHALL run only on a snapshot labelled `synthetic`. For a `live` or `recorded`
@@ -38,7 +38,7 @@ dashboard's display formats, and SHALL insert every required text itself:
 - the judgement note, the crossing notices, the "thin" and "single list price" labels;
 - the history terms and the thin-sample line;
 - the Microsoft Learn credit;
-- the closing line "Prose drafted by claude-opus-5-5 (prompt v2); every number placed and
+- the closing line "Prose drafted by claude-opus-5-5 (prompt v3); every number placed and
   checked by code.".
 
 The filled brief SHALL pass the independent brief check before it is written.
@@ -53,7 +53,12 @@ A deterministic validator SHALL reject a draft section that has:
   (H100 and US West 3 are names, not figures, as in the independent check);
 - a number word outside placeholders: zero to twenty, thirty to ninety by tens, hundred,
   thousand, million, billion, half, halves, twice, double, doubled, triple, tripled, quarter,
-  percent, per cent, dozen;
+  percent, per cent, dozen; and (D47) their plurals and multiples (tens, dozens, hundreds,
+  thousands, millions, billions, quarters, halved, halving, doubles, doubling, triples,
+  tripling, quadruple, quadrupled, thrice, twofold to fivefold, tenfold, hundredfold,
+  percentage), "both", "neither" and the ordinals first to fifth and tenth. "Once" is allowed,
+  as part of the defined term "absent once";
+- a line break or "#": each section is one paragraph, so no heading can end the checked text;
 - a placeholder that names no fact in the fact set;
 - a missing required placeholder for its section (the bottom line needs the workload cost, its
   region, the regional range and both contingencies);
@@ -78,7 +83,9 @@ SHALL scan only the model's prose, never code-filled text.
 - **THEN** the draft is accepted and filled
 
 ### Requirement: Retry and fallback
-After a rejected draft, the drafter SHALL try once more. When the second draft is also
+After a rejected draft, the drafter SHALL try once more. A filled draft that fails the
+independent check counts as rejected inside this loop, so it also gets the second attempt (D47).
+When the second draft is also
 rejected, or the request fails, the command SHALL write the template brief, record every
 rejection reason, and exit 1 for the draft while still writing the checked template brief.
 
@@ -103,7 +110,7 @@ A template-only run SHALL record that no request was made. The record SHALL neve
 
 #### Scenario: Record of a drafted run
 - **WHEN** a draft is accepted on its first attempt through a fake client
-- **THEN** the run record names `claude-opus-5-5`, `prompt v2`, one attempt with its token counts and outcome, the text used "draft" and the data label `synthetic`
+- **THEN** the run record names `claude-opus-5-5`, `prompt v3`, one attempt with its token counts and outcome, the text used "draft" and the data label `synthetic`
 
 ### Requirement: Offline tests
 Tests SHALL inject a fake client and SHALL need no key and no network. Fixture responses SHALL be

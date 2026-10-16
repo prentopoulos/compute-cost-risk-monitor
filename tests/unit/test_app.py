@@ -137,6 +137,16 @@ def test_no_database_names_the_commands(tmp_path: Path) -> None:
     no_alerts(at)
 
 
+def test_demo_serve_offers_only_the_built_demo() -> None:
+    from compute_cost_risk_monitor import app
+
+    built = Path("elsewhere") / "demo.duckdb"
+    assert app.datasets(["--demo", str(built)]) == (
+        (dashboard.SYNTHETIC_DATASET, built),
+    )
+    assert app.datasets([]) == dashboard.KNOWN
+
+
 def test_only_existing_databases_offered(demo: list[tuple[str, Path]]) -> None:
     at = page(demo)
     dataset = at.sidebar.selectbox[0]

@@ -131,8 +131,33 @@ def test_serve_starts_the_dashboard_after_a_build(tmp_path: Path) -> None:
 
     target = tmp_path / "synthetic.duckdb"
     assert demo.main(["--db", str(target), "--serve"], launch=launch) == 0
-    assert started == [[sys.executable, "-m", "streamlit", "run", str(demo.APP)]]
+    # The dashboard is told which database was built, so it offers only that one.
+    assert started == [
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(demo.APP),
+            "--",
+            "--demo",
+            str(target),
+        ]
+    ]
     assert demo.APP.name == "app.py" and demo.APP.is_file()
+
+
+def test_a_stale_log_beside_the_target_is_removed(tmp_path: Path) -> None:
+    target = tmp_path / "synthetic.duckdb"
+    stale = tmp_path / "synthetic.duckdb.wal"
+    stale.write_bytes(b"left by a crashed session")
+    assert demo.build(target) == 0
+    assert not stale.exists()
+    connection = duckdb.connect(str(target), read_only=True)
+    try:
+        assert connection.execute("SELECT count(*) FROM collection_run").fetchone()
+    finally:
+        connection.close()
 
 
 def test_serve_not_started_after_a_failed_build(tmp_path: Path) -> None:

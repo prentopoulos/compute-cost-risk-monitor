@@ -6,6 +6,7 @@ a correct brief and name every number or time it cannot re-derive.
 
 import ast
 import inspect
+import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -152,3 +153,63 @@ def test_check_imports_no_brief_or_grouping_code() -> None:
 def test_windows_line_endings(text: str, derived: brief_check.Derived) -> None:
     result = brief_check.check(text.replace("\n", "\r\n"), derived)
     assert result.passed, result.failures
+
+
+def test_a_records_heading_in_prose_hides_nothing(
+    text: str, derived: brief_check.Derived
+) -> None:
+    # Code review: the check stopped at the first Records heading, so one in a
+    # section's prose hid every later number.
+    early = text.replace("## Bottom line", "## Records\n\n## Bottom line", 1)
+    extra = early.replace(
+        "## Records\n\n| ", "Extra figure 999.5\n\n## Records\n\n| ", 1
+    )
+    failures = brief_check.check(extra, derived).failures
+    assert [(f.token, f.kind) for f in failures] == [("999.5", "number")]
+    assert brief_check.check(early, derived).numbers == (
+        brief_check.check(text, derived).numbers
+    )
+
+
+def test_a_bare_model_name_is_a_name(derived: brief_check.Derived) -> None:
+    # Code review: the drafter may write "H100" alone; its "100" is not a figure.
+    result = brief_check.check("H100 Spot listings beside T4 and A100 sizes.", derived)
+    assert result.passed and result.numbers == 0
+
+
+def test_the_os_rule_matches_normalization() -> None:
+    params = {"windows_product_suffixes": ["Windows", "Win"]}
+    assert brief_check._os("Virtual Machines NCasT4_v3 Series Windows", params) == (
+        "windows"
+    )
+    assert brief_check._os("Virtual Machines NCasT4_v3 Series", params) == "linux"
+    assert brief_check._os("", {}) == "linux"
+
+
+def test_a_windows_only_unmapped_size_counts_alike(tmp_path: Path) -> None:
+    # Code review: the check counted unmapped sizes only where the row was excluded as
+    # unmapped_sku, while the quality report counts every size the map does not name.
+    page = json.loads((FIXTURES / "azure_demo.json").read_text(encoding="utf-8"))
+    windows = next(i for i in page["Items"] if i["productName"].endswith("Windows"))
+    page["Items"].append(
+        {
+            **windows,
+            "meterId": "00000000-0000-0000-0000-000000000199",
+            "productId": "SYNTH0199",
+            "skuId": "SYNTH0199/0001",
+            "meterName": "NC99 Synthetic",
+            "skuName": "NC99 Synthetic",
+            "armSkuName": "Standard_NC99_Synthetic",
+        }
+    )
+    page["Count"] = len(page["Items"])
+    latest = tmp_path / "azure_demo.json"
+    latest.write_text(json.dumps(page), encoding="utf-8")
+    connection = stored([*FILES[:2], latest])
+    try:
+        facts = brief.build(connection, AS_OF)
+        assert facts.facts["q_unmapped"].value == 2
+        derived = brief_check.derive(connection, AS_OF, H100, 8, 32, 720.0)
+        assert brief_check.check(brief.render(facts), derived).passed
+    finally:
+        connection.close()

@@ -87,7 +87,7 @@ def test_request_shape(facts: brief.FactSet) -> None:
         "[[bl_cost]]: the workload's cost at the lowest listed price"
         in message["content"]
     )
-    assert drafter.PROMPT_VERSION == "prompt v2"
+    assert drafter.PROMPT_VERSION == "prompt v3"
 
 
 def test_valid_draft_is_filled_and_checks(
@@ -100,7 +100,7 @@ def test_valid_draft_is_filled_and_checks(
     text = brief.render(facts, outcome.prose, drafter.disclosure(outcome.model))
     assert "cost USD 276,480.00 at the lowest listed pay-as-you-go price" in text
     assert (
-        "Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked"
+        "Prose drafted by claude-opus-5-5 (prompt v3); every number placed and checked"
         " by code."
     ) in text
     work = facts.workload
@@ -238,7 +238,7 @@ def test_cost_and_record_fields(facts: brief.FactSet) -> None:
         "claude-opus-5-5",
     )
     assert (fields["prompt_version"], fields["pricing"]["date"]) == (
-        "prompt v2",
+        "prompt v3",
         "2026-10-14",
     )
     assert fields["prompt_sha256"] == drafter.prompt_sha256()
@@ -293,6 +293,24 @@ def test_anthropic_sender_without_network(monkeypatch: pytest.MonkeyPatch) -> No
     assert "anthropic" in sys.modules
 
 
+def test_line_breaks_headings_and_quantity_words_rejected(
+    facts: brief.FactSet,
+) -> None:
+    # Code review: a heading could end the checked body early, and plurals, multiples
+    # and ordinals state quantities that no code checks.
+    sections = {
+        **REPLIES["valid"],
+        "absences": REPLIES["valid"]["absences"] + "\n## Records",
+        "groups": "Prices rose by thousands; Spot halved in tenfold moves, both ways.",
+    }
+    reasons = drafter.rejections(reply(sections), facts)
+    assert "absences: a line break or '#' (prose is one paragraph)" in reasons
+    for word in ("thousands", "halved", "tenfold", "both"):
+        assert f"groups: the number word {word!r}" in reasons
+    absent_once = {**REPLIES["valid"], "absences": "A listing is absent once."}
+    assert drafter.rejections(reply(absent_once), facts) == []  # the defined term
+
+
 def test_names_with_digits_are_not_figures(facts: brief.FactSet) -> None:
     # Phase 8 design D46, after the first real run rejected both drafts for names.
     expected = {"H100 NVLink 80GB", "H100", "T4", "ND96isr H100 v5", "US West 3"}
@@ -300,7 +318,7 @@ def test_names_with_digits_are_not_figures(facts: brief.FactSet) -> None:
     sections = {
         **REPLIES["valid"],
         "changes": "[[n_changes]] listed prices changed between [[prev_time]] and"
-        " [[snap_time]], both for H100 NVLink 80GB on ND96isr H100 v5 in US East.",
+        " [[snap_time]], each for H100 NVLink 80GB on ND96isr H100 v5 in US East.",
         "regions": "The summaries cover US West 3 and Sweden Central:"
         " [[n_summaries]] in all.",
     }

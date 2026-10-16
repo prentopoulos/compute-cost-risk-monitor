@@ -31,7 +31,7 @@ EFFORT = "low"  # thinking cannot be turned off on this model (D16)
 MAX_TOKENS = 4_000
 TIMEOUT_SECONDS = 120.0
 ATTEMPTS = 2  # one retry after a rejected draft (D19)
-PROMPT_VERSION = "prompt v2"
+PROMPT_VERSION = "prompt v3"
 # USD per million tokens, from Anthropic's pricing page, retrieved 2026-10-14 (D17).
 PRICING = {"date": "2026-10-14", "input": 4.0, "output": 20.0}
 NUMBER_WORDS = [
@@ -77,6 +77,38 @@ NUMBER_WORDS = [
     "quarter",
     "percent",
     "dozen",
+    # Plurals, multiples and ordinals state quantities no code checks (code review).
+    "tens",
+    "dozens",
+    "hundreds",
+    "thousands",
+    "millions",
+    "billions",
+    "quarters",
+    "halved",
+    "halving",
+    "doubles",
+    "doubling",
+    "triples",
+    "tripling",
+    "quadruple",
+    "quadrupled",
+    "thrice",
+    "twofold",
+    "threefold",
+    "fourfold",
+    "fivefold",
+    "tenfold",
+    "hundredfold",
+    "percentage",
+    "both",
+    "neither",
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "tenth",
 ] + ["per cent"]
 # Recorded (D44) and owner-added (D28) words the model may not write.
 BANNED = (
@@ -163,12 +195,13 @@ Each string is one to three plain sentences for a reader at a GPU buyer or on a 
 desk: terse, factual, no headings, no lists, no Markdown.
 
 Rules you must follow, or the draft is discarded:
-1. Never write a number: no digits and no number words (one, two, half, twice, percent
-   and so on). Refer to every figure only through a placeholder [[fact_id]] taken from
-   the fact list, exactly as written there. Do not invent fact IDs. Write "a listing"
-   or "a single list price", never "one listing". GPU, VM size and region names
-   from the list of names may be written as they are, even with digits (H100,
-   US West 3); no other word may hold a digit.
+1. Never write a number: no digits and no number words (one, two, half, twice, both,
+   first, second, thousands, tenfold, percent and so on). Refer to every figure only
+   through a placeholder [[fact_id]] taken from the fact list, exactly as written there.
+   Do not invent fact IDs. Write "a listing" or "a single list price", never "one
+   listing"; write "each", never "both". GPU, VM size and region names from the list of
+   names may be written as they are, even with digits (H100, US West 3); no other word
+   may hold a digit. Each section is one paragraph: no line breaks and no "#".
 2. The bottom_line section must use these placeholders:
    {", ".join(f"[[{f}]]" for f in brief.REQUIRED["bottom_line"])}.
 3. State only what the facts say. Do not recommend, forecast, predict or describe a
@@ -287,6 +320,9 @@ def rejections(reply: Reply, facts: FactSet) -> list[str]:
     known = usable(facts)
     reasons = []
     for section, text in prose.items():
+        if "\n" in text or "\r" in text or "#" in text:
+            # A heading or line break in prose could end the checked body early.
+            reasons.append(f"{section}: a line break or '#' (prose is one paragraph)")
         named = PLACEHOLDER.findall(text)
         unknown = sorted({key for key in named if key not in known})
         if unknown:
@@ -354,8 +390,14 @@ def _attempt(reply: Reply, reasons: Sequence[str]) -> dict[str, Any]:
     }
 
 
-def draft(facts: FactSet, send: Sender) -> Outcome:
-    """Up to two attempts; the template prose when none is usable."""
+def draft(
+    facts: FactSet, send: Sender, check: Callable[[str], list[str]] | None = None
+) -> Outcome:
+    """Up to two attempts; the template prose when none is usable.
+
+    `check` takes the filled brief and returns why it fails the independent check, so a
+    draft that fails it is rejected inside the loop and the second attempt is made.
+    """
     attempts: list[dict[str, Any]] = []
     for _ in range(ATTEMPTS):
         try:
@@ -369,6 +411,8 @@ def draft(facts: FactSet, send: Sender) -> Outcome:
             text = brief.render(facts, prose, disclosure(reply.model))
             missing = missing_texts(text, facts)
             reasons = [f"missing required text {label!r}" for label in missing]
+            if not reasons and check is not None:
+                reasons = check(text)
         attempts.append(_attempt(reply, reasons))
         if prose is not None and not reasons:
             return Outcome("draft", prose, attempts, reply.model)

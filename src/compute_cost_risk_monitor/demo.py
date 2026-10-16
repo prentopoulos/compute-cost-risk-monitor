@@ -74,6 +74,8 @@ def build(
         if code:
             return code
         try:
+            # A log left by a crashed session belongs to the old file, not the new one.
+            target.with_name(target.name + ".wal").unlink(missing_ok=True)
             os.replace(building, target)
         except PermissionError:
             print(IN_USE.format(target=target), file=sys.stderr)
@@ -103,7 +105,19 @@ def main(
     code = build(args.db, store=store, normalize_db=normalize_db)
     if code or not args.serve:
         return code
-    return launch([sys.executable, "-m", "streamlit", "run", str(APP)])
+    # The dashboard offers only the database just built, not collected prices first.
+    return launch(
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(APP),
+            "--",
+            "--demo",
+            str(args.db),
+        ]
+    )
 
 
 if __name__ == "__main__":
