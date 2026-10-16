@@ -16,8 +16,9 @@ in `pyproject.toml`. Project commands SHALL run Python through uv, never through
 ### Requirement: Locked Python dependencies
 The project SHALL commit a uv lockfile that pins every runtime and dev dependency, including
 transitive ones, with hashes for every platform uv supports. Runtime dependencies SHALL be
-pandas, DuckDB, Streamlit, pytz and Altair. Dev dependencies SHALL be pytest, pytest-cov,
-pytest-socket, Hypothesis, Ruff, mypy, pandas-stubs, types-pytz, commitizen and detect-secrets.
+pandas, DuckDB, Streamlit, pytz, Altair and anthropic (the official Anthropic SDK, imported only
+by the brief drafter). Dev dependencies SHALL be pytest, pytest-cov, pytest-socket, Hypothesis,
+Ruff, mypy, pandas-stubs, types-pytz, commitizen and detect-secrets.
 
 #### Scenario: Fresh environment from the lockfile
 - **WHEN** a developer runs `uv sync --locked` in a fresh clone
@@ -29,11 +30,15 @@ pytest-socket, Hypothesis, Ruff, mypy, pandas-stubs, types-pytz, commitizen and 
 
 #### Scenario: Declared dependencies match the requirement
 - **WHEN** `pyproject.toml` is read
-- **THEN** its runtime dependencies are exactly pandas, DuckDB, Streamlit, pytz and Altair, and its dev group is exactly the dev dependencies listed above
+- **THEN** its runtime dependencies are exactly pandas, DuckDB, Streamlit, pytz, Altair and anthropic, and its dev group is exactly the dev dependencies listed above
 
 #### Scenario: Property tests run the same everywhere
 - **WHEN** the gate runs locally and in CI, where the `CI` environment variable is set
 - **THEN** Hypothesis uses the same fixed profile in both, with derandomized examples and no example database, so it writes no tracked file
+
+#### Scenario: SDK only in the drafter
+- **WHEN** the package's modules are searched for imports of `anthropic`
+- **THEN** only `drafter.py` imports it
 
 ### Requirement: Locked OpenSpec CLI
 The project SHALL pin the OpenSpec CLI (`@fission-ai/openspec`) at exactly 1.6.0 in

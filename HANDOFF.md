@@ -4,7 +4,10 @@ Read PROJECT.md and current user instructions. Inspect actual Git/OpenSpec state
 
 ## Current checkpoint
 
-Phase 8 (the final phase) is in progress: see § Phase 8 below.
+All eight phases are Done. Phase 8, the final phase, delivered the public demo through PR #15
+from branch `phase-8-demo` and is archived as `openspec/changes/archive/2026-10-16-phase-8-demo`
+(design D1–D47). See § Phase 8 below. The repository is public: the owner made it public and
+approved the publishing list (PROJECT.md §6, 2026-10-15).
 
 Phase 7 (front-office interface: dark desk theme, answer-first layout and a scenario ladder) is
 Done. It was delivered through PR #13 from branch `phase-7-interface` and archived as
@@ -89,6 +92,17 @@ Every command prints counts, names and keys only, never prices.
     tests/fixtures/synthetic/marketplace/snapshot-1.json ...snapshot-2.json ...snapshot-3.json`,
     then `normalize --db data/synthetic.duckdb`. After the demo file changes, rebuild from an
     empty file: move the old `data/synthetic.duckdb` aside first.
+- **Demo (Phase 8):** `uv run --locked python -m compute_cost_risk_monitor.demo [--serve]`
+  rebuilds `data/synthetic.duckdb` from the committed snapshots (refusing `data/monitor.duckdb`)
+  and, with `--serve`, opens the dashboard on that database only.
+- **Market brief (Phase 8):** `uv run --locked python -m compute_cost_risk_monitor.brief --db FILE
+  [--as-of TIME] [--out DIR] [--draft]`.
+  - It writes `brief.md`, `facts.json` and `run-record.json` after the independent check passes;
+    collected-price briefs stay under `data/`.
+  - `--draft` asks Claude for the text on invented data only, with `ANTHROPIC_API_KEY` set. The
+    key lives in the gitignored `.env`, and runs are started by hand under the PROJECT.md §6
+    spend decision.
+  - The committed demo brief is rebuilt with the command in AI_OPS.md.
 - **Dashboard (Phases 4–7):** `uv run streamlit run src/compute_cost_risk_monitor/app.py`.
   - The config beside the script applies from any folder: 127.0.0.1 only, no usage statistics,
     one dark theme, and Streamlit's menu hidden (no Deploy button and no theme switch).
@@ -242,63 +256,48 @@ settled with their basis. D50 records the code review.
     `.codex/config.toml` are gitignored. The config can hold an API key that detect-secrets does
     not flag, and it was never committed.
 
-## Phase 8 (in progress on branch `phase-8-demo`, draft PR #15)
+## Phase 8 (Done, PR #15)
 
-Phase 8 is the final phase. It may run over several sessions as one phase, and it ends with the
-repository ready to make public. The owner approved the spec on 2026-10-15. Every decision is
-in `openspec/changes/phase-8-demo/design.md`: D1–D45 come from the grilling, and D46 from the
-first drafter run. The task list is `openspec/changes/phase-8-demo/tasks.md`.
+The final phase made the repository public-ready. Decisions are in the archived design (D1–D45
+from the grilling, D46 from the first drafter run, D47 from the code review). The review record is
+`docs/reviews/2026-10-16-phase-8-demo.md`.
 
-**Done:**
-- **2.1–2.2:** the demo history (two earlier synthetic snapshots before `azure_demo.json`), and
-  `python -m compute_cost_risk_monitor.demo [--serve]`.
-- **3.1–3.4:** `brief.py` (fact set, template, bottom line, command), `brief_check.py`
-  (independent check) and the committed brief in `docs/brief/`.
-- **4.1–4.4:**
-  - `anthropic` 1.14 and `drafter.py`;
-  - two real runs on 2026-10-15, about USD 0.14 in total. Run 1 used prompt v1: both drafts
-    were rejected and the record is kept in commit 0730db0. Run 2 used prompt v2: accepted,
-    and `docs/brief/` now holds the AI-drafted brief;
-  - AI_OPS.md records both runs.
-- **5.1–5.3:** the owner approved mock v4 (Figma node 21:2), and the build added "NOT A FORECAST"
-  in the grid title, the "EXCL." tag line and positional grid cells.
-- **6.2:** synthetic screenshots in `docs/assets/`.
-- **6.4, the deck:** six plain-language slides in Figma Slides
-  (https://www.figma.com/slides/Z6FH7RthVyYAWPB5pWEl03), approved by the owner on 2026-10-15.
-  The PDF was exported slide by slide through the Figma tools and is
-  `docs/compute-cost-risk-monitor-deck.pdf`. PR #16 puts the PDF and a "Start here" README link on
-  `main` ahead of the phase, at the owner's request. CI passes; the merge waits for the owner.
-- **6.1:** `docs/methodology.md`, with the futures paragraph rechecked on 2026-10-15.
-- **6.5:** `docs/walkthrough.md`. The owner asked Claude to record the video, and approved
-  the 1:58 captioned take, which is kept out of Git at `tmp/compute-cost-risk-monitor-walkthrough.mp4`.
-  Where it is published is the owner's call (9.1).
-- **Wording (owner, 2026-10-15):** no slogans or reassurance taglines. Slide 5 now reads
-  "HOW IT USES AI" / "AI-powered market brief".
-- **7.1–7.4:**
-  - the owner made the repository public; PROJECT.md §6 records it (recorded 2026-10-15);
-  - the pre-publication record is in `docs/reviews/2026-10-15-phase-8-demo.md`: the history
-    secret scan, the live-figure survey, the personal details and the publishing list.
-- **Gate:** green on 2026-10-15; hosted CI passes.
+- **Demo:** `demo --serve`, a three-snapshot synthetic history, checked from a fresh clone.
+- **Market brief:** a fact set, the template and bottom line, the independent check
+  (`brief_check.py`, which imports none of the code it checks), and the committed AI-drafted brief
+  in `docs/brief/`.
+- **AI drafter:** `drafter.py`, `claude-opus-5-5`, `prompt v3`. There were three real runs, all on
+  2026-10-15, costing about USD 0.19 in total. Run 1 was rejected and its record is kept in commit
+  0730db0. Runs 2 and 3 were accepted; run 3 followed the review fixes. AI_OPS.md logs each run.
+- **Dashboard:** "NOT A FORECAST" in the grid title, the "EXCL." tag line, and positional grid
+  cells, as in the approved mock v4.
+- **Documents:**
+  - README (the bottom line first, tested against the brief);
+  - `docs/methodology.md` (the SR 11-7 model-risk section and the futures paragraph, rechecked
+    2026-10-15);
+  - `docs/walkthrough.md`;
+  - the six-slide deck PDF and the 1:58 walkthrough video (on `main` via PR #16);
+  - C4 context and container diagrams redrawn to the c4model.com notation guide.
+- **Pre-publication:** the history secret scan, the live-figure survey, personal details and the
+  approved publishing list, all in the review record.
+- **Code review:** 15 findings, all fixed with tests (D47).
+- **Checks:** the gate passes, with 900 tests at 100% branch coverage; `uv audit` is clean;
+  hosted CI passes.
 
-**Open:**
-- **6.3:** README extension and tests;
-- **6.6:** the diagrams;
-- **8.1–8.5:** verification and review;
-- **9.1–9.2:** the close (the visibility decision is already recorded).
+**Owner wording rules** (also in the setup kit's `showcase` skill): plain language, newcomer
+first, no slogans or reassurance taglines; name the AI feature plainly ("AI-powered market
+brief").
 
-**Facts and owner tasks:**
-- **STALE:** the demo turns STALE after 2026-10-19 09:00 UTC; the screenshots were taken before
-  that.
-- **API key:** in the gitignored `.env`, loaded only for a `--draft` run.
-- **Owner tasks:**
-  - rotate the 21st.dev key and move it out of `.codex/config.toml`;
-  - optionally run one or two collects;
-  - merge PR #16 (the deck on `main`);
-  - approve the publishing list.
+**Owner tasks, optional:**
+- rotate the 21st.dev key and move it out of `.codex/config.toml`;
+- delete the scratch folder `C:\src` left by the fresh-clone check;
+- run more collects, at most one a day, if trend work is ever wanted;
+- note the demo shows STALE from 2026-10-19 09:00 UTC. That is the 7-day rule working; the
+  public screenshots and video were taken before it.
 
 ## Next action
 
-Extend the README (6.3): the bottom line first, the one-command demo, links to the deck,
-methodology, brief and video, with its two repository tests. Write it in the owner's plain style,
-with no taglines. Then the diagrams (6.6), and the verification and review (8.1–8.5). PR #16, the
-deck on `main`, waits for the owner's merge.
+None is required: the project is complete and public. A new piece of work starts as a new
+phase in a fresh session, through the next-phase skill's grilling. Candidates from PROJECT.md §2:
+- a second source, after its access, terms and comparable fields are verified (⛔ gate);
+- trend claims, once several weeks of collected snapshots exist.

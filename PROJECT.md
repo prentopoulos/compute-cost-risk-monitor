@@ -49,7 +49,7 @@ In scope (one phase per session, see §6):
   records and re-derived by an independent check. An AI model drafts its prose only, from
   synthetic figures, and writes no number (Phase 8, ⛔ spend decision in §6).
 - Public demo (Phase 8): the repository made public on the operator's decision, with a README,
-  methodology, five-slide deck and walkthrough, all on synthetic data. The app runs from a
+  methodology, six-slide deck and walkthrough, all on synthetic data. The app runs from a
   clone; it is not hosted.
 
 Deferred or out of scope:
@@ -123,8 +123,8 @@ user before each later phase. Evidence that counts in every phase:
   `openspec/changes/archive/2026-10-14-phase-7-interface/design.md` D1–D50. Phase 8
   grilling decisions (the final phase, public form, one synthetic demo history, the brief and
   its bottom line, the AI drafter, documents and pre-publication; owner answered every owner
-  call on 2026-10-14 and 2026-10-15) are cited in `openspec/changes/phase-8-demo/design.md`
-  D1–D45. Vast.ai
+  call on 2026-10-14 and 2026-10-15) are cited in
+  `openspec/changes/archive/2026-10-16-phase-8-demo/design.md` D1–D47. Vast.ai
   was dropped: its terms (version 2026-09-01) forbid automated collection, price-comparison
   use and redistribution without a written agreement.
 - Methodology reference: [Silicon Data's H100 index](https://www.silicondata.com/products/silicon-index/h100)
@@ -211,7 +211,7 @@ brief lists.
 | 5 | Workload cost calculator and labelled budget-exposure scenarios | Done |
 | 6 | Tests for units, calculations, missing data and stale offers | Done |
 | 7 | Front-office interface: dark desk theme, answer-first layout and a scenario ladder | Done |
-| 8 | Public demo, methodology document, market brief with AI-drafted prose, README and five-slide deck, two-minute walkthrough; diagrams updated. The final phase | In progress |
+| 8 | Public demo, methodology document, market brief with AI-drafted prose, README and six-slide deck, two-minute walkthrough; diagrams updated. The final phase | Done |
 
 ### ⛔ Before reading live data from any source
 
@@ -273,7 +273,7 @@ brief lists.
   personal details. It is in the Phase 8 review record. It approves no hosting, and no sharing of
   the video. The brief, the methodology and the publishing list still come through the Phase 8 PR.
 - Decision, 2026-10-15 (owner): approved the Phase 8 publishing list in
-  `docs/reviews/2026-10-15-phase-8-demo.md`. Scope:
+  `docs/reviews/2026-10-16-phase-8-demo.md`. Scope:
   - **public:** everything tracked, with the full Git history. That covers the code, tests and
     invented fixtures, the OpenSpec records, the README, methodology, brief, deck, walkthrough
     video, screenshots, diagrams and review records, AI_OPS.md, HANDOFF.md, PROJECT.md and the
