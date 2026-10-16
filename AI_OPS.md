@@ -16,7 +16,7 @@ Phase 8 task 4.4, started by the owner.
 | Capability | Status | Reason / evidence or task | Recheck when |
 |---|---|---|---|
 | Hosted or local model inference | enabled | `drafter.py`: one Claude API request (`claude-opus-5-5`, effort low, 4,000 tokens) per attempt, at most two, started by hand with `brief --draft`; no fallback model, no SDK retries. Tests: `tests/unit/test_drafter.py`, `tests/unit/test_brief_command.py` | Any provider, model, effort or token change |
-| Prompts and structured output | enabled | `drafter.SYSTEM_PROMPT` (`prompt v2` since the first run, SHA-256 in every run record); JSON-schema output with one string per section; placeholders from the fact set's closed list; the validator and the independent brief check (`brief_check.py`) | Prompt, placeholder list, banned words, validator or model changes |
+| Prompts and structured output | enabled | `drafter.SYSTEM_PROMPT` (`prompt v3` since the code review (D47), SHA-256 in every run record); JSON-schema output with one string per section; placeholders from the fact set's closed list; the validator and the independent brief check (`brief_check.py`) | Prompt, placeholder list, banned words, validator or model changes |
 | RAG / document ingestion | not applicable | The drafter receives one fact set built by code; nothing is retrieved or indexed | A document source or retrieval step is proposed |
 | Semantic or response caching | not applicable | One call per draft, no cache | Repeated or batched drafting is proposed |
 | Model training / feature pipelines | not applicable | No model is trained or tuned | Any training or fine-tuning is proposed |
@@ -63,5 +63,9 @@ The provider keeps API inputs and outputs for up to 30 days and does not train o
   (commit 0730db0). Fixed by design D46 (`prompt v2`).
 - **Provider run 2, 2026-10-15 (pass):** `prompt v2`, one request, 6,119 input and 1,082
   output tokens, about USD 0.05; the draft was accepted and passed the independent check
-  (105 numbers and 13 times re-derived). Last known-good: this run's record in
-  `docs/brief/run-record.json`. Spend so far about USD 0.14 of the USD 10 cap.
+  (105 numbers and 13 times re-derived). Spend after this run: about USD 0.14.
+- **Provider run 3, 2026-10-15 (pass):** `prompt v3` (design D47, after the code
+  review), one request, 6,223 input and 1,475 output tokens, about USD 0.05; the draft
+  was accepted and passed the independent check (128 numbers and 13 times re-derived).
+  Last known-good: this run's record in `docs/brief/run-record.json`. Spend so far
+  about USD 0.19 of the USD 10 cap.

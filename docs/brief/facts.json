@@ -223,7 +223,7 @@
       "derived_from": [],
       "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
       "id": "bl_max",
-      "meaning": "the highest of the regions' lowest listed prices",
+      "meaning": "the highest of the regions' lowest listed prices for this GPU and count",
       "reason": null,
       "records": [
         {
@@ -244,7 +244,7 @@
       "derived_from": [],
       "group": "H100 NVLink 80GB × 8 · pay-as-you-go",
       "id": "bl_min",
-      "meaning": "the lowest listed price across regions",
+      "meaning": "the lowest listed price for this GPU and count, across regions",
       "reason": null,
       "records": [
         {
@@ -829,7 +829,7 @@
       ],
       "group": null,
       "id": "n_spot",
-      "meaning": "Spot listings compared",
+      "meaning": "Spot listings for this GPU and count",
       "reason": null,
       "records": [],
       "text": "3",
@@ -842,7 +842,7 @@
       ],
       "group": null,
       "id": "n_spot_above",
-      "meaning": "Spot listings above that pay-as-you-go price",
+      "meaning": "of them, those above that pay-as-you-go price",
       "reason": null,
       "records": [],
       "text": "0",
@@ -855,7 +855,7 @@
       ],
       "group": null,
       "id": "n_spot_equal",
-      "meaning": "Spot listings equal to that pay-as-you-go price",
+      "meaning": "of them, those equal to that pay-as-you-go price",
       "reason": null,
       "records": [],
       "text": "1",
@@ -868,7 +868,7 @@
       ],
       "group": null,
       "id": "n_spot_paired",
-      "meaning": "Spot listings with the same size on pay-as-you-go in the same region",
+      "meaning": "of them, those with the same size on pay-as-you-go in the same region",
       "reason": null,
       "records": [],
       "text": "2",
@@ -1877,10 +1877,12 @@
     "NC24ads A100 v4",
     "NC4as T4 v3",
     "NC8as T4 v3",
+    "ND96is MI300X v5",
     "ND96isr H100 v5",
     "Standard_NC24ads_A100_v4",
     "Standard_NC4as_T4_v3",
     "Standard_NC8as_T4_v3",
+    "Standard_ND96is_MI300X_v5",
     "Standard_ND96isr_H100_v5",
     "Sweden Central",
     "T4",
@@ -1921,12 +1923,12 @@
   "stale": false,
   "template": {
     "absences": "[[n_absent_once]] listing is absent once (unconfirmed), and [[n_not_listed]] is not listed.",
-    "bottom_line": "[[bl_gpus]] [[bl_variant]] GPUs ([[bl_vms]] × [[bl_size]]) for [[bl_hours]] hours cost USD [[bl_cost]] at the lowest listed pay-as-you-go price for this size: [[bl_region]], [[bl_price]] USD/GPU-h. This size lists in [[bl_regions]] regions at [[bl_min]]–[[bl_max]] USD/GPU-h, so the same workload costs USD [[bl_cost_min]]–[[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] a +[[bl_c50_move]]% move.",
+    "bottom_line": "[[bl_gpus]] [[bl_variant]] GPUs ([[bl_vms]] × [[bl_size]]) for [[bl_hours]] hours cost USD [[bl_cost]] at the lowest listed pay-as-you-go price for this GPU and count: [[bl_region]], [[bl_price]] USD/GPU-h. Across [[bl_regions]] regions, the lowest listed prices for this GPU and count run [[bl_min]]–[[bl_max]] USD/GPU-h, so the same workload costs USD [[bl_cost_min]]–[[bl_cost_max]]. A contingency of USD [[bl_c25]] covers a +[[bl_c25_move]]% list-price move, and USD [[bl_c50]] a +[[bl_c50_move]]% move.",
     "changes": "[[n_changes]] listed prices changed between [[prev_time]] and [[snap_time]].",
     "groups": "[[n_groups]] region groups across [[n_variants]] GPU variants; [[n_single]] of them have a single list price.",
     "quality": "The latest snapshot holds [[q_obs]] observations; [[q_normalized]] are compared and the rest are excluded, each with its reason.",
     "regions": "[[n_summaries]] cross-region summaries; [[n_thin]] of them are thin, from fewer than [[thin_below]] regions.",
-    "spot": "[[n_spot_paired]] of [[n_spot]] Spot listings have the same size on pay-as-you-go in the same region; [[n_spot_equal]] equals it and [[n_spot_above]] are above it. The table shows [[bl_variant]]."
+    "spot": "[[n_spot_paired]] of [[n_spot]] [[bl_variant]] Spot listings have the same size on pay-as-you-go in the same region; [[n_spot_equal]] equals it and [[n_spot_above]] are above it."
   },
   "workload": {
     "gpus": 32,

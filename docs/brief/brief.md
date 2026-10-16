@@ -6,7 +6,7 @@ Invented prices for demonstration, in the shape of Azure's API.
 
 ## Bottom line
 
-Running 32 H100 NVLink 80GB GPUs as 4 × ND96isr H100 v5 for 720 hours costs USD 276,480.00 at the lowest listed pay-as-you-go price, in US East at 12.0000 USD/GPU-h. Across 5 regions this size lists at 12.0000–15.0000 USD/GPU-h, putting the same workload at USD 276,480.00–345,600.00. A contingency of USD 69,120.00 covers a +25% list-price move, and USD 138,240.00 covers a +50% move.
+32 H100 NVLink 80GB GPUs, run as 4 VMs of ND96isr H100 v5 for 720 hours, cost USD 276,480.00 at the lowest listed pay-as-you-go price for this GPU and count, in US East at 12.0000 USD/GPU-h. Across 5 regions the lowest listed prices run from 12.0000 to 15.0000 USD/GPU-h, putting the same workload at USD 276,480.00 to 345,600.00. A contingency of USD 69,120.00 covers a +25% list-price move, and USD 138,240.00 covers a +50% move.
 
 *This compares across regions.*
 
@@ -16,7 +16,7 @@ Running 32 H100 NVLink 80GB GPUs as 4 × ND96isr H100 v5 for 720 hours costs USD
 
 ## Changes since the previous snapshot
 
-2 listed prices changed between 2026-10-05 09:00 UTC and 2026-10-12 09:00 UTC, both for ND96isr H100 v5 in US East. The pay-as-you-go price rose from 11.0000 to 12.0000 USD/GPU-h, and the Spot price rose from 11.0000 to 12.0000 USD/GPU-h.
+2 listed prices changed between 2026-10-05 09:00 UTC and 2026-10-12 09:00 UTC, each for ND96isr H100 v5 on Linux in US East. The pay-as-you-go price rose from 88.00 to 96.00 USD/VM-h (11.0000 to 12.0000 USD/GPU-h), and the Spot price rose from 88.00 to 96.00 USD/VM-h (11.0000 to 12.0000 USD/GPU-h).
 
 - US East · ND96isr H100 v5 · pay-as-you-go · linux: 88.00 → 96.00 USD/VM-h (11.0000 → 12.0000 USD/GPU-h).
 - US East · ND96isr H100 v5 · Spot · linux: 88.00 → 96.00 USD/VM-h (11.0000 → 12.0000 USD/GPU-h).
@@ -30,7 +30,7 @@ Running 32 H100 NVLink 80GB GPUs as 4 × ND96isr H100 v5 for 720 hours costs USD
 
 ## Groups per GPU
 
-The latest snapshot holds 11 region groups across 3 GPU variants, and 10 of them have a single list price. All 8 H100 NVLink 80GB groups have a single list price, while 1 of 2 T4 16GB groups do.
+The latest snapshot holds 11 region groups across 3 GPU variants, and 10 of them have a single list price. H100 NVLink 80GB accounts for 8 groups, all 8 with a single list price; T4 16GB has 2 groups with 1 single-priced, and A100 PCIe 80GB has 1 group with 1 single-priced.
 
 | GPU | Region groups | Single list price |
 |---|---:|---:|
@@ -40,7 +40,7 @@ The latest snapshot holds 11 region groups across 3 GPU variants, and 10 of them
 
 ## Spot against pay-as-you-go
 
-2 of 3 H100 NVLink 80GB Spot listings have the same size on pay-as-you-go in the same region. 1 equals it at 12.0000 USD/GPU-h, 0 are above it, and another sits at 5.0000 against 12.5000 USD/GPU-h, or 40.0% of pay-as-you-go.
+2 of 3 H100 NVLink 80GB Spot listings have the same size on pay-as-you-go in the same region; 1 equals it and 0 are above it. A Spot price of 12.0000 USD/GPU-h matches its pay-as-you-go price of 12.0000, a share of 100.0%, while another at 5.0000 sits at 40.0% of 12.5000; a further Spot listing at 6.0000 has no pay-as-you-go pair.
 
 | Region | Size | Spot, USD/GPU-h | Pay-as-you-go, USD/GPU-h | Spot as % of pay-as-you-go |
 |---|---|---:|---:|---:|
@@ -52,7 +52,7 @@ The latest snapshot holds 11 region groups across 3 GPU variants, and 10 of them
 
 ## Across regions
 
-There are 4 cross-region summaries, and 3 of them are thin, drawn from fewer than 5 regions. H100 NVLink 80GB pay-as-you-go spans 12.0000–15.0000 USD/GPU-h across 5 regions, with a median of 13.0000.
+There are 4 cross-region summaries, and 3 of them are thin, from fewer than 5 regions. H100 NVLink 80GB pay-as-you-go across 5 regions runs 12.0000 to 15.0000 USD/GPU-h with a median of 13.0000, while its Spot group across 3 regions runs 5.0000 to 12.0000 with a median of 6.0000. T4 16GB across 2 regions runs 0.6000 to 0.7000 with a median of 0.6500, and A100 PCIe 80GB in 1 region lists at 3.8000, with median 3.8000 and high 3.8000.
 
 | GPU | Pricing | Regions | Lowest | Median | Highest | Labels |
 |---|---|---:|---:|---:|---:|---|
@@ -65,7 +65,7 @@ There are 4 cross-region summaries, and 3 of them are thin, drawn from fewer tha
 
 ## Data quality
 
-The latest snapshot holds 14 observations; 12 are compared and the rest are excluded, 1 as an unmapped size and 1 as Windows. The record covers 3 succeeded snapshots over 14 days, and a snapshot is stale after 7 days.
+The latest snapshot holds 14 observations; 12 are compared and the rest are excluded, each with its reason: 1 as an unmapped size and 1 as Windows, with 1 size absent from the GPU map. The data spans 3 succeeded snapshots over 14 days, and a snapshot counts as stale after 7 days.
 
 - Observations: 14, of which 12 are compared.
 - Excluded as `unmapped_sku`: 1.
@@ -83,7 +83,7 @@ The latest snapshot holds 14 observations; 12 are compared and the rest are excl
 
 GPU map: contains material from Microsoft Learn, © Microsoft, licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
 
-Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked by code.
+Prose drafted by claude-opus-5-5 (prompt v3); every number placed and checked by code.
 
 ## Records
 
@@ -114,14 +114,14 @@ Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked by
 | `bl_c50_move` | stated input or fixed rule | | | |
 | `n_changes` | derived from `prev_time`, `snap_time` | | | |
 | `prev_time` | synthetic-20261005T090000Z-101e6e |  |  | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
-| `chg_1_before_gpu` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
-| `chg_1_after_gpu` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `chg_2_before_gpu` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
-| `chg_2_after_gpu` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `chg_1_before` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
 | `chg_1_after` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `chg_1_before_gpu` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
+| `chg_1_after_gpu` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `chg_2_before` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
 | `chg_2_after` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `chg_2_before_gpu` | synthetic-20261005T090000Z-101e6e | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-05 09:00 UTC | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
+| `chg_2_after_gpu` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_absent_once` | derived from `snap_time` | | | |
 | `abs_1_since` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `abs_1_seen` | synthetic-20261005T090000Z-101e6e |  |  | 101e6e611bd8c5f8af678e71347a147bb0a058218fd6c261cf6c864652162dc8 |
@@ -132,25 +132,30 @@ Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked by
 | `n_variants` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `grp_2_n` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `grp_3_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `grp_2_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `grp_3_n` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `grp_3_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `grp_1_n` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `grp_1_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `grp_2_single` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_spot_paired` | derived from `snap_time` | | | |
 | `n_spot` | derived from `snap_time` | | | |
 | `n_spot_equal` | derived from `snap_time` | | | |
-| `spot_1_spot` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_spot_above` | derived from `snap_time` | | | |
-| `spot_3_spot` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `spot_3_payg` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `spot_3_ratio` | derived from `spot_3_spot`, `spot_3_payg` | | | |
+| `spot_1_spot` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `spot_1_payg` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `spot_1_ratio` | derived from `spot_1_spot`, `spot_1_payg` | | | |
+| `spot_3_spot` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `spot_3_ratio` | derived from `spot_3_spot`, `spot_3_payg` | | | |
+| `spot_3_payg` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `spot_2_spot` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_summaries` | derived from `snap_time` | | | |
 | `n_thin` | derived from `snap_time`, `thin_below` | | | |
 | `thin_below` | stated input or fixed rule | | | |
+| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000103\|SYNTH0103/0001\|southcentralus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000105\|SYNTH0105/0001\|swedencentral\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000104\|SYNTH0104/0001\|westus3\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000103\|SYNTH0103/0001\|southcentralus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000105\|SYNTH0105/0001\|swedencentral\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
@@ -161,45 +166,40 @@ Prose drafted by claude-opus-5-5 (prompt v2); every number placed and checked by
 | `reg_2_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000105\|SYNTH0105/0001\|swedencentral\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000104\|SYNTH0104/0001\|westus3\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000103\|SYNTH0103/0001\|southcentralus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000105\|SYNTH0105/0001\|swedencentral\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_2_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000104\|SYNTH0104/0001\|westus3\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000101\|SYNTH0101/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000103\|SYNTH0103/0001\|southcentralus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000105\|SYNTH0105/0001\|swedencentral\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000102\|SYNTH0102/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_2_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000104\|SYNTH0104/0001\|westus3\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_1_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_1_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_1_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_1_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_3_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000106\|SYNTH0106/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000114\|SYNTH0114/0001\|uksouth\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_3_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000107\|SYNTH0107/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_ND96isr_H100_v5 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000108\|SYNTH0108/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000110\|SYNTH0110/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000108\|SYNTH0108/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000110\|SYNTH0110/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_4_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000108\|SYNTH0108/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `reg_4_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000110\|SYNTH0110/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000108\|SYNTH0108/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `reg_4_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000110\|SYNTH0110/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_4_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000108\|SYNTH0108/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_4_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000110\|SYNTH0110/0001\|westeurope\|Consumption\|\|0.0\|USD\|Standard_NC4as_T4_v3 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_1_n` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_1_min` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_1_median` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `reg_1_max` | synthetic-20261012T090000Z-2b4972 | 00000000-0000-0000-0000-000000000111\|SYNTH0111/0001\|eastus\|Consumption\|\|0.0\|USD\|Standard_NC24ads_A100_v4 | 2026-10-12 09:00 UTC | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `q_obs` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `q_normalized` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `q_reason_2` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `q_reason_3` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
+| `q_unmapped` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_snapshots` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `n_days` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
 | `stale_days` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |
-| `q_unmapped` | synthetic-20261012T090000Z-2b4972 |  |  | 2b4972683a3825143fb34b0bc78703244a9e4401d293e82dc8b6acee6e405c6a |

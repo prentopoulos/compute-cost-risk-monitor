@@ -117,7 +117,7 @@
   - the read-through and the manual check;
   - the pre-publication record ("Pre-publication record");
   - what was cut, if anything.
-- [ ] 8.5 Run `/code-review` on the PR, fix findings in new commits or answer them, and record the outcome in the PR body
+- [x] 8.5 Run `/code-review` on the PR, fix findings in new commits or answer them, and record the outcome in the PR body. Done on 2026-10-15: 15 findings; all fixed with tests (design D47), the brief re-drafted once (prompt v3, about USD 0.05), and the outcome recorded in the PR body
 
 ## 9. Gate and close
 

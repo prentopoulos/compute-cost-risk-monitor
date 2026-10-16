@@ -10,9 +10,10 @@
 > **Bottom line** · SYNTHETIC DATA — NOT AZURE LIST PRICES · prices as of 2026-10-12 09:00 UTC
 >
 > 32 H100 NVLink 80GB GPUs (4 × ND96isr H100 v5) for 720 hours cost **USD 276,480.00** at the
-> lowest listed pay-as-you-go price: US East, 12.0000 USD/GPU-h. Across 5 regions this size lists
-> at 12.0000–15.0000 USD/GPU-h, so the same workload costs USD 276,480.00–345,600.00. Setting
-> aside USD 69,120.00 covers a +25% list-price rise, and USD 138,240.00 a +50% rise.
+> lowest listed pay-as-you-go price: US East, 12.0000 USD/GPU-h. Across 5 regions, the lowest
+> listed prices for this GPU and count run 12.0000–15.0000 USD/GPU-h, so the same workload costs
+> USD 276,480.00–345,600.00. Setting aside USD 69,120.00 covers a +25% list-price rise, and
+> USD 138,240.00 a +50% rise.
 >
 > Scenario calculation, not a forecast. Not included: storage, data transfer, IP addresses,
 > licences, taxes, discounts, reserved-price plans, Spot interruptions and availability limits.
