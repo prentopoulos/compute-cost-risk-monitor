@@ -272,6 +272,20 @@ brief lists.
   scan of every blob in the history, the survey for figures from collected prices, and the
   personal details. It is in the Phase 8 review record. It approves no hosting, and no sharing of
   the video. The brief, the methodology and the publishing list still come through the Phase 8 PR.
+- Decision, 2026-10-15 (owner): approved the Phase 8 publishing list in
+  `docs/reviews/2026-10-15-phase-8-demo.md`. Scope:
+  - **public:** everything tracked, with the full Git history. That covers the code, tests and
+    invented fixtures, the OpenSpec records, the README, methodology, brief, deck, walkthrough
+    video, screenshots, diagrams and review records, AI_OPS.md, HANDOFF.md, PROJECT.md and the
+    vendored skills;
+  - **data:** "No live Azure price, cost, exposure or SKU-level price figure appears.
+    Aggregate counts and coarse distributions from the one local snapshot appear in design and
+    review records.";
+  - **not public:** `data/` (collected prices, original responses, local databases) and `.env`;
+    no app is hosted.
+
+  The walkthrough video is in the repository (PR #16, at the owner's request), not on a video
+  site.
 
 Record explicit operator decisions already given, with scope and date; do not request them
 again. Gates without such a decision remain unresolved. Local work proceeds independently.

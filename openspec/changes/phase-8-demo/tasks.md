@@ -121,5 +121,5 @@
 
 ## 9. Gate and close
 
-- [ ] 9.1 Put the publishing list to the operator and record the decision in PROJECT.md §6 (D5). On approval, the owner uploads the video unlisted and its link enters the README
+- [x] 9.1 Put the publishing list to the operator and record the decision in PROJECT.md §6 (D5). On approval, the owner uploads the video unlisted and its link enters the README. Done on 2026-10-15: the owner approved the list; PROJECT.md §6 records it. At the owner's request the video is in the repository (PR #16) rather than uploaded unlisted, and the README links it
 - [ ] 9.2 Update HANDOFF for the checkpoint after the merge, including the visibility change the operator approved. Archive the change and mark Phase 8 Done
